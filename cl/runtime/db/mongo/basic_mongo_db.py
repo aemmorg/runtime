@@ -652,7 +652,7 @@ class BasicMongoDb(Db):
             # Not implemented. Return unchanged records by default.
             return records
         else:
-            raise ValueError(f"Unsupported SortOrder: {order}")
+            raise ValueError(f"Unsupported SortOrder: {sort_order}")
 
     def _with_pruned_fields(
         self,

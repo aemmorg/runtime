@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pymongo
 from dataclasses import dataclass
 from mongomock import MongoClient as MongoClientMock
+from pymongo.synchronous.collection import Collection
 from cl.runtime.db.mongo.basic_mongo_db import BasicMongoDb
 
 
@@ -24,3 +26,28 @@ class BasicMongoMockDb(BasicMongoDb):
     def _get_mongo_client_type(self) -> type:
         """Get the type of MongoDB client object, this method overrides base to return the mongomock class."""
         return MongoClientMock
+
+    def _add_index(
+        self,
+        *,
+        collection: Collection,
+        query_type: type,
+    ) -> None:
+        """Add index for the specified query_type without background parameter for mongomock compatibility."""
+        if not self._query_types_with_index:
+            # Create an empty set of query types for which the index has already been added
+            self._query_types_with_index = set()
+        if query_type not in self._query_types_with_index:
+            # First fields in the index
+            query_index = [("_tenant", pymongo.ASCENDING), ("_dataset", pymongo.ASCENDING)]
+            # Populate query fields recursively
+            self._populate_index(type_=query_type, result=query_index)
+            # Key is the last field in the index
+            query_index.append(("_key", pymongo.ASCENDING))
+
+            # Add index to DB without 'background' parameter (mongomock doesn't handle it properly)
+            # Convert list to tuple to avoid list/tuple comparison issues
+            collection.create_index(tuple(query_index), unique=True)
+
+            # Add to the set of query types for which the index has already been added
+            self._query_types_with_index.add(query_type)
