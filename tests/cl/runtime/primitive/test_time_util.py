@@ -20,7 +20,15 @@ from cl.runtime.primitive.time_util import TimeUtil
 
 def get_valid_samples() -> list[tuple[int, str]]:
     """Return a list of valid sample date strings in (iso_int, str) format."""
-    return [(101530000, "10:15:30.000"), (101530500, "10:15:30.500")]
+    return [
+        (101530000, "10:15:30.000"),
+        (101530500, "10:15:30.500"),
+        (11530500, "01:15:30.500"),
+        (1530500, "00:15:30.500"),
+        (30500, "00:00:30.500"),
+        (500, "00:00:00.500"),
+        (0, "00:00:00.000"),
+    ]
 
 
 def get_invalid_time_samples() -> list[dt.time]:
@@ -48,9 +56,10 @@ def get_invalid_iso_int_samples() -> list[int]:
     """Return a list of invalid sample time ISO ints."""
     return [
         -1,  # Too small
-        1015,  # No seconds
-        101530,  # No milliseconds
-        10153000,  # Int too short
+        99000,  # Invalid seconds
+        256030000,  # Invalid hours
+        106030000,  # Invalid minutes
+        101599000,  # Invalid seconds
         1015300000,  # Int too long
     ]
 

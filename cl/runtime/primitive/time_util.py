@@ -130,28 +130,25 @@ class TimeUtil:
     def from_iso_int(cls, value: int) -> dt.time:
         """Convert int in hhmmssfff format with millisecond precision to dt.time."""
 
-        if value < 100000000:
-            raise RuntimeError(f"Time {value} is too short for 'hhmmssfff' format.")
-        if value > 999999999:
-            raise RuntimeError(f"Time {value} is too long for 'hhmmssfff' format.")
+        # Validate the value
+        if value < 0:
+            raise RuntimeError(f"Time {value} cannot be less that 0 for 'hhmmssfff' format.")
+        s = f"{value:09d}"
+        if len(s) != 9:
+            raise RuntimeError(f"Invalid value '{value}' for 'hhmmssfff' format.")
 
-        hour: int = value // 1000_00_00
-        value -= hour * 1000_00_00
-        if hour > 23 or hour < 0:
+        hour = int(s[0:2])
+        minute = int(s[2:4])
+        second = int(s[4:6])
+        millisecond = int(s[6:9])
+
+        if not (0 <= hour <= 23):
             raise RuntimeError(f"Invalid hour {hour} for time {value} in 'hhmmssfff' format.")
-
-        minute: int = value // 1000_00
-        value -= minute * 1000_00
-        if minute > 59 or minute < 0:
+        if not (0 <= minute <= 59):
             raise RuntimeError(f"Invalid minute {minute} for time {value} in 'hhmmssfff' format.")
-
-        second: int = value // 1000
-        value -= second * 1000
-        if second > 59 or second < 0:
+        if not (0 <= second <= 59):
             raise RuntimeError(f"Invalid second {second} for time {value} in 'hhmmssfff' format.")
-
-        millisecond: int = value
-        if millisecond > 999 or millisecond < 0:
+        if not (0 <= millisecond <= 999):
             raise RuntimeError(f"Invalid millisecond {millisecond} for time {value} in 'hhmmssfff' format.")
 
         result = dt.time(hour, minute, second, microsecond=1000 * millisecond)
