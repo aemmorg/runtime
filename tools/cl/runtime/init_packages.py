@@ -14,7 +14,7 @@
 
 from pathlib import Path
 
-import locate # isort: skip Prevent isort from moving this line
+import locate  # isort: skip Prevent isort from moving this line
 
 # Ensure bootstrap module can be found
 locate.append_sys_path("../../..")
@@ -27,6 +27,95 @@ from cl.runtime.settings.package_settings import PackageSettings
 from cl.runtime.templates.jinja_template_engine import JinjaTemplateEngine
 
 
+def get_package_name(package_namespace: str) -> str:
+    """Extract the short package name from namespace (e.g., 'cl.convince' -> 'convince')."""
+    return package_namespace.split(".")[-1]
+
+
+def get_isort_section_name(package_namespace: str) -> str:
+    """Get isort section name from package namespace (e.g., 'cl.runtime' -> 'RUNTIME')."""
+    return get_package_name(package_namespace).upper()
+
+
+def get_isort_known_key(package_namespace: str) -> str:
+    """Get isort known_* key from package namespace (e.g., 'cl.runtime' -> 'known_runtime')."""
+    return f"known_{get_package_name(package_namespace)}"
+
+
+def build_package_data(package_namespace: str, all_packages: tuple[str, ...]) -> dict:
+    """
+    Build template data for a package including isort configuration.
+
+    Args:
+        package_namespace: The package namespace (e.g., 'cl.convince')
+        all_packages: All package namespaces from PackageSettings
+
+    Returns:
+        Dict with template data including isort config
+    """
+    # Separate main packages from stubs
+    main_packages = [p for p in all_packages if not p.startswith("stubs.")]
+    stub_packages = [p for p in all_packages if p.startswith("stubs.")]
+
+    # Find index of current package in main packages
+    package_name = get_package_name(package_namespace)
+    try:
+        current_index = next(i for i, p in enumerate(main_packages) if get_package_name(p) == package_name)
+    except StopIteration:
+        # Package not found in main packages (might be a stubs package), use all
+        current_index = len(main_packages) - 1
+
+    # Include all main packages up to and including current package
+    included_main_packages = main_packages[: current_index + 1]
+
+    # Include stubs for all included main packages
+    included_stubs = []
+    for mp in included_main_packages:
+        mp_name = get_package_name(mp)
+        matching_stub = next((s for s in stub_packages if get_package_name(s) == mp_name), None)
+        if matching_stub:
+            included_stubs.append(matching_stub)
+
+    # Build isort known_* entries for main packages
+    isort_known_packages = []
+    for p in included_main_packages:
+        isort_known_packages.append(
+            {
+                "key": get_isort_known_key(p),
+                "value": p,
+                "section": get_isort_section_name(p),
+            }
+        )
+
+    # Build isort known_* entries for stubs
+    isort_known_stubs = []
+    for s in included_stubs:
+        stub_name = get_package_name(s)
+        isort_known_stubs.append(
+            {
+                "key": f"known_{stub_name}_stubs",
+                "value": s,
+                "section": f"{stub_name.upper()}_STUBS",
+            }
+        )
+
+    # Build sections list: FUTURE, PYTEST, STDLIB, THIRDPARTY, [main packages], [stubs], FIRSTPARTY, LOCALFOLDER
+    sections = ["FUTURE", "PYTEST", "STDLIB", "THIRDPARTY"]
+    sections.extend(get_isort_section_name(p) for p in included_main_packages)
+    sections.extend(entry["section"] for entry in isort_known_stubs)
+    sections.extend(["FIRSTPARTY", "LOCALFOLDER"])
+
+    return {
+        "package": package_namespace,
+        "package_name": package_name,
+        "main_packages": included_main_packages,
+        "stub_packages": included_stubs,
+        "isort_known_packages": isort_known_packages,
+        "isort_known_stubs": isort_known_stubs,
+        "isort_sections": sections,
+    }
+
+
 def init_packages() -> None:
     """Initialize package files for each package."""
 
@@ -36,13 +125,31 @@ def init_packages() -> None:
     # Create Jinja2 template engine
     engine = JinjaTemplateEngine().build()
 
-    # Iterate over each package and render templates into the package root
-    for package in PackageSettings.instance().get_packages():
+    # Get all packages from settings
+    all_packages = PackageSettings.instance().get_packages()
+
+    # Track processed package roots to avoid duplicates (stubs share same root as main package)
+    processed_roots = set()
+
+    # Iterate over each main package (skip stubs as they share the same package root)
+    for package in all_packages:
+        # Skip stubs packages - they share the package root with main package
+        if package.startswith("stubs."):
+            continue
+
         package_root = ProjectLayout.get_package_root(package)
-        engine.render_dir(input_dir=template_dir, output_dir=package_root, data={"package": package})
+
+        # Skip if already processed (shouldn't happen for main packages, but safety check)
+        if package_root in processed_roots:
+            continue
+        processed_roots.add(package_root)
+
+        # Build template data with isort configuration
+        data = build_package_data(package, all_packages)
+
+        engine.render_dir(input_dir=template_dir, output_dir=package_root, data=data)
 
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     # Initialize package files
     init_packages()

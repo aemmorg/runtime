@@ -33,11 +33,9 @@ lines_between_sections = 0
 force_single_line = true
 skip = ["__init__.py"]
 known_pytest = ["pytest"]
-known_cl_runtime = ["cl.runtime"]
-known_stubs_cl_runtime = ["stubs.cl.runtime"]
-known_cl_convince = ["cl.convince"]
-known_stubs_cl_convince = ["stubs.cl.convince"]
-sections = ["FUTURE", "PYTEST", "STDLIB", "THIRDPARTY", "CL_RUNTIME", "CL_CONVINCE", "STUBS_CL_RUNTIME", "STUBS_CL_CONVINCE", "FIRSTPARTY", "LOCALFOLDER"]
+{% for entry in isort_known_packages %}{{ entry.key }} = ["{{ entry.value }}"]
+{% endfor %}{% for entry in isort_known_stubs %}{{ entry.key }} = ["{{ entry.value }}"]
+{% endfor %}sections = [{% for section in isort_sections %}"{{ section }}"{% if not loop.last %}, {% endif %}{% endfor %}]
 
 [build-system]
 requires = ["hatchling>=1.21.0"]
@@ -46,6 +44,6 @@ build-backend = "hatchling.build"
 [tool.pytest.ini_options]
 addopts = "-p no:warnings"
 asyncio_default_fixture_loop_scope = "function"
-pythonpath = [{% for package in packages %}"{{ package }}"{% if not loop.last %}, {% endif %}{% endfor %}]
-testpaths = [{% for package in packages %}"{{ package }}/tests"{% if not loop.last %}, {% endif %}{% endfor %}]
+pythonpath = ["."]
+testpaths = ["tests"]
 
