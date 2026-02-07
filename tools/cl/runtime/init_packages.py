@@ -16,6 +16,8 @@ from pathlib import Path
 
 import locate  # isort: skip Prevent isort from moving this line
 
+from cl.runtime.settings.project_settings import ProjectSettings
+
 # Ensure bootstrap module can be found
 locate.append_sys_path("../../..")
 
@@ -44,15 +46,19 @@ def get_isort_known_key(package_namespace: str) -> str:
 
 def build_package_data(package_namespace: str, all_packages: tuple[str, ...]) -> dict:
     """
-    Build template data for a package including isort configuration.
+    Build template data for a package including isort configuration and package settings.
 
     Args:
         package_namespace: The package namespace (e.g., 'cl.convince')
         all_packages: All package namespaces from PackageSettings
 
     Returns:
-        Dict with template data including isort config
+        Dict with template data including isort config and package settings
     """
+    # Load settings for the speific package, including package-level project settings
+    project_settings = ProjectSettings.instance(package=package_namespace)
+    package_settings = PackageSettings.instance(package=package_namespace)
+
     # Separate main packages from stubs
     main_packages = [p for p in all_packages if not p.startswith("stubs.")]
     stub_packages = [p for p in all_packages if p.startswith("stubs.")]
@@ -107,7 +113,14 @@ def build_package_data(package_namespace: str, all_packages: tuple[str, ...]) ->
 
     return {
         "package": package_namespace,
-        "package_name": package_name,
+        "project_name": project_settings.project_name,
+        "package_description": package_settings.package_description or "",
+        "package_classifiers": list(package_settings.package_classifiers),
+        "package_url_label": package_settings.package_url_label,
+        "package_url": package_settings.package_url,
+        "package_dependencies": list(package_settings.package_dependencies),
+        "package_has_shared_data": package_settings.package_has_shared_data,
+        "package_has_mypy": package_settings.package_has_mypy,
         "main_packages": included_main_packages,
         "stub_packages": included_stubs,
         "isort_known_packages": isort_known_packages,

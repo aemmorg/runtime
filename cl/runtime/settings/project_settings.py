@@ -15,7 +15,6 @@
 from dataclasses import dataclass
 from typing import Sequence
 from typing_extensions import final  # TODO: !!! Do not import from typing_extensions
-from cl.runtime.prebuild.license_kind import LicenseKind
 from cl.runtime.records.for_dataclasses.extensions import required
 from cl.runtime.settings.settings import Settings
 
@@ -25,7 +24,7 @@ from cl.runtime.settings.settings import Settings
 class ProjectSettings(Settings):
     """Project settings used to generate pyproject.toml and other build config files and scripts."""
 
-    project_name: str = required()
+    project_name: str | None = None
     """Field 'name' under [project] in pyproject.toml."""
 
     project_version: str = required()
@@ -36,9 +35,6 @@ class ProjectSettings(Settings):
 
     project_required_python: str | None = None
     """Field 'requires-python' under [project] in pyproject.toml, skip if not specified."""
-
-    project_license_kind: LicenseKind | None = None
-    """Determines license-related settings, try to match LICENSE file checksum if not specified."""  # TODO(Claude): Implement in __init to set to this value if not specified
 
     project_license: str | None = None
     """Field 'license' under [project] in pyproject.toml, try to match LICENSE file checksum if not specified."""

@@ -1,6 +1,9 @@
 # Default environment
 default:
 
+  # Documented in ProjectSettings class
+  project_name: Runtime
+
   # Documented in PackageSettings class
   package_dirs:
     cl.runtime: .

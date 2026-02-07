@@ -21,6 +21,7 @@ from typing import Sequence
 import frozendict
 from typing_extensions import final  # TODO: !!! Do not import from typing_extensions
 
+from cl.runtime.primitive.case_util import CaseUtil
 from cl.runtime.project.project_checks import ProjectChecks
 from cl.runtime.project.project_layout import ProjectLayout
 from cl.runtime.records.for_dataclasses.extensions import required
@@ -42,6 +43,27 @@ class PackageSettings(Settings):
     package_namespace: str = required()
     """Namespace of the package, e.g. 'cl.runtime'."""
 
+    package_version: str | None = None
+    """Field 'version' under [project] in pyproject.toml (defaults to __version__ in __init__.py at package root)."""  # TODO(Claude): Implement in __init to set to this value if not specified
+
+    package_description: str | None = None
+    """Field 'description' under [project] in pyproject.toml, skip if not specified."""  # TODO(Claude): Use in pyproject.toml, skip if not specified
+
+    package_requires_python: str | None = None
+    """Field 'requires-python' under [project] in pyproject.toml, skip if not specified."""  # TODO(Claude): Use in pyproject.toml, skip if not specified
+
+    package_license: str | None = None
+    """Field 'license' under [project] in pyproject.toml, try to match LICENSE file checksum if not specified.""" # TODO(Claude): Use dummy checksum for now
+
+    package_authors: str | None = None
+    """Field 'authors' under [project] in pyproject.toml, try to read from COPYRIGHT if not specified."""  # TODO(Claude): Implement
+
+    package_urls: Mapping[str, str] | None = None
+    """Mapping under [project.urls] in pyproject.toml, skip if not specified."""  # TODO(Claude): Implement
+
+    package_classifiers: Sequence[str] | None = None
+    """Field 'classifiers' under [project] in pyproject.toml, skip if not specified."""
+
     package_stubs_namespace: str = "stubs.{package_namespace}"
     """Stubs namespace of the package, e.g. 'stubs.cl.runtime' (defaults to stubs.{package_namespace})."""
 
@@ -54,19 +76,30 @@ class PackageSettings(Settings):
     package_tests_dir: Mapping[str, str] = "tests"
     """Tests dir relative to project root (defaults to 'tests')."""
 
+    package_has_shared_data: bool = False
+    """Whether to include [tool.hatch.build.targets.wheel.shared-data] section for py.typed marker."""
+
+    package_has_mypy: bool = False
+    """Whether to include [tool.mypy] section in pyproject.toml."""
+
     package_dependencies: Sequence[str] | None = None
-    """Used to generate dependencies in pyproject.toml."""
+    """Field 'dependencies' under [project] in pyproject.toml, skip if not specified."""
 
     def __init(self) -> None:
         """Use instead of __init__ in the builder pattern, invoked by the build method in base to derived order."""
 
-        # Perform variable substitution in package_stubs_namespace
-        self.package_stubs_namespace = self.package_stubs_namespace.format(package_namespace=self.package_namespace)
+        # Perform variable substitution in package_stubs_namespace if package_namespace is set
+        if self.package_namespace is not None:
+            self.package_stubs_namespace = self.package_stubs_namespace.format(package_namespace=self.package_namespace)
 
         # Initialize and validate package dependencies
         if self.package_dependencies is None:
             self.package_dependencies = []
         ProjectChecks.guard_requirements(self.package_dependencies)
+
+        # Initialize package_classifiers if None
+        if self.package_classifiers is None:
+            self.package_classifiers = []
 
     def get_packages(self) -> tuple[str, ...]:
         """Ordered tuple of package namespaces (keys) from package_dirs mapping."""
