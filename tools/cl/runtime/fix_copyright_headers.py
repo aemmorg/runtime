@@ -24,5 +24,5 @@ from cl.runtime.prebuild.copyright_util import CopyrightUtil
 
 if __name__ == '__main__':
 
-    # Fix or report errors where copyright header is missing, incorrect, or not followed by a blank line
-    CopyrightUtil.check_copyright_headers(fix_trailing_blank_line=True, verbose=True)
+    # Fix incorrect or missing copyright headers and trailing blank lines
+    CopyrightUtil.fix_copyright_headers(verbose=True)

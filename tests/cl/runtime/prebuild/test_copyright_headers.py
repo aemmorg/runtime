@@ -19,8 +19,8 @@ from cl.runtime.prebuild.copyright_util import CopyrightUtil
 def test_copyright_headers():
     """Prebuild test to check that the specified copyright header is present in all code directories."""
 
-    # Get the list files where copyright header is missing, incorrect, or not followed by a blank line
-    CopyrightUtil.check_copyright_headers()
+    # Test that copyright headers are correct and followed by a blank line
+    CopyrightUtil.test_copyright_headers()
 
 
 if __name__ == "__main__":

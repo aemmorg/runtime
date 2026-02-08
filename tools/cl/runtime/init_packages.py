@@ -22,8 +22,8 @@ import cl.runtime.bootstrap
 # isort: on
 
 from pathlib import Path
+from cl.runtime.prebuild.copyright_util import CopyrightUtil
 from cl.runtime.prebuild.version_util import VersionUtil
-
 from cl.runtime.project.project_layout import ProjectLayout
 from cl.runtime.settings.package_settings import PackageSettings
 from cl.runtime.templates.jinja_template_engine import JinjaTemplateEngine
@@ -57,6 +57,13 @@ def build_package_data(package_namespace: str, all_packages: tuple[str, ...]) ->
     """
     # Settings for the specified package
     package_settings = PackageSettings.instance(package=package_namespace)
+    package_root = ProjectLayout.get_package_root(package_namespace)
+
+    # Use yaml override for authors if specified, otherwise extract from COPYRIGHT file
+    package_authors = package_settings.package_authors or CopyrightUtil.get_authors(package_root, package_namespace)
+
+    # Use yaml override for license if specified, otherwise extract from LICENSE file
+    package_license = package_settings.package_license or CopyrightUtil.get_license_name(package_root, package_namespace)
 
     # Separate main packages from stubs
     main_packages = [p for p in all_packages if not p.startswith("stubs.")]
@@ -115,8 +122,8 @@ def build_package_data(package_namespace: str, all_packages: tuple[str, ...]) ->
         "package_path": "/".join(package_namespace.split(".")),  # Slash-delimited package namespace, e.g., 'cl/runtime'
         "package_version": VersionUtil.get_package_version(package=package_namespace),
         "package_description": package_settings.package_description or "",
-        "package_license": package_settings.package_license or "",
-        "package_authors": package_settings.package_authors or "",
+        "package_license": package_license,
+        "package_authors": package_authors,
         "package_classifiers": list(package_settings.package_classifiers) if package_settings.package_classifiers else [],
         "package_urls": package_settings.package_urls,
         "package_dependencies": list(package_settings.package_dependencies) if package_settings.package_dependencies else [],
