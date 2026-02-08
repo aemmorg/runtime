@@ -117,9 +117,8 @@ class Settings(BootstrapMixin, ABC):
         if unknown_fields := [k for k in specified_fields if k not in class_fields]:
             raise RuntimeError(
                 f"The following fields with prefix '{prefix}' are defined in envvars, .env or settings files\n"
-                f"for the settings directory '{loader.get_settings_dir()}' but are not included\n"
-                f"in the settings class: {typename(cls)} for this prefix:\n\n{cls.get_fields_str(unknown_fields)}\n\n"
-                f"{loader.get_sources_str(prefix=prefix)}"
+                f"for the settings directory '{loader.get_settings_dir()}' but are not included in {typename(cls)}:\n"
+                f"{cls.get_fields_str(unknown_fields)}\n{loader.get_sources_str(prefix=prefix)}"
             )
 
         # List of required fields in cls (fields for which neither default nor default_factory is specified)

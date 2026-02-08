@@ -261,12 +261,12 @@ class DynaconfLoader(BootstrapMixin):
 
         # Dynaconf settings files
         settings_files_str = ", ".join(self.get_settings_files())
-        sources_list.extend(f"Fields with prefix '{prefix}_' in settings files: {settings_files_str}")
+        sources_list.append(f"Fields with prefix '{prefix}_' in settings files: {settings_files_str}")
 
         # Convert sources list to string
         sources_str ="\n".join(f"  - {x}" for x in sources_list)
         settings_dir_str = self.get_settings_dir()
-        result =  f"Sources:\n{sources_str}\nSettings directory: {settings_dir_str}\n"
+        result =  f"Sources:\n{sources_str}\nSettings directory:\n  {settings_dir_str}\n"
         return result
 
 

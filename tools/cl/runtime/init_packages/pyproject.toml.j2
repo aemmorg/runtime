@@ -1,5 +1,5 @@
 [project]
-name = "{{ project_name }}"
+name = "{{ package_name }}"
 version = "2025.1217.0"
 description = "{{ package_description }}"
 readme = "README.md"
@@ -14,18 +14,23 @@ classifiers = [
 dependencies = [
 {% for dep in package_dependencies %}    "{{ dep }}",
 {% endfor %}]
+{%- if package_urls %}
+
 [project.urls]
-"{{ package_url_label }}" = "{{ package_url }}"
+{%- for label, url in package_urls.items() %}
+"{{ label }}" = "{{ url }}"
+{%- endfor %}
+{%- endif %}
 
 [tool.hatch.build.targets.wheel]
-packages = ["cl/{{ package_name }}"]
+packages = ["{{ package_path }}"]
 exclude = [
     "/tests",
     "/tests.*",
 ]
 {% if package_has_shared_data %}
 [tool.hatch.build.targets.wheel.shared-data]
-"cl/{{ package_name }}/py.typed" = "cl/{{ package_name }}/py.typed"
+"{{ package_path }}/py.typed" = "{{ package_path }}/py.typed"
 {% endif %}
 [tool.autoflake]
 recursive = true
@@ -111,4 +116,4 @@ module = [
     "numpy.*"
 ]
 ignore_missing_imports = true
-{% endif %}
+{% endif -%}

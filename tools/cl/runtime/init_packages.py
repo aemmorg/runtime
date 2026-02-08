@@ -55,8 +55,7 @@ def build_package_data(package_namespace: str, all_packages: tuple[str, ...]) ->
     Returns:
         Dict with template data including isort config and package settings
     """
-    # Load settings for the speific package, including package-level project settings
-    project_settings = ProjectSettings.instance(package=package_namespace)
+    # Settings for the specified package
     package_settings = PackageSettings.instance(package=package_namespace)
 
     # Separate main packages from stubs
@@ -112,12 +111,12 @@ def build_package_data(package_namespace: str, all_packages: tuple[str, ...]) ->
     sections.extend(["FIRSTPARTY", "LOCALFOLDER"])
 
     return {
-        "package": package_namespace,
-        "project_name": project_settings.project_name,
+        "package_name": package_settings.package_name,  # Readable name, e.g., "Runtime"
+        "package_namespace": package_namespace,  # Dot-delimited package namespace, e.g., 'cl.runtime'
+        "package_path": "/".join(package_namespace.split(".")),  # Slash-delimited package namespace, e.g., 'cl/runtime'
         "package_description": package_settings.package_description or "",
         "package_classifiers": list(package_settings.package_classifiers),
-        "package_url_label": package_settings.package_url_label,
-        "package_url": package_settings.package_url,
+        "package_urls": package_settings.package_urls,
         "package_dependencies": list(package_settings.package_dependencies),
         "package_has_shared_data": package_settings.package_has_shared_data,
         "package_has_mypy": package_settings.package_has_mypy,

@@ -40,29 +40,32 @@ class PackageSettings(Settings):
     where dependent packages follow the packages they depend on.
     """
 
+    package_name: str | None = None
+    """Field 'name' under [project] in pyproject.toml of the package."""
+
     package_namespace: str = required()
     """Namespace of the package, e.g. 'cl.runtime'."""
 
     package_version: str | None = None
-    """Field 'version' under [project] in pyproject.toml (defaults to __version__ in __init__.py at package root)."""  # TODO(Claude): Implement in __init to set to this value if not specified
+    """Field 'version' under [project] in pyproject.toml of the package (defaults to __version__ in __init__.py at package root)."""  # TODO(Claude): Implement in __init to set to this value if not specified
 
     package_description: str | None = None
-    """Field 'description' under [project] in pyproject.toml, skip if not specified."""  # TODO(Claude): Use in pyproject.toml, skip if not specified
+    """Field 'description' under [project] in pyproject.toml of the package, skip if not specified."""  # TODO(Claude): Use in pyproject.toml, skip if not specified
 
     package_requires_python: str | None = None
-    """Field 'requires-python' under [project] in pyproject.toml, skip if not specified."""  # TODO(Claude): Use in pyproject.toml, skip if not specified
+    """Field 'requires-python' under [project] in pyproject.toml of the package, skip if not specified."""  # TODO(Claude): Use in pyproject.toml, skip if not specified
 
     package_license: str | None = None
-    """Field 'license' under [project] in pyproject.toml, try to match LICENSE file checksum if not specified.""" # TODO(Claude): Use dummy checksum for now
+    """Field 'license' under [project] in pyproject.toml of the package, LICENSE file checksum if not specified.""" # TODO(Claude): Use dummy checksum for now
 
     package_authors: str | None = None
-    """Field 'authors' under [project] in pyproject.toml, try to read from COPYRIGHT if not specified."""  # TODO(Claude): Implement
+    """Field 'authors' under [project] in pyproject.toml of the package, try to read from COPYRIGHT if not specified."""  # TODO(Claude): Implement
 
     package_urls: Mapping[str, str] | None = None
-    """Mapping under [project.urls] in pyproject.toml, skip if not specified."""  # TODO(Claude): Implement
+    """Mapping under [project.urls] in pyproject.toml of the package, skip if not specified."""  # TODO(Claude): Implement
 
     package_classifiers: Sequence[str] | None = None
-    """Field 'classifiers' under [project] in pyproject.toml, skip if not specified."""
+    """Field 'classifiers' under [project] in pyproject.toml of the package, skip if not specified."""
 
     package_stubs_namespace: str = "stubs.{package_namespace}"
     """Stubs namespace of the package, e.g. 'stubs.cl.runtime' (defaults to stubs.{package_namespace})."""
@@ -80,10 +83,10 @@ class PackageSettings(Settings):
     """Whether to include [tool.hatch.build.targets.wheel.shared-data] section for py.typed marker."""
 
     package_has_mypy: bool = False
-    """Whether to include [tool.mypy] section in pyproject.toml."""
+    """Whether to include [tool.mypy] section in pyproject.toml of the package."""
 
-    package_dependencies: Sequence[str] | None = None
-    """Field 'dependencies' under [project] in pyproject.toml, skip if not specified."""
+    package_dependencies: Sequence[str] = required()
+    """Field 'dependencies' under [project] in pyproject.toml of the package, init to empty if not specified."""
 
     def __init(self) -> None:
         """Use instead of __init__ in the builder pattern, invoked by the build method in base to derived order."""
@@ -93,13 +96,17 @@ class PackageSettings(Settings):
             self.package_stubs_namespace = self.package_stubs_namespace.format(package_namespace=self.package_namespace)
 
         # Initialize and validate package dependencies
-        if self.package_dependencies is None:
-            self.package_dependencies = []
-        ProjectChecks.guard_requirements(self.package_dependencies)
+        if self.package_dependencies is not None:
+            # Validate each item is in the format "package_name[extra1,extra2,...] (version_specifier)"
+            self.package_dependencies = tuple(self.package_dependencies)  # Ensure it's a tuple for immutability
+            ProjectChecks.guard_requirements(self.package_dependencies)
+        else:
+            # Initialize as empty list if None to simplify processing later
+            self.package_dependencies = tuple()
 
         # Initialize package_classifiers if None
         if self.package_classifiers is None:
-            self.package_classifiers = []
+            self.package_classifiers = []  # TODO(Claude): Do not rely on initialization as an empty list, skip the entire section in pyproject.toml if None
 
     def get_packages(self) -> tuple[str, ...]:
         """Ordered tuple of package namespaces (keys) from package_dirs mapping."""

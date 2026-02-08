@@ -2,6 +2,7 @@
 default:
 
   # Documented in PackageSettings class
+  package_name: Runtime
   package_has_shared_data: true
   package_has_mypy: true
   package_description: CompatibL Runtime Community Edition
@@ -15,8 +16,8 @@ default:
     - "Programming Language :: Python :: 3.12"
     - "Programming Language :: Python :: 3.13"
     - "Operating System :: OS Independent"
-  package_url_label: Repository
-  package_url: https://github.com/compatibl/runtime
+  package_urls:
+    Repository: https://github.com/compatibl/runtime
   package_dependencies:
     - aiofiles>=0.8.0
     - aiomysql>=0.1.1
