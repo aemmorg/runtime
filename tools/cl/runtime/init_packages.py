@@ -35,13 +35,13 @@ def get_package_name(package_namespace: str) -> str:
 
 
 def get_isort_section_name(package_namespace: str) -> str:
-    """Get isort section name from package namespace (e.g., 'cl.runtime' -> 'RUNTIME')."""
-    return get_package_name(package_namespace).upper()
+    """Get isort section name from package namespace (e.g., 'cl.runtime' -> 'CL_RUNTIME')."""
+    return package_namespace.replace(".", "_").upper()
 
 
 def get_isort_known_key(package_namespace: str) -> str:
-    """Get isort known_* key from package namespace (e.g., 'cl.runtime' -> 'known_runtime')."""
-    return f"known_{get_package_name(package_namespace)}"
+    """Get isort known_* key from package namespace (e.g., 'cl.runtime' -> 'known_cl_runtime')."""
+    return f"known_{package_namespace.replace('.', '_')}"
 
 
 def build_package_data(package_namespace: str, all_packages: tuple[str, ...]) -> dict:
@@ -95,12 +95,11 @@ def build_package_data(package_namespace: str, all_packages: tuple[str, ...]) ->
     # Build isort known_* entries for stubs
     isort_known_stubs = []
     for s in included_stubs:
-        stub_name = get_package_name(s)
         isort_known_stubs.append(
             {
-                "key": f"known_{stub_name}_stubs",
+                "key": get_isort_known_key(s),
                 "value": s,
-                "section": f"{stub_name.upper()}_STUBS",
+                "section": get_isort_section_name(s),
             }
         )
 

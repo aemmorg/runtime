@@ -78,7 +78,10 @@ skip = ["__init__.py"]
 known_pytest = ["pytest"]
 {% for entry in isort_known_packages %}{{ entry.key }} = ["{{ entry.value }}"]
 {% endfor %}{% for entry in isort_known_stubs %}{{ entry.key }} = ["{{ entry.value }}"]
-{% endfor %}sections = [{% for section in isort_sections %}"{{ section }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+{% endfor %}sections = [
+{% for section in isort_sections %}  "{{ section }}"{% if not loop.last %},{% endif %}
+{% endfor -%}
+]
 
 [build-system]
 requires = ["hatchling>=1.21.0"]
