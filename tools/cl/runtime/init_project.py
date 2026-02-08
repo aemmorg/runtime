@@ -12,19 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pathlib import Path
+# isort: off
+# Ensure bootstrap module can be found and import to configure PYTHONPATH and other settings
+# This code block must remain at the top before any other imports
+import locate
+locate.append_sys_path("../../..")
+import cl.runtime.bootstrap
+# isort: on
 
-import locate # isort: skip Prevent isort from moving this line
+from pathlib import Path
 
 from cl.runtime.exceptions.error_util import ErrorUtil
 from cl.runtime.project.project_layout_kind import ProjectLayoutKind
-
-# Ensure bootstrap module can be found
-locate.append_sys_path("../../..")
-
-# Import bootstrap module first to configure PYTHONPATH and other settings
-import cl.runtime.bootstrap  # isort: skip Prevent isort from moving this line
-
 from cl.runtime.project.project_layout import ProjectLayout
 from cl.runtime.settings.package_settings import PackageSettings
 from cl.runtime.templates.jinja_template_engine import JinjaTemplateEngine

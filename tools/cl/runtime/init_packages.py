@@ -12,18 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# isort: off
+# Ensure bootstrap module can be found and import to configure PYTHONPATH and other settings
+# This code block must remain at the top before any other imports
+import locate
+locate.append_sys_path("../..")
+locate.append_sys_path("../../../../runtime")
+import cl.runtime.bootstrap
+# isort: on
+
 from pathlib import Path
-
-import locate  # isort: skip Prevent isort from moving this line
-
 from cl.runtime.prebuild.version_util import VersionUtil
-from cl.runtime.settings.project_settings import ProjectSettings
-
-# Ensure bootstrap module can be found
-locate.append_sys_path("../../..")
-
-# Import bootstrap module first to configure PYTHONPATH and other settings
-import cl.runtime.bootstrap  # isort: skip Prevent isort from moving this line
 
 from cl.runtime.project.project_layout import ProjectLayout
 from cl.runtime.settings.package_settings import PackageSettings

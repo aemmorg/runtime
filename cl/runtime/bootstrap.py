@@ -12,10 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import locate  # isort: skip Prevent isort from moving this line
-
-# Ensure package_settings module can be found
-locate.append_sys_path("../..")
+# isort: off
+# Import to configure PYTHONPATH and other settings
+# This code block must remain at the top before any other imports
+import locate
+locate.append_sys_path("../../..")
+# isort: on
 
 # Extend sys.path and PYTHONPATH with source and stubs dirs for all packages in settings.yaml
 from cl.runtime.settings.package_settings import PackageSettings  # isort: skip Prevent isort from moving this line
