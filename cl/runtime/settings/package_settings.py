@@ -46,9 +46,6 @@ class PackageSettings(Settings):
     package_namespace: str = required()
     """Namespace of the package, e.g. 'cl.runtime'."""
 
-    package_version: str | None = None
-    """Field 'version' under [project] in pyproject.toml of the package (defaults to __version__ in __init__.py at package root)."""  # TODO(Claude): Implement in __init to set to this value if not specified
-
     package_description: str | None = None
     """Field 'description' under [project] in pyproject.toml of the package, skip if not specified."""  # TODO(Claude): Use in pyproject.toml, skip if not specified
 

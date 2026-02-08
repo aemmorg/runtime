@@ -18,6 +18,7 @@ from memoization import cached
 from cl.runtime.exceptions.error_util import ErrorUtil
 from cl.runtime.prebuild.import_util import ImportUtil
 from cl.runtime.prebuild.version_format import VersionFormat
+from cl.runtime.settings.package_settings import PackageSettings
 from cl.runtime.settings.version_settings import VersionSettings
 
 
@@ -51,6 +52,21 @@ class VersionUtil:
             return module_obj.__version__
         except AttributeError:
             raise RuntimeError(f"Module {module} does not import or define a __version__ variable.")
+
+    @classmethod
+    @cached
+    def get_package_version(cls, *, package: str) -> str:
+        """Get the version string for the specified package."""
+
+        # Check it is a package
+        if package not in PackageSettings.instance().get_packages():
+            raise RuntimeError(f"Package {package} is not listed in settings.yaml 'packages' field.")
+
+        module_obj = ImportUtil.get_module(module=package)
+        try:
+            return module_obj.__version__
+        except AttributeError:
+            raise RuntimeError(f"Root namespace of package {package} does not import or define a __version__ variable.")
 
     @classmethod
     @cached

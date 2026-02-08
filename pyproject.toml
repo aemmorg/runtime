@@ -1,6 +1,6 @@
 [project]
 name = "Runtime"
-version = "2025.1217.0"
+version = "2026.124.2135"
 description = "CompatibL Runtime Community Edition"
 readme = "README.md"
 requires-python = ">=3.11"

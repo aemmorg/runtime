@@ -16,6 +16,7 @@ from pathlib import Path
 
 import locate  # isort: skip Prevent isort from moving this line
 
+from cl.runtime.prebuild.version_util import VersionUtil
 from cl.runtime.settings.project_settings import ProjectSettings
 
 # Ensure bootstrap module can be found
@@ -114,7 +115,7 @@ def build_package_data(package_namespace: str, all_packages: tuple[str, ...]) ->
         "package_name": package_settings.package_name,  # Readable name, e.g., "Runtime"
         "package_namespace": package_namespace,  # Dot-delimited package namespace, e.g., 'cl.runtime'
         "package_path": "/".join(package_namespace.split(".")),  # Slash-delimited package namespace, e.g., 'cl/runtime'
-        "package_version": package_settings.package_version or "",
+        "package_version": VersionUtil.get_package_version(package=package_namespace),
         "package_description": package_settings.package_description or "",
         "package_license": package_settings.package_license or "",
         "package_authors": package_settings.package_authors or "",
