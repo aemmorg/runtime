@@ -122,6 +122,7 @@ def build_package_data(package_namespace: str, all_packages: tuple[str, ...]) ->
         "package_path": "/".join(package_namespace.split(".")),  # Slash-delimited package namespace, e.g., 'cl/runtime'
         "package_version": VersionUtil.get_package_version(package=package_namespace),
         "package_description": package_settings.package_description or "",
+        "package_requires_python": package_settings.package_requires_python,
         "package_license": package_license,
         "package_authors": package_authors,
         "package_classifiers": list(package_settings.package_classifiers) if package_settings.package_classifiers else [],

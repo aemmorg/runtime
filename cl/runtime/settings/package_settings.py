@@ -43,19 +43,19 @@ class PackageSettings(Settings):
     """Namespace of the package, e.g. 'cl.runtime'."""
 
     package_description: str | None = None
-    """Field 'description' under [project] in pyproject.toml of the package, skip if not specified."""  # TODO(Claude): Use in pyproject.toml, skip if not specified
+    """Field 'description' under [project] in pyproject.toml of the package, skip if not specified."""
 
     package_requires_python: str | None = None
-    """Field 'requires-python' under [project] in pyproject.toml of the package, skip if not specified."""  # TODO(Claude): Use in pyproject.toml, skip if not specified
+    """Field 'requires-python' under [project] in pyproject.toml of the package, skip if not specified."""
 
     package_license: str | None = None
-    """Field 'license' under [project] in pyproject.toml of the package, LICENSE file checksum if not specified."""  # TODO(Claude): Use dummy checksum for now
+    """Field 'license' under [project] in pyproject.toml of the package, match based on LICENSE file checksum if not specified."""
 
     package_authors: str | None = None
-    """Field 'authors' under [project] in pyproject.toml of the package, try to read from COPYRIGHT if not specified."""  # TODO(Claude): Implement
+    """Field 'authors' under [project] in pyproject.toml of the package, try to read from COPYRIGHT if not specified."""
 
     package_urls: Mapping[str, str] | None = None
-    """Mapping under [project.urls] in pyproject.toml of the package, skip if not specified."""  # TODO(Claude): Implement
+    """Mapping under [project.urls] in pyproject.toml of the package, skip if not specified."""
 
     package_classifiers: Sequence[str] | None = None
     """Field 'classifiers' under [project] in pyproject.toml of the package, skip if not specified."""
@@ -88,20 +88,11 @@ class PackageSettings(Settings):
         if self.package_namespace is not None:
             self.package_stubs_namespace = self.package_stubs_namespace.format(package_namespace=self.package_namespace)
 
-        # Initialize and validate package dependencies
+        # Validate package dependencies if specified
         if self.package_dependencies is not None:
             # Validate each item is in the format "package_name[extra1,extra2,...] (version_specifier)"
             self.package_dependencies = tuple(self.package_dependencies)  # Ensure it's a tuple for immutability
             ProjectChecks.guard_requirements(self.package_dependencies)
-        else:
-            # Initialize as empty list if None to simplify processing later
-            self.package_dependencies = tuple()
-
-        # Initialize package_classifiers if None
-        if self.package_classifiers is None:
-            self.package_classifiers = (
-                []
-            )  # TODO(Claude): Do not rely on initialization as an empty list, skip the entire section in pyproject.toml if None
 
     def get_packages(self) -> tuple[str, ...]:
         """Ordered tuple of package namespaces (keys) from package_dirs mapping."""

@@ -4,6 +4,7 @@ default:
   # Documented in PackageSettings class
   package_name: Runtime
   package_description: CompatibL Runtime Community Edition
+  package_requires_python: ">=3.11"
   package_license: Apache Software License
   package_authors: The Project Contributors
   package_has_shared_data: true

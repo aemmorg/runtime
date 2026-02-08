@@ -3,7 +3,9 @@ name = "{{ package_name }}"
 version = "{{ package_version }}"
 description = "{{ package_description }}"
 readme = "README.md"
-requires-python = ">=3.11"
+{%- if package_requires_python %}
+requires-python = "{{ package_requires_python }}"
+{%- endif %}
 {% if package_license.startswith("LicenseRef-") -%}
 license = "{{ package_license }}"
 license-files = ["LICENSE"]
