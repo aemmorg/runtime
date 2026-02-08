@@ -114,10 +114,13 @@ def build_package_data(package_namespace: str, all_packages: tuple[str, ...]) ->
         "package_name": package_settings.package_name,  # Readable name, e.g., "Runtime"
         "package_namespace": package_namespace,  # Dot-delimited package namespace, e.g., 'cl.runtime'
         "package_path": "/".join(package_namespace.split(".")),  # Slash-delimited package namespace, e.g., 'cl/runtime'
+        "package_version": package_settings.package_version or "",
         "package_description": package_settings.package_description or "",
-        "package_classifiers": list(package_settings.package_classifiers),
+        "package_license": package_settings.package_license or "",
+        "package_authors": package_settings.package_authors or "",
+        "package_classifiers": list(package_settings.package_classifiers) if package_settings.package_classifiers else [],
         "package_urls": package_settings.package_urls,
-        "package_dependencies": list(package_settings.package_dependencies),
+        "package_dependencies": list(package_settings.package_dependencies) if package_settings.package_dependencies else [],
         "package_has_shared_data": package_settings.package_has_shared_data,
         "package_has_mypy": package_settings.package_has_mypy,
         "main_packages": included_main_packages,

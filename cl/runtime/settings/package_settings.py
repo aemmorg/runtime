@@ -85,8 +85,8 @@ class PackageSettings(Settings):
     package_has_mypy: bool = False
     """Whether to include [tool.mypy] section in pyproject.toml of the package."""
 
-    package_dependencies: Sequence[str] = required()
-    """Field 'dependencies' under [project] in pyproject.toml of the package, init to empty if not specified."""
+    package_dependencies: Sequence[str] | None = None
+    """Field 'dependencies' under [project] in pyproject.toml of the package, defaults to empty if not specified."""
 
     def __init(self) -> None:
         """Use instead of __init__ in the builder pattern, invoked by the build method in base to derived order."""

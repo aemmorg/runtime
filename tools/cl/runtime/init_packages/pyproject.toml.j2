@@ -1,19 +1,28 @@
 [project]
 name = "{{ package_name }}"
-version = "2025.1217.0"
+version = "{{ package_version }}"
 description = "{{ package_description }}"
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "Apache Software License" }
+{% if package_license.startswith("LicenseRef-") -%}
+license = "{{ package_license }}"
+license-files = ["LICENSE"]
+{% else -%}
+license = { text = "{{ package_license }}" }
+{% endif -%}
 authors = [
-    { name = "The Project Contributors" }
+    { name = "{{ package_authors }}" }
 ]
+{%- if package_classifiers %}
 classifiers = [
 {% for classifier in package_classifiers %}    "{{ classifier }}",
 {% endfor %}]
+{%- endif %}
+{%- if package_dependencies %}
 dependencies = [
 {% for dep in package_dependencies %}    "{{ dep }}",
 {% endfor %}]
+{%- endif %}
 {%- if package_urls %}
 
 [project.urls]
