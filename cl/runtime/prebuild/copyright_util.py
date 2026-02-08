@@ -20,11 +20,11 @@ from cl.runtime.primitive.string_util import StringUtil
 from cl.runtime.project.project_layout import ProjectLayout
 from cl.runtime.settings.package_settings import PackageSettings
 
-_LICENSE_MD5_TO_NAME = {
-    "f9154a63c383844813d6abf79e4230d1": "Apache Software License",
-    "124c1fc0f9f45eeba2cdd9a556e61eb2": "LicenseRef-Proprietary",
+_LICENSE_SHA256_TO_NAME = {
+    "a693f674809b366bc3da40795cf14af35837964b5d7ac7c2909321f76110959e": "Apache Software License",
+    "d482ed223e84ecb6fda3fb109505ede4c19c94333fb57f619938f663be66d2d5": "LicenseRef-Proprietary",
 }
-"""Mapping from StringUtil.md5_hex of LICENSE file contents to license name."""
+"""Mapping from StringUtil.sha256_hex of LICENSE file contents to license name."""
 
 _COPYRIGHT_AUTHOR_RE = re.compile(r"Copyright\s+\(C\)\s+\d{4}-present\s+(.+?)(?:\.\s*All rights reserved\.)?$")
 """Regex to extract author name from the first line of a COPYRIGHT file."""
@@ -68,7 +68,7 @@ class CopyrightUtil:
 
     @classmethod
     def get_license_name(cls, package_root: str, package_namespace: str) -> str:
-        """Determine license name from the LICENSE file at package root using MD5 lookup.
+        """Determine license name from the LICENSE file at package root using SHA-256 lookup.
 
         Args:
             package_root: Absolute path to the package root directory
@@ -77,11 +77,11 @@ class CopyrightUtil:
         license_file_path = os.path.join(package_root, "LICENSE")
         with open(license_file_path, "r", encoding="utf-8") as f:
             license_text = f.read()
-        license_md5 = StringUtil.md5_hex(license_text)
-        license_name = _LICENSE_MD5_TO_NAME.get(license_md5)
+        license_sha256 = StringUtil.sha256_hex(license_text)
+        license_name = _LICENSE_SHA256_TO_NAME.get(license_sha256)
         if license_name is None:
             raise RuntimeError(
-                f"Unable to obtain license name from LICENSE file for {package_namespace} (md5={license_md5}), "
+                f"Unable to obtain license name from LICENSE file for {package_namespace} (sha256={license_sha256}), "
                 f"specify package_license field in cl.{package_namespace.split('.')[-1]}.settings.yaml"
             )
         return license_name

@@ -115,7 +115,7 @@ class TestPngUtil:
         # Calculate checksum
         checksum = PngUtil.get_png_checksum(png_data, exclude_metadata=True)
 
-        assert len(checksum) == 32, "MD5 checksum should be 32 characters"
+        assert len(checksum) == 64, "SHA-256 checksum should be 64 characters"
         assert checksum.isalnum(), "Checksum should be alphanumeric"
         print(f"✓ Checksum calculated: {checksum}")
 

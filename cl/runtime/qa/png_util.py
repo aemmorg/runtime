@@ -51,13 +51,13 @@ class PngUtil:
     @classmethod
     def get_pixel_hash_from_png(cls, png_source: str | BytesIO) -> str:
         """
-        Get MD5 hash of pixel data from a PNG file or BytesIO object.
+        Get SHA-256 hash of pixel data from a PNG file or BytesIO object.
 
         Args:
             png_source: PNG file path or BytesIO object
 
         Returns:
-            str: MD5 hash of the pixel array
+            str: SHA-256 hash of the pixel array
         """
 
         # Load as pixel array
@@ -65,8 +65,8 @@ class PngUtil:
             img_rgba = img.convert("RGBA")
             arr = np.array(img_rgba, dtype=np.uint8)
 
-        # Calculate MD5 hash of pixel data
-        return hashlib.md5(arr.tobytes()).hexdigest()
+        # Calculate SHA-256 hash of pixel data
+        return hashlib.sha256(arr.tobytes()).hexdigest()
 
     @classmethod
     def compare_pixel_data(cls, file1: str | BytesIO, file2: str | BytesIO) -> dict[str, Any]:
@@ -80,8 +80,8 @@ class PngUtil:
         Returns:
             Dictionary with comparison results:
             - 'match': True if pixel data is identical
-            - 'pixel_hash1': MD5 hash of first image's pixel array
-            - 'pixel_hash2': MD5 hash of second image's pixel array
+            - 'pixel_hash1': SHA-256 hash of first image's pixel array
+            - 'pixel_hash2': SHA-256 hash of second image's pixel array
             - 'shape1': Shape of first image array
             - 'shape2': Shape of second image array
         """
@@ -95,9 +95,9 @@ class PngUtil:
             img2_rgba = img2.convert("RGBA")
             arr2 = np.array(img2_rgba, dtype=np.uint8)
 
-        # Calculate MD5 hash of pixel data
-        hash1 = hashlib.md5(arr1.tobytes()).hexdigest()
-        hash2 = hashlib.md5(arr2.tobytes()).hexdigest()
+        # Calculate SHA-256 hash of pixel data
+        hash1 = hashlib.sha256(arr1.tobytes()).hexdigest()
+        hash2 = hashlib.sha256(arr2.tobytes()).hexdigest()
 
         return {
             "match": hash1 == hash2,
@@ -182,8 +182,8 @@ class PngUtil:
         Returns:
             dict: Comparison result with keys:
                 - 'match': bool indicating if images match
-                - 'hash1': MD5 hash of first image
-                - 'hash2': MD5 hash of second image
+                - 'hash1': SHA-256 hash of first image
+                - 'hash2': SHA-256 hash of second image
                 - 'size1': Size in bytes of first image (after filtering)
                 - 'size2': Size in bytes of second image (after filtering)
         """
@@ -196,8 +196,8 @@ class PngUtil:
             data2 = png2
 
         # Calculate hashes
-        hash1 = hashlib.md5(data1).hexdigest()
-        hash2 = hashlib.md5(data2).hexdigest()
+        hash1 = hashlib.sha256(data1).hexdigest()
+        hash2 = hashlib.sha256(data2).hexdigest()
 
         return {
             "match": hash1 == hash2,
@@ -231,31 +231,31 @@ class PngUtil:
     @classmethod
     def get_png_checksum(cls, png_data: bytes, exclude_metadata: bool = True) -> str:
         """
-        Calculate MD5 checksum of a PNG image.
+        Calculate SHA-256 checksum of a PNG image.
 
         Args:
             png_data: Bytes of the PNG image
             exclude_metadata: If True, exclude metadata chunks from checksum calculation
 
         Returns:
-            str: Hexadecimal MD5 checksum
+            str: Hexadecimal SHA-256 checksum
         """
         if exclude_metadata:
             png_data = cls.extract_png_data_chunks(png_data)
 
-        return hashlib.md5(png_data).hexdigest()
+        return hashlib.sha256(png_data).hexdigest()
 
     @classmethod
     def get_png_file_checksum(cls, file_path: str | Path, exclude_metadata: bool = True) -> str:
         """
-        Calculate MD5 checksum of a PNG file.
+        Calculate SHA-256 checksum of a PNG file.
 
         Args:
             file_path: Path to the PNG file
             exclude_metadata: If True, exclude metadata chunks from checksum calculation
 
         Returns:
-            str: Hexadecimal MD5 checksum
+            str: Hexadecimal SHA-256 checksum
         """
         with open(file_path, "rb") as f:
             png_data = f.read()

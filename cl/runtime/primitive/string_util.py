@@ -41,6 +41,7 @@ class StringUtil:
         """Returns true if the string is not None or ''."""
         return value is not None and value != ""
 
+    # TODO(Sasha) !! Find a way to shorten the digest without collisions, while also replacing MD5 with SHA-256.
     @classmethod
     def digest(
         cls,
@@ -99,6 +100,23 @@ class StringUtil:
             )
 
         return digest
+
+    @classmethod
+    def sha256_hex(cls, value: str | None) -> str:
+        """Return SHA-256 hash in hexadecimal format after converting to lowercase and removing all whitespace."""
+        return cls._sha256(value).hexdigest()
+
+    @classmethod
+    def _sha256(cls, value: str | None):
+        """Return SHA-256 hash object after converting to lowercase and removing all whitespace."""
+
+        # Convert to lowercase and remove all whitespace including EOL for any OS
+        value = value.lower()
+        value = value.replace(" ", "").replace("\n", "").replace("\r", "")
+
+        # Encode to bytes using UTF-8 and get the SHA-256 hash in hexadecimal format
+        result = hashlib.sha256(value.encode("utf-8"))
+        return result
 
     @classmethod
     def md5_hex(cls, value: str | None) -> str:
