@@ -14,12 +14,14 @@
 
 import os
 from dataclasses import dataclass
-from typing import Any, ClassVar
-from dotenv import load_dotenv, find_dotenv, dotenv_values
+from typing import Any
+from typing import ClassVar
+from dotenv import dotenv_values
+from dotenv import find_dotenv
+from dotenv import load_dotenv
 from dynaconf import Dynaconf
 from frozendict import frozendict
 from typing_extensions import Self
-
 from cl.runtime.project.project_layout import ProjectLayout
 from cl.runtime.qa.qa_util import QaUtil
 from cl.runtime.records.bootstrap_mixin import BootstrapMixin
@@ -129,7 +131,7 @@ class DynaconfLoader(BootstrapMixin):
             # Package-specific settings files and envvar prefix
             if self.package is not None:
                 # Package-specific envvar prefix is underscore-delimited package namespace
-                self._envvar_prefix = self.package.replace('.', '_').upper()
+                self._envvar_prefix = self.package.replace(".", "_").upper()
 
                 # Settings filename without extension has package namespace prefix
                 self._settings_filename = f"{self.package}.settings"
@@ -264,11 +266,10 @@ class DynaconfLoader(BootstrapMixin):
         sources_list.append(f"Fields with prefix '{prefix}_' in settings files: {settings_files_str}")
 
         # Convert sources list to string
-        sources_str ="\n".join(f"  - {x}" for x in sources_list)
+        sources_str = "\n".join(f"  - {x}" for x in sources_list)
         settings_dir_str = self.get_settings_dir()
-        result =  f"Sources:\n{sources_str}\nSettings directory:\n  {settings_dir_str}\n"
+        result = f"Sources:\n{sources_str}\nSettings directory:\n  {settings_dir_str}\n"
         return result
-
 
     @classmethod
     def get_envvar_value(cls, envvar: str, default: str | None = None) -> str | None:

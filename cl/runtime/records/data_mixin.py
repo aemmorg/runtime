@@ -73,7 +73,9 @@ class DataMixin(BuilderMixin, ABC):
         return result_type(**{k: getattr(self, k) for k in self.get_field_names()})
 
 
-TDataField = dict[str, "TDataField"] | list["TDataField"] | PrimitiveTypes | Enum  # TODO: Review potential replacement by a non-generic hint
+TDataField = (
+    dict[str, "TDataField"] | list["TDataField"] | PrimitiveTypes | Enum
+)  # TODO: Review potential replacement by a non-generic hint
 """Field types for serialized data in dictionary format."""
 
 TDataDict = dict[str, TDataField]  # TODO: Review potential replacement by a non-generic hint

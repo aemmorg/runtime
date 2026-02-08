@@ -18,15 +18,16 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-
 from cl.runtime.primitive.timestamp import Timestamp
-from cl.runtime.records.data_mixin import TData, DataMixin
+from cl.runtime.records.data_mixin import DataMixin
 from cl.runtime.records.record_mixin import RecordMixin
 from cl.runtime.templates.template_engine_key import TemplateEngineKey
+
 
 def transform_part(part: str) -> str:
     """Replace dot_ prefix by . in file or directory name token."""
     return "." + part.removeprefix("dot_") if part.startswith("dot_") else part
+
 
 @dataclass(slots=True, kw_only=True)
 class TemplateEngine(TemplateEngineKey, RecordMixin, ABC):
@@ -64,11 +65,13 @@ class TemplateEngine(TemplateEngineKey, RecordMixin, ABC):
             path_parts = list(relative_path.parts)
 
             # Output path relative to output_dir
-            output_relative_path = Path(*[
-                # Remove suffix .j2 only from the last part of the path (the filename)
-                transform_part(p.removesuffix(".j2") if i == len(path_parts) - 1 else p)
-                for i, p in enumerate(path_parts)
-            ])
+            output_relative_path = Path(
+                *[
+                    # Remove suffix .j2 only from the last part of the path (the filename)
+                    transform_part(p.removesuffix(".j2") if i == len(path_parts) - 1 else p)
+                    for i, p in enumerate(path_parts)
+                ]
+            )
 
             # Read template file content and render
             template_text = template_file.read_text(encoding="utf-8")

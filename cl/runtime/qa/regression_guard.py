@@ -20,10 +20,9 @@ from enum import Enum
 from typing import Any
 from typing import ClassVar
 from typing import Self
-
 from cl.runtime.plots.for_plotly.plotly_util import PlotlyUtil
-from cl.runtime.qa.qa_util import QaUtil
 from cl.runtime.qa.png_util import PngUtil
+from cl.runtime.qa.qa_util import QaUtil
 from cl.runtime.records.bootstrap_mixin import BootstrapMixin
 from cl.runtime.records.protocols import MAPPING_TYPES
 from cl.runtime.records.protocols import SEQUENCE_TYPES

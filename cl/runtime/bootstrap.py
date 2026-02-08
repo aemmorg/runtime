@@ -16,6 +16,7 @@
 # Import to configure PYTHONPATH and other settings
 # This code block must remain at the top before any other imports
 import locate
+
 locate.append_sys_path("../../..")
 # isort: on
 

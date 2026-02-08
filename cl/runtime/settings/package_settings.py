@@ -17,11 +17,7 @@ import sys
 from dataclasses import dataclass
 from typing import Mapping
 from typing import Sequence
-
-import frozendict
 from typing_extensions import final  # TODO: !!! Do not import from typing_extensions
-
-from cl.runtime.primitive.case_util import CaseUtil
 from cl.runtime.project.project_checks import ProjectChecks
 from cl.runtime.project.project_layout import ProjectLayout
 from cl.runtime.records.for_dataclasses.extensions import required
@@ -53,7 +49,7 @@ class PackageSettings(Settings):
     """Field 'requires-python' under [project] in pyproject.toml of the package, skip if not specified."""  # TODO(Claude): Use in pyproject.toml, skip if not specified
 
     package_license: str | None = None
-    """Field 'license' under [project] in pyproject.toml of the package, LICENSE file checksum if not specified.""" # TODO(Claude): Use dummy checksum for now
+    """Field 'license' under [project] in pyproject.toml of the package, LICENSE file checksum if not specified."""  # TODO(Claude): Use dummy checksum for now
 
     package_authors: str | None = None
     """Field 'authors' under [project] in pyproject.toml of the package, try to read from COPYRIGHT if not specified."""  # TODO(Claude): Implement
@@ -103,7 +99,9 @@ class PackageSettings(Settings):
 
         # Initialize package_classifiers if None
         if self.package_classifiers is None:
-            self.package_classifiers = []  # TODO(Claude): Do not rely on initialization as an empty list, skip the entire section in pyproject.toml if None
+            self.package_classifiers = (
+                []
+            )  # TODO(Claude): Do not rely on initialization as an empty list, skip the entire section in pyproject.toml if None
 
     def get_packages(self) -> tuple[str, ...]:
         """Ordered tuple of package namespaces (keys) from package_dirs mapping."""

@@ -16,11 +16,9 @@
 # Ensure bootstrap module can be found and import to configure PYTHONPATH and other settings
 # This code block must remain at the top before any other imports
 import locate
-locate.append_sys_path("../../..")
-import cl.runtime.bootstrap
-# isort: on
 
-from cl.runtime.settings.dynaconf_loader import ENVVAR_PREFIX
+locate.append_sys_path("../../..")
+# isort: on
 
 import logging.config
 import os
@@ -47,6 +45,7 @@ from cl.runtime.server.env import Env
 from cl.runtime.server.shutdown_aware_server import ShutdownAwareServer
 from cl.runtime.settings.api_settings import ApiSettings
 from cl.runtime.settings.celery_settings import CelerySettings
+from cl.runtime.settings.dynaconf_loader import ENVVAR_PREFIX
 from cl.runtime.settings.env_kind import EnvKind
 from cl.runtime.settings.env_settings import EnvSettings
 from cl.runtime.settings.frontend_settings import FrontendSettings

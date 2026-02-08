@@ -16,9 +16,9 @@
 # Ensure bootstrap module can be found and import to configure PYTHONPATH and other settings
 # This code block must remain at the top before any other imports
 import locate
+
 locate.append_sys_path("../..")
 locate.append_sys_path("../../../../runtime")
-import cl.runtime.bootstrap
 # isort: on
 
 # Use noqa to prevent linters from removing the imports

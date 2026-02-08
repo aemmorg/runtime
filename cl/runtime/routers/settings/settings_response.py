@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 from dataclasses import field
 from typing import Self
 from pydantic import BaseModel
@@ -23,7 +22,8 @@ from cl.runtime.primitive.timestamp import Timestamp
 from cl.runtime.records.for_dataclasses.extensions import optional
 from cl.runtime.routers.settings.env_info import EnvInfo
 from cl.runtime.server.env import Env
-from cl.runtime.settings.dynaconf_loader import ENVVAR_PREFIX, DynaconfLoader
+from cl.runtime.settings.dynaconf_loader import ENVVAR_PREFIX
+from cl.runtime.settings.dynaconf_loader import DynaconfLoader
 from cl.runtime.settings.package_settings import PackageSettings
 
 SESSION_ID = Timestamp.create()
@@ -52,12 +52,16 @@ class SettingsResponse(BaseModel):
     """Version of the backend-frontend API contract (schema). Used to ensure compatibility between backend and frontend."""
 
     application_name: str | None = optional(
-        default_factory=lambda: DynaconfLoader.get_envvar_value(f"{ENVVAR_PREFIX}_APP_TITLE")  # TODO: !! Switch to the standard design pattern using a Settings class
+        default_factory=lambda: DynaconfLoader.get_envvar_value(
+            f"{ENVVAR_PREFIX}_APP_TITLE"
+        )  # TODO: !! Switch to the standard design pattern using a Settings class
     )
     """Name of the application."""
 
     environment: str | None = optional(
-        default_factory=lambda: DynaconfLoader.get_envvar_value(f"{ENVVAR_PREFIX}_ENVIRONMENT")  # TODO: !! Switch to the standard design pattern using a Settings class
+        default_factory=lambda: DynaconfLoader.get_envvar_value(
+            f"{ENVVAR_PREFIX}_ENVIRONMENT"
+        )  # TODO: !! Switch to the standard design pattern using a Settings class
     )
     """
     Active application environment (e.g., 'dev', 'staging', 'prod').

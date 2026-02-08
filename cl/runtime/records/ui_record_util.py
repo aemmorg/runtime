@@ -63,7 +63,7 @@ class UiRecordUtil(DataclassMixin):  # TODO: Move to the appropriate directory
                 name=pv.view_name,
                 label=pv.view_name,
                 kind=ViewPersistenceUtil.get_panel_kind_from_view(pv),
-                persistable=True
+                persistable=True,
             )
             for pv in persisted_views
         ]
@@ -78,7 +78,8 @@ class UiRecordUtil(DataclassMixin):  # TODO: Move to the appropriate directory
             return []
         return [
             RecordPanel(name=h.name, label=h.label, kind=cls._get_primary_kind_or_none(h), persistable=False)
-            for h in handler_block.handlers if cls._is_viewer(h)
+            for h in handler_block.handlers
+            if cls._is_viewer(h)
         ]
 
     @classmethod

@@ -14,10 +14,9 @@
 
 from dataclasses import dataclass
 from typing import Any
-from box import Box
 from jinja2 import Environment
 from cl.runtime.records.data_mixin import DataMixin
-from cl.runtime.records.typename import typename, typenameof
+from cl.runtime.records.typename import typenameof
 from cl.runtime.serializers.data_serializers import DataSerializers
 from cl.runtime.templates.template_engine import TemplateEngine
 
@@ -52,4 +51,3 @@ class JinjaTemplateEngine(TemplateEngine):
         body = env.from_string(body)
         result = body.render(data_dict)
         return result
-

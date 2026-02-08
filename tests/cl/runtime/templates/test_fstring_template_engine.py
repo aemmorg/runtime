@@ -108,15 +108,9 @@ def test_dict_with_nested_dict():
         "user": {"name": "Bob", "email": "bob@example.com"},
         "settings": {"theme": "dark", "notifications": True},
     }
-    body = (
-        "User: {user.name} ({user.email})\n"
-        "Theme: {settings.theme}, Notifications: {settings.notifications}"
-    )
+    body = "User: {user.name} ({user.email})\nTheme: {settings.theme}, Notifications: {settings.notifications}"
 
-    expected_result = (
-        "User: Bob (bob@example.com)\n"
-        "Theme: dark, Notifications: True"
-    )
+    expected_result = "User: Bob (bob@example.com)\nTheme: dark, Notifications: True"
 
     result = engine.render(body=body, data=data)
     assert result == expected_result

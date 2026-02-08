@@ -88,6 +88,7 @@ def test_get_panels_with_dynamic_views(default_db_fixture):
     with pytest.raises(RuntimeError, match="is not a record type"):
         UiRecordUtil.run_get_record_panels(type_name=typename(StubDataclassData), key="_")
 
+
 @pytest.mark.skip("Skipped until load_query is not working properly")
 def test_get_panels_with_persisted_views(default_db_fixture):
     """Test run_get_record_panels includes persisted views in the results."""

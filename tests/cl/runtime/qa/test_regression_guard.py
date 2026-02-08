@@ -107,6 +107,7 @@ def test_multiple_extensions():
     # Verify all guards in the same output dir
     RegressionGuard.verify_all()
 
+
 def test_verify_hash():
     """Test verify with use_hash=True that uses SHA256 hash comparison."""
 

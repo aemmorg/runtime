@@ -14,6 +14,7 @@
 
 import re
 
+
 class PlotlyUtil:
     """Helper methods for Plotly."""
 

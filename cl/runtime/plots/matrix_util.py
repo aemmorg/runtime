@@ -19,7 +19,9 @@ from sklearn.metrics import confusion_matrix
 class MatrixUtil:
 
     @classmethod
-    def create_confusion_matrix(cls, data: pd.DataFrame, true_column_name: str, predicted_column_name: str) -> pd.DataFrame:
+    def create_confusion_matrix(
+        cls, data: pd.DataFrame, true_column_name: str, predicted_column_name: str
+    ) -> pd.DataFrame:
         categories = data[true_column_name].unique().tolist()
         data_confusion_matrix = confusion_matrix(
             y_true=data[true_column_name], y_pred=data[predicted_column_name], labels=categories
