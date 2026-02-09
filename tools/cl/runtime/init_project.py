@@ -29,6 +29,33 @@ from cl.runtime.settings.package_settings import PackageSettings
 from cl.runtime.templates.jinja_template_engine import JinjaTemplateEngine
 
 
+def collect_all_requirements(all_packages: tuple[str, ...]) -> dict:
+    """Collect and combine requirements from all main packages in package_dirs order."""
+
+    # Only process main packages (not stubs)
+    main_packages = [p for p in all_packages if not p.startswith("stubs.")]
+
+    # Combine requirements from all packages in order, do not remove duplicates
+    combined_package_requirements = []
+    combined_build_requirements = []
+    combined_test_requirements = []
+
+    for package in main_packages:
+        pkg_settings = PackageSettings.instance(package=package)
+        if pkg_settings.package_requirements:
+            combined_package_requirements.extend(pkg_settings.package_requirements)
+        if pkg_settings.package_build_requirements:
+            combined_build_requirements.extend(pkg_settings.package_build_requirements)
+        if pkg_settings.package_test_requirements:
+            combined_test_requirements.extend(pkg_settings.package_test_requirements)
+
+    return {
+        "package_requirements": combined_package_requirements,
+        "build_requirements": combined_build_requirements,
+        "test_requirements": combined_test_requirements,
+    }
+
+
 def init_project() -> None:
     """Initialize project files."""
 
@@ -38,6 +65,10 @@ def init_project() -> None:
     # Extract unique package directory names (excluding stubs and ".")
     # Filter to only get main packages (cl.*) and their directory values
     package_dirs = PackageSettings.instance().get_dirs()
+
+    # Collect combined requirements from all packages in package_dirs order
+    all_packages = PackageSettings.instance().get_packages()
+    requirements = collect_all_requirements(all_packages)
 
     # Get project root
     project_root = Path(ProjectLayout.get_project_root())
@@ -52,7 +83,8 @@ def init_project() -> None:
 
     # Create Jinja2 template engine and render all templates
     engine = JinjaTemplateEngine().build()
-    engine.render_dir(input_dir=template_dir, output_dir=project_root, data={"packages": package_dirs})
+    data = {"packages": package_dirs, **requirements}
+    engine.render_dir(input_dir=template_dir, output_dir=project_root, data=data)
 
 
 if __name__ == '__main__':

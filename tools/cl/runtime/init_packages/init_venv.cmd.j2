@@ -2,11 +2,11 @@
 
 :PROMPT
 set CONFIRM=n
-set /p CONFIRM="ATTENTION - overwrite existing venv? (y/n)? "
+set /p CONFIRM="ATTENTION - overwrite existing .venv? (y/n)? "
 IF /I "%CONFIRM%" NEQ "y" GOTO END
 
 echo.
-echo Create venv
+echo Create an empty .venv
 IF EXIST ".venv" rd /s /q .venv
 python -m venv .venv
 
@@ -18,6 +18,6 @@ python -m pip install --upgrade pip
 
 echo.
 echo Install dependencies from pyproject.toml
-pip install .
+pip install ".[dev]"
 
 :END

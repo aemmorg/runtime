@@ -81,6 +81,15 @@ class PackageSettings(Settings):
     package_dependencies: Sequence[str] | None = None
     """Field 'dependencies' under [project] in pyproject.toml of the package, defaults to empty if not specified."""
 
+    package_requirements: Sequence[str] | None = None
+    """Package requirements for local development venv, combined across packages in package_dirs order."""
+
+    package_build_requirements: Sequence[str] | None = None
+    """Build requirements for local development venv, combined across packages in package_dirs order."""
+
+    package_test_requirements: Sequence[str] | None = None
+    """Test requirements for local development venv, combined across packages in package_dirs order."""
+
     def __init(self) -> None:
         """Use instead of __init__ in the builder pattern, invoked by the build method in base to derived order."""
 
@@ -93,6 +102,14 @@ class PackageSettings(Settings):
             # Validate each item is in the format "package_name[extra1,extra2,...] (version_specifier)"
             self.package_dependencies = tuple(self.package_dependencies)  # Ensure it's a tuple for immutability
             ProjectChecks.guard_requirements(self.package_dependencies)
+
+        # Convert requirement sequences to tuples for immutability
+        if self.package_requirements is not None:
+            self.package_requirements = tuple(self.package_requirements)
+        if self.package_build_requirements is not None:
+            self.package_build_requirements = tuple(self.package_build_requirements)
+        if self.package_test_requirements is not None:
+            self.package_test_requirements = tuple(self.package_test_requirements)
 
     def get_packages(self) -> tuple[str, ...]:
         """Ordered tuple of package namespaces (keys) from package_dirs mapping."""

@@ -33,6 +33,13 @@ dependencies = [
 {%- endfor %}
 {%- endif %}
 
+[project.optional-dependencies]
+dev = [
+{% for dep in package_requirements %}    "{{ dep }}",
+{% endfor %}{% for dep in build_requirements %}    "{{ dep }}",
+{% endfor %}{% for dep in test_requirements %}    "{{ dep }}",
+{% endfor %}]
+
 [tool.hatch.build.targets.wheel]
 packages = ["{{ package_path }}"]
 exclude = [
