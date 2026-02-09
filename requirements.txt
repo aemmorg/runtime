@@ -1,8 +1,0 @@
-# Package requirements
--r ./tools/cl/runtime/package_requirements.txt
-
-# Build requirements
--r ./tools/cl/runtime/build_requirements.txt
-
-# Test requirements
--r ./tools/cl/runtime/test_requirements.txt
