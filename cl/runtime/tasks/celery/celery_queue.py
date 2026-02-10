@@ -57,140 +57,11 @@ celery_app.conf.task_time_limit = celery_settings.celery_time_limit
 celery_app.conf.worker_prefetch_multiplier = 1  # One task per worker for better control
 
 
-@setup_logging.connect()
-def config_loggers(*args, **kwargs):
-    """Setup logging config for celery worker."""
-    from logging.config import dictConfig
-
-    # Use empty config to suppress celery logger and propagate to root.
-    dictConfig(celery_empty_logging_config)
-
-
+# Standalone function: @celery_app.task decorator is incompatible with class/static methods
 @celery_app.task(max_retries=celery_settings.celery_max_retries, acks_late=True)  # Do not retry failed tasks
-def execute_task(
-    task_id: str,
-    context_snapshot_json: str,
-) -> None:
-    """Invoke 'run_task' method of the specified task."""
-
-    # Deserialize context from 'context_data' parameter to run with the same settings as the caller context
-    with ContextSnapshot.from_json(context_snapshot_json):
-        # The task is running.
-        running_query = TaskQuery(status=TaskStatus.RUNNING).build()
-        running_tasks = active(DataSource).load_by_query(running_query, cast_to=Task)
-
-        if len(running_tasks) >= celery_settings.celery_max_tenant_tasks:
-            raise Reject("Tenant exceeded task limit", requeue=True)
-
-        # Load and run the task
-        task_key = TaskKey(task_id=task_id).build()
-        task = active(DataSource).load_one(task_key, cast_to=Task)
-        task.run_task()
-
-
-def celery_start_queue_callable(*, log_config: Dict) -> None:
-    """
-    Callable for starting the celery queue process.
-
-    Args:
-        log_config: logging dict config from the main process.
-    """
-
-    # Setup logging config from the main process.
-    logging.config.dictConfig(log_config)
-
-    celery_app.worker_main(
-        argv=[
-            "-A",
-            "cl.runtime.tasks.celery.celery_queue",
-            "worker",
-            "--loglevel=info",
-            f"--pool={celery_settings.celery_pool_type}",
-            f"--concurrency={celery_settings.celery_workers}",
-        ],
-    )
-
-
-def celery_delete_existing_tasks() -> None:
-    """Delete the existing Celery tasks (will exit when the current process exits)."""
-
-    # Remove sqlite file of celery broker if exists
-    if celery_settings.celery_broker == "sqlite":
-        celery_file = celery_settings.celery_broker_uri.split("sqlite:///")[1]
-
-        # Remove sqlite file of celery broker if exists
-        if os.path.exists(celery_file):
-            os.remove(celery_file)
-
-    if celery_settings.celery_broker == "mongodb":
-        # Parse MongoDB URI to extract database name
-        # Format: mongodb://localhost:27017/celery-{context_id}
-        try:
-            from pymongo import MongoClient
-
-            # Delete stuck RUNNING/PENDING tasks from previous backend runs
-            all_tasks: tuple[Task, ...] = active(DataSource).load_all(key_type=TaskKey)
-            stuck_tasks = [task for task in all_tasks if task.status in (TaskStatus.RUNNING, TaskStatus.PENDING)]
-
-            if stuck_tasks:
-                logging.getLogger(__name__).warning(
-                    "Deleting %s stuck tasks from previous backend run", len(stuck_tasks)
-                )
-                active(DataSource).delete_many([task.get_key() for task in stuck_tasks], commit=True)
-
-            # Clear Celery broker database
-            mongo_client = MongoClient(celery_settings.celery_broker_uri)
-            db_name = celery_settings.celery_broker_uri.split("/")[-1]
-            mongo_db = mongo_client[db_name]
-
-            for collection_name in mongo_db.list_collection_names():
-                mongo_db.drop_collection(collection_name)
-
-            mongo_client.close()
-            logging.getLogger(__name__).info("Cleared MongoDB Celery broker database: %s", db_name)
-
-        except Exception as e:
-            logging.getLogger(__name__).warning("Failed to clear MongoDB Celery broker: %s", e)
-
-    if celery_settings.celery_broker == "redis":
-        # Parse the URI
-        parsed_uri = urlparse(celery_settings.celery_broker_uri)
-        host = parsed_uri.hostname
-        port = parsed_uri.port
-        db = parsed_uri.path.lstrip("/")
-
-        # Connect to Redis
-        redis_client = redis.StrictRedis(host=host, port=port, db=db)
-
-        # Clear the Celery queue and result backend
-        redis_client.delete(celery_settings.celery_broker_queue)
-        redis_client.flushdb()
-
-    if celery_settings.celery_broker == "rabbitmq":
-        # Parse the URI
-        parsed_uri = urlparse(celery_settings.celery_broker_uri)
-        user, password = parsed_uri.netloc.split("@")[0].split(":")
-
-        # Connect to RabbitMQ
-        connection = pika.BlockingConnection(
-            pika.ConnectionParameters(
-                host=parsed_uri.hostname, port=parsed_uri.port, credentials=pika.PlainCredentials(user, password)
-            )
-        )
-        channel = connection.channel()
-
-        try:
-            # Check if the queue exists (passive=True) if not raise ChannelClosedByBroker
-            channel.queue_declare(queue=celery_settings.celery_broker_queue, passive=True)
-
-            # Purge all messages in the queue
-            channel.queue_purge(queue=celery_settings.celery_broker_queue)
-
-        except ChannelClosedByBroker:
-            pass
-
-        finally:
-            connection.close()
+def execute_task(task_id: str, context_snapshot_json: str) -> None:
+    """Invoke 'run_task' method of the specified task, delegates to CeleryQueue._execute_task."""
+    CeleryQueue._execute_task(task_id, context_snapshot_json)
 
 
 @dataclass(slots=True, kw_only=True)
@@ -202,6 +73,137 @@ class CeleryQueue(TaskQueue):
 
     # max_workers: int = required()  # TODO: Implement support for max_workers
     """The maximum number of processes running concurrently."""
+
+    @staticmethod
+    @setup_logging.connect()
+    def _config_loggers(*args, **kwargs):
+        """Setup logging config for celery worker."""
+        from logging.config import dictConfig
+
+        # Use empty config to suppress celery logger and propagate to root.
+        dictConfig(celery_empty_logging_config)
+
+    @classmethod
+    def _execute_task(cls, task_id: str, context_snapshot_json: str) -> None:
+        """Invoke 'run_task' method of the specified task."""
+
+        # Deserialize context from 'context_data' parameter to run with the same settings as the caller context
+        with ContextSnapshot.from_json(context_snapshot_json):
+            # The task is running.
+            running_query = TaskQuery(status=TaskStatus.RUNNING).build()
+            running_tasks = active(DataSource).load_by_query(running_query, cast_to=Task)
+
+            if len(running_tasks) >= celery_settings.celery_max_tenant_tasks:
+                raise Reject("Tenant exceeded task limit", requeue=True)
+
+            # Load and run the task
+            task_key = TaskKey(task_id=task_id).build()
+            task = active(DataSource).load_one(task_key, cast_to=Task)
+            task.run_task()
+
+    @classmethod
+    def delete_existing_tasks(cls) -> None:
+        """Delete the existing Celery tasks (will exit when the current process exits)."""
+
+        # Remove sqlite file of celery broker if exists
+        if celery_settings.celery_broker == "sqlite":
+            celery_file = celery_settings.celery_broker_uri.split("sqlite:///")[1]
+
+            # Remove sqlite file of celery broker if exists
+            if os.path.exists(celery_file):
+                os.remove(celery_file)
+
+        if celery_settings.celery_broker == "mongodb":
+            # Parse MongoDB URI to extract database name
+            # Format: mongodb://localhost:27017/celery-{context_id}
+            try:
+                from pymongo import MongoClient
+
+                # Delete stuck RUNNING/PENDING tasks from previous backend runs
+                all_tasks: tuple[Task, ...] = active(DataSource).load_all(key_type=TaskKey)
+                stuck_tasks = [task for task in all_tasks if task.status in (TaskStatus.RUNNING, TaskStatus.PENDING)]
+
+                if stuck_tasks:
+                    logging.getLogger(__name__).warning(
+                        "Deleting %s stuck tasks from previous backend run", len(stuck_tasks)
+                    )
+                    active(DataSource).delete_many([task.get_key() for task in stuck_tasks], commit=True)
+
+                # Clear Celery broker database
+                mongo_client = MongoClient(celery_settings.celery_broker_uri)
+                db_name = celery_settings.celery_broker_uri.split("/")[-1]
+                mongo_db = mongo_client[db_name]
+
+                for collection_name in mongo_db.list_collection_names():
+                    mongo_db.drop_collection(collection_name)
+
+                mongo_client.close()
+                logging.getLogger(__name__).info("Cleared MongoDB Celery broker database: %s", db_name)
+
+            except Exception as e:
+                logging.getLogger(__name__).warning("Failed to clear MongoDB Celery broker: %s", e)
+
+        if celery_settings.celery_broker == "redis":
+            # Parse the URI
+            parsed_uri = urlparse(celery_settings.celery_broker_uri)
+            host = parsed_uri.hostname
+            port = parsed_uri.port
+            db = parsed_uri.path.lstrip("/")
+
+            # Connect to Redis
+            redis_client = redis.StrictRedis(host=host, port=port, db=db)
+
+            # Clear the Celery queue and result backend
+            redis_client.delete(celery_settings.celery_broker_queue)
+            redis_client.flushdb()
+
+        if celery_settings.celery_broker == "rabbitmq":
+            # Parse the URI
+            parsed_uri = urlparse(celery_settings.celery_broker_uri)
+            user, password = parsed_uri.netloc.split("@")[0].split(":")
+
+            # Connect to RabbitMQ
+            connection = pika.BlockingConnection(
+                pika.ConnectionParameters(
+                    host=parsed_uri.hostname, port=parsed_uri.port, credentials=pika.PlainCredentials(user, password)
+                )
+            )
+            channel = connection.channel()
+
+            try:
+                # Check if the queue exists (passive=True) if not raise ChannelClosedByBroker
+                channel.queue_declare(queue=celery_settings.celery_broker_queue, passive=True)
+
+                # Purge all messages in the queue
+                channel.queue_purge(queue=celery_settings.celery_broker_queue)
+
+            except ChannelClosedByBroker:
+                pass
+
+            finally:
+                connection.close()
+
+    @classmethod
+    def _start_queue_callable(cls, *, log_config: Dict) -> None:
+        """Callable for starting the celery queue process.
+
+        Args:
+            log_config: logging dict config from the main process.
+        """
+
+        # Setup logging config from the main process.
+        logging.config.dictConfig(log_config)
+
+        celery_app.worker_main(
+            argv=[
+                "-A",
+                "cl.runtime.tasks.celery.celery_queue",
+                "worker",
+                "--loglevel=info",
+                f"--pool={celery_settings.celery_pool_type}",
+                f"--concurrency={celery_settings.celery_workers}",
+            ],
+        )
 
     @classmethod
     def run_start_queue(cls) -> None:
@@ -222,7 +224,7 @@ class CeleryQueue(TaskQueue):
         else:
             # Old mode - single embedded worker
             worker_process = multiprocessing.Process(
-                target=celery_start_queue_callable,
+                target=cls._start_queue_callable,
                 daemon=True,
                 kwargs={"log_config": celery_worker_logging_config},
             )
@@ -246,7 +248,7 @@ class CeleryQueue(TaskQueue):
             cls.__celery_worker_process = None
 
         if not CelerySettings.instance().celery_resume_on_launch:
-            celery_delete_existing_tasks()
+            cls.delete_existing_tasks()
 
     def submit_task(self, task: TaskKey) -> None:
 

@@ -40,7 +40,6 @@ from cl.runtime.settings.qa_settings import QaSettings
 from cl.runtime.settings.sse_settings import SseSettings
 from cl.runtime.tasks.celery.celery_queue import CeleryQueue
 from cl.runtime.tasks.celery.celery_queue import celery_app
-from cl.runtime.tasks.celery.celery_queue import celery_delete_existing_tasks
 
 
 @pytest.fixture
@@ -156,7 +155,7 @@ def multi_db_fixture(request, tenant_fixture) -> Iterator[Db]:
 def celery_queue_fixture():
     """Pytest session fixture to start Celery test queue for test execution."""
     print("Starting celery workers, will delete the existing tasks.")
-    celery_delete_existing_tasks()
+    CeleryQueue.delete_existing_tasks()
 
     # Here we configure Celery to run in "eager mode":
     # tasks are executed right away in the current process,
@@ -166,7 +165,7 @@ def celery_queue_fixture():
     with activate(CeleryQueue(queue_id="Test Handler Queue").build()):
         yield
 
-    celery_delete_existing_tasks()
+    CeleryQueue.delete_existing_tasks()
     print("Stopping celery workers and cleaning up tasks.")
 
 

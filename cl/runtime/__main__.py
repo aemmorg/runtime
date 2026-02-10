@@ -51,7 +51,6 @@ from cl.runtime.settings.env_kind import EnvKind
 from cl.runtime.settings.env_settings import EnvSettings
 from cl.runtime.settings.frontend_settings import FrontendSettings
 from cl.runtime.tasks.celery.celery_queue import CeleryQueue
-from cl.runtime.tasks.celery.celery_queue import celery_delete_existing_tasks
 
 # Server
 server_app = FastAPI()
@@ -112,7 +111,7 @@ def _start_celery_quietly() -> str | None:
         root_logger.removeHandler(h)
     try:
         if not CelerySettings.instance().celery_resume_on_launch:
-            celery_delete_existing_tasks()
+            CeleryQueue.delete_existing_tasks()
         CeleryQueue.run_start_queue()
         if CelerySettings.instance().celery_multiprocess_pool:
             from cl.runtime.tasks.celery.worker_health_monitor import WorkerHealthMonitor
