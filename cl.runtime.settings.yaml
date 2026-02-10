@@ -21,7 +21,7 @@ default:
     - "Operating System :: OS Independent"
   package_urls:
     Repository: https://github.com/compatibl/runtime
-  package_build_dependencies:
+  package_dependencies:
     - aiofiles>=0.8.0
     - aiomysql>=0.1.1
     - alembic>=1.8.1
