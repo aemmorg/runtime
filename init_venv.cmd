@@ -17,5 +17,7 @@ echo Upgrade pip
 python -m pip install --upgrade pip
 
 echo.
-echo Install requirements (excludes linter and build requirements)
-pip install -r requirements.txt
+echo Install dependencies from pyproject.toml
+pip install ".[dev]"
+
+:END

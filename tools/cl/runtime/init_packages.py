@@ -116,18 +116,14 @@ def build_package_data(package_namespace: str, all_packages: tuple[str, ...]) ->
     sections.extend(entry["section"] for entry in isort_known_stubs)
     sections.extend(["FIRSTPARTY", "LOCALFOLDER"])
 
-    # Combine requirements from all included packages in order, do not remove duplicates
-    combined_package_requirements = []
-    combined_build_requirements = []
-    combined_test_requirements = []
+    # Combine dependencies from all included packages in order, do not remove duplicates across packages
+    combined_dependencies = []
     for p in included_main_packages:
         pkg_settings = PackageSettings.instance(package=p)
-        if pkg_settings.package_requirements:
-            combined_package_requirements.extend(pkg_settings.package_requirements)
-        if pkg_settings.package_build_requirements:
-            combined_build_requirements.extend(pkg_settings.package_build_requirements)
-        if pkg_settings.package_test_requirements:
-            combined_test_requirements.extend(pkg_settings.package_test_requirements)
+        if pkg_settings.package_dependencies:
+            combined_dependencies.extend(pkg_settings.package_dependencies)
+        if pkg_settings.package_test_dependencies:
+            combined_dependencies.extend(pkg_settings.package_test_dependencies)
 
     return {
         "package_name": package_settings.package_name,  # Readable name, e.g., "Runtime"
@@ -141,9 +137,6 @@ def build_package_data(package_namespace: str, all_packages: tuple[str, ...]) ->
         "package_classifiers": list(package_settings.package_classifiers) if package_settings.package_classifiers else [],
         "package_urls": package_settings.package_urls,
         "package_dependencies": list(package_settings.package_dependencies) if package_settings.package_dependencies else [],
-        "package_requirements": combined_package_requirements,
-        "build_requirements": combined_build_requirements,
-        "test_requirements": combined_test_requirements,
         "package_has_shared_data": package_settings.package_has_shared_data,
         "package_has_mypy": package_settings.package_has_mypy,
         "main_packages": included_main_packages,

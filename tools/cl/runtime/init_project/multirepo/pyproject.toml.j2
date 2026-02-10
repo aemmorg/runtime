@@ -1,9 +1,7 @@
 [project]
 dependencies = [
-{% for dep in package_requirements %}    "{{ dep }}",
-{% endfor %}{% for dep in build_requirements %}    "{{ dep }}",
-{% endfor %}{% for dep in test_requirements %}    "{{ dep }}",
-{% endfor %}]
+{% for dep in combined_dependencies %}    "{{ dep }}",
+{% endfor %}
 
 [tool.autoflake]
 recursive = true

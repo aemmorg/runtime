@@ -78,17 +78,11 @@ class PackageSettings(Settings):
     package_has_mypy: bool = False
     """Whether to include [tool.mypy] section in pyproject.toml of the package."""
 
-    package_dependencies: Sequence[str] | None = None
-    """Field 'dependencies' under [project] in pyproject.toml of the package, defaults to empty if not specified."""
+    package_build_dependencies: Sequence[str] | None = None
+    """Included in 'dependencies' under [project] in pyproject.toml, combined across packages."""
 
-    package_requirements: Sequence[str] | None = None
-    """Package requirements for local development venv, combined across packages in package_dirs order."""
-
-    package_build_requirements: Sequence[str] | None = None
-    """Build requirements for local development venv, combined across packages in package_dirs order."""
-
-    package_test_requirements: Sequence[str] | None = None
-    """Test requirements for local development venv, combined across packages in package_dirs order."""
+    package_test_dependencies: Sequence[str] | None = None
+    """Included when testing, combined across packages."""
 
     def __init(self) -> None:
         """Use instead of __init__ in the builder pattern, invoked by the build method in base to derived order."""
@@ -97,19 +91,16 @@ class PackageSettings(Settings):
         if self.package_namespace is not None:
             self.package_stubs_namespace = self.package_stubs_namespace.format(package_namespace=self.package_namespace)
 
-        # Validate package dependencies if specified
+        # Validate and check for duplicates in package dependencies
         if self.package_dependencies is not None:
-            # Validate each item is in the format "package_name[extra1,extra2,...] (version_specifier)"
-            self.package_dependencies = tuple(self.package_dependencies)  # Ensure it's a tuple for immutability
+            self.package_dependencies = tuple(self.package_dependencies)
             ProjectChecks.guard_requirements(self.package_dependencies)
+            self._check_duplicates(self.package_dependencies, "package_dependencies")
 
-        # Convert requirement sequences to tuples for immutability
-        if self.package_requirements is not None:
-            self.package_requirements = tuple(self.package_requirements)
-        if self.package_build_requirements is not None:
-            self.package_build_requirements = tuple(self.package_build_requirements)
-        if self.package_test_requirements is not None:
-            self.package_test_requirements = tuple(self.package_test_requirements)
+        # Validate and check for duplicates in package test dependencies
+        if self.package_test_dependencies is not None:
+            self.package_test_dependencies = tuple(self.package_test_dependencies)
+            self._check_duplicates(self.package_test_dependencies, "package_test_dependencies")
 
     def get_packages(self) -> tuple[str, ...]:
         """Ordered tuple of package namespaces (keys) from package_dirs mapping."""
@@ -154,6 +145,17 @@ class PackageSettings(Settings):
         if python_path_added:
             # Only if paths have been added
             os.environ["PYTHONPATH"] = python_path_str
+
+    @classmethod
+    def _check_duplicates(cls, deps: Sequence[str], field_name: str) -> None:
+        """Raise an error if the dependency list contains duplicates within a single package."""
+        seen = set()
+        for dep in deps:
+            # Normalize to lowercase for comparison
+            dep_lower = dep.lower()
+            if dep_lower in seen:
+                raise RuntimeError(f"Duplicate entry '{dep}' in {field_name}.")
+            seen.add(dep_lower)
 
     @classmethod
     def _normalize_paths(cls, paths: Sequence[str]) -> tuple[str, ...]:
