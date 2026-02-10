@@ -16,7 +16,6 @@ import csv
 import os
 import shutil
 from dataclasses import dataclass
-from typing import Any
 from typing import Sequence
 from cl.runtime.db.db import Db
 from cl.runtime.db.query_mixin import QueryMixin
@@ -63,9 +62,6 @@ class CsvDb(Db):
         # Default cache to BasicMongoMockDb
         if self._cache is None:
             from cl.runtime.db.mongo.basic_mongo_mock_db import BasicMongoMockDb
-
-            # Patch bson.binary.Binary.from_uuid for mongomock compatibility
-            self._patch_bson_for_mongomock()
 
             self._cache = BasicMongoMockDb(db_id=f"{self.db_id}_cache").build()
 
@@ -339,17 +335,3 @@ class CsvDb(Db):
             writer = csv.DictWriter(f, fieldnames=new_fieldnames, extrasaction="ignore")
             writer.writeheader()
             writer.writerows(rows)
-
-    @staticmethod
-    def _patch_bson_for_mongomock() -> None:
-        """Patch bson.binary.Binary.from_uuid for mongomock compatibility with UUID fields."""
-        import uuid
-        from bson import Binary
-        from bson.binary import UUID_SUBTYPE
-
-        original_from_uuid = Binary.from_uuid
-
-        def _patched_from_uuid(uuid_: uuid.UUID, uuid_representation=None):
-            return Binary(uuid_.bytes, UUID_SUBTYPE)
-
-        Binary.from_uuid = staticmethod(_patched_from_uuid)
