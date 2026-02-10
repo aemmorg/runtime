@@ -59,9 +59,9 @@ celery_app.conf.worker_prefetch_multiplier = 1  # One task per worker for better
 
 # Standalone function: @celery_app.task decorator is incompatible with class/static methods
 @celery_app.task(max_retries=celery_settings.celery_max_retries, acks_late=True)  # Do not retry failed tasks
-def execute_task(task_id: str, context_snapshot_json: str) -> None:
-    """Invoke 'run_task' method of the specified task, delegates to CeleryQueue._execute_task."""
-    CeleryQueue._execute_task(task_id, context_snapshot_json)
+def celery_run_task(task_id: str, context_snapshot_json: str) -> None:
+    """Invoke 'run_task' method of the specified task, delegates to CeleryQueue.run_task."""
+    CeleryQueue.run_task(task_id, context_snapshot_json)
 
 
 @dataclass(slots=True, kw_only=True)
@@ -84,7 +84,7 @@ class CeleryQueue(TaskQueue):
         dictConfig(celery_empty_logging_config)
 
     @classmethod
-    def _execute_task(cls, task_id: str, context_snapshot_json: str) -> None:
+    def run_task(cls, task_id: str, context_snapshot_json: str) -> None:
         """Invoke 'run_task' method of the specified task."""
 
         # Deserialize context from 'context_data' parameter to run with the same settings as the caller context
@@ -259,13 +259,13 @@ class CeleryQueue(TaskQueue):
             context_snapshot_json = ContextSnapshot.capture_active().to_json()
 
             # Pass parameters to the Celery task signature
-            execute_task_signature = execute_task.s(
+            celery_run_task_signature = celery_run_task.s(
                 task.task_id,
                 context_snapshot_json,
             )
 
             # Submit task to Celery with completed and error links
-            execute_task_signature.apply_async(
+            celery_run_task_signature.apply_async(
                 task_id=task.task_id,  # Use our custom task ID instead of auto-generated UUID
                 retry=False,  # Do not retry in case the task fails
                 ignore_result=True,  # TODO: Do not publish to the Celery result backend

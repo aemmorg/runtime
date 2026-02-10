@@ -20,7 +20,7 @@ from cl.runtime.contexts.context_manager import active
 from cl.runtime.contexts.context_snapshot import ContextSnapshot
 from cl.runtime.db.data_source import DataSource
 from cl.runtime.tasks.celery.celery_queue import CeleryQueue
-from cl.runtime.tasks.celery.celery_queue import execute_task
+from cl.runtime.tasks.celery.celery_queue import celery_run_task
 from cl.runtime.tasks.class_method_task import ClassMethodTask
 from cl.runtime.tasks.task import Task
 from cl.runtime.tasks.task_key import TaskKey
@@ -39,7 +39,7 @@ def _create_task(queue: TaskQueueKey) -> TaskKey:
 
 @pytest.mark.skip("Celery tasks lock sqlite db file.")  # TODO (Roman): resolve conflict
 def test_method(celery_queue_fixture):
-    """Test calling 'execute_task' method in-process."""
+    """Test calling 'CeleryQueue.run_task' method in-process."""
 
     # Create queue
     queue_id = f"test_celery_queue.test_method"
@@ -49,9 +49,9 @@ def test_method(celery_queue_fixture):
     # Create task
     task_key = _create_task(queue.get_key())
 
-    # Call 'execute_task' method in-process
+    # Delegates to 'CeleryQueue.run_task' method, invoked in-process
     context_snapshot_data = ContextSnapshot.to_json()
-    execute_task(
+    celery_run_task(
         task_key.task_id,
         context_snapshot_data,
     )
@@ -81,7 +81,7 @@ def test_reached_tenant_limit(default_db_fixture):
     mock_instance.celery_max_tenant_tasks = 0
     with patch("cl.runtime.tasks.celery.celery_queue.celery_settings", new=mock_instance):
         with pytest.raises(Reject):
-            execute_task(
+            celery_run_task(
                 "test_task_id",
                 context_snapshot_json,
             )
