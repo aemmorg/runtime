@@ -63,6 +63,10 @@ class CelerySettings(Settings):
     celery_worker_optimization: bool = True
     """Enable Windows-specific optimizations (no gossip, mingle, heartbeat)."""
 
+    celery_resume_on_launch: bool | None = None
+    """If True, resume execution of tasks remaining in the celery queue from a previous process.
+    If None or False (default), wipe the celery DB on launch so stale tasks do not execute."""
+
     def __init(self) -> None:
         if not self.celery_broker:
             raise RuntimeError("Celery broker is not specified in settings.")

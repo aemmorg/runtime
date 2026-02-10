@@ -111,7 +111,8 @@ def _start_celery_quietly() -> str | None:
     for h in stdout_handlers:
         root_logger.removeHandler(h)
     try:
-        celery_delete_existing_tasks()
+        if not CelerySettings.instance().celery_resume_on_launch:
+            celery_delete_existing_tasks()
         CeleryQueue.run_start_queue()
         if CelerySettings.instance().celery_multiprocess_pool:
             from cl.runtime.tasks.celery.worker_health_monitor import WorkerHealthMonitor

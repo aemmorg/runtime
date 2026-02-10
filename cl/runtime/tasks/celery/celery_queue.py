@@ -245,7 +245,8 @@ class CeleryQueue(TaskQueue):
             cls.__celery_worker_process.join()
             cls.__celery_worker_process = None
 
-        celery_delete_existing_tasks()
+        if not CelerySettings.instance().celery_resume_on_launch:
+            celery_delete_existing_tasks()
 
     def submit_task(self, task: TaskKey) -> None:
 
