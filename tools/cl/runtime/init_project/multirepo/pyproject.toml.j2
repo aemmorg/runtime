@@ -1,7 +1,14 @@
 [project]
 dependencies = [
-{% for dep in combined_dependencies %}    "{{ dep }}",
-{% endfor %}
+{% for dep in combined_package_dependencies %}    "{{ dep }}",
+{% endfor %}]
+{%- if combined_test_dependencies %}
+
+[dependency-groups]
+test = [
+{% for dep in combined_test_dependencies %}    "{{ dep }}",
+{% endfor %}]
+{%- endif %}
 
 [tool.autoflake]
 recursive = true

@@ -36,17 +36,19 @@ def collect_all_dependencies(all_packages: tuple[str, ...]) -> dict:
     main_packages = [p for p in all_packages if not p.startswith("stubs.")]
 
     # Combine dependencies from all packages in order, do not remove duplicates across packages
-    combined_dependencies = []
+    combined_package_dependencies = []
+    combined_test_dependencies = []
 
     for package in main_packages:
         pkg_settings = PackageSettings.instance(package=package)
         if pkg_settings.package_dependencies:
-            combined_dependencies.extend(pkg_settings.package_dependencies)
+            combined_package_dependencies.extend(pkg_settings.package_dependencies)
         if pkg_settings.package_test_dependencies:
-            combined_dependencies.extend(pkg_settings.package_test_dependencies)
+            combined_test_dependencies.extend(pkg_settings.package_test_dependencies)
 
     return {
-        "combined_dependencies": combined_dependencies,
+        "combined_package_dependencies": combined_package_dependencies,
+        "combined_test_dependencies": combined_test_dependencies,
     }
 
 

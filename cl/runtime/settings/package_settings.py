@@ -78,8 +78,8 @@ class PackageSettings(Settings):
     package_has_mypy: bool = False
     """Whether to include [tool.mypy] section in pyproject.toml of the package."""
 
-    package_build_dependencies: Sequence[str] | None = None
-    """Included in 'dependencies' under [project] in pyproject.toml, combined across packages."""
+    package_dependencies: Sequence[str] | None = None
+    """Field 'dependencies' under [project] in pyproject.toml of the package, combined across packages for venv setup."""
 
     package_test_dependencies: Sequence[str] | None = None
     """Included when testing, combined across packages."""

@@ -18,6 +18,6 @@ python -m pip install --upgrade pip
 
 echo.
 echo Install dependencies from pyproject.toml
-pip install ".[dev]"
+pip install --group test .
 
 :END
