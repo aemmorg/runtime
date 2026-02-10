@@ -26,6 +26,7 @@ from cl.runtime.exceptions.error_util import ErrorUtil
 from cl.runtime.project.project_layout_kind import ProjectLayoutKind
 from cl.runtime.project.project_layout import ProjectLayout
 from cl.runtime.settings.package_settings import PackageSettings
+from cl.runtime.settings.project_settings import ProjectSettings
 from cl.runtime.templates.jinja_template_engine import JinjaTemplateEngine
 
 
@@ -77,10 +78,21 @@ def init_project() -> None:
     else:
         raise ErrorUtil.enum_value_error(layout_kind, ProjectLayoutKind)
 
+    # Get include/exclude patterns from project settings
+    project_settings = ProjectSettings.instance()
+    init_include = project_settings.project_init_include
+    init_exclude = project_settings.project_init_exclude
+
     # Create Jinja2 template engine and render all templates
     engine = JinjaTemplateEngine().build()
     data = {"packages": package_dirs, **dependencies}
-    engine.render_dir(input_dir=template_dir, output_dir=project_root, data=data)
+    engine.render_dir(
+        input_dir=template_dir,
+        output_dir=project_root,
+        data=data,
+        include=init_include,
+        exclude=init_exclude,
+    )
 
 
 if __name__ == '__main__':

@@ -12,12 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import fnmatch
 import platform
 from abc import ABC
 from abc import abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+from typing import Sequence
 from cl.runtime.primitive.timestamp import Timestamp
 from cl.runtime.records.data_mixin import DataMixin
 from cl.runtime.records.record_mixin import RecordMixin
@@ -46,10 +48,22 @@ class TemplateEngine(TemplateEngineKey, RecordMixin, ABC):
     def render(self, *, body: str, data: DataMixin | dict[str, Any]) -> str:
         """Render the template body by taking parameters from the data object."""
 
-    def render_dir(self, *, input_dir: str, output_dir, data: DataMixin | dict[str, Any]) -> None:
+    def render_dir(
+        self,
+        *,
+        input_dir: str,
+        output_dir,
+        data: DataMixin | dict[str, Any],
+        include: Sequence[str] | None = None,
+        exclude: Sequence[str] | None = None,
+    ) -> None:
         """
         Render all templates with filename.ext.j2 name in input_dir and its subdirectories by taking parameters
         from data object or dict, write output to filename.ext in the matching subdirectory of output_dir.
+
+        Args:
+            include: Glob patterns for files to include, defaults to ['*'] if not specified.
+            exclude: Glob patterns for files to exclude, applied after include. Defaults to [] if not specified.
         """
 
         # Find all .j2 files recursively in input_dir
@@ -72,6 +86,15 @@ class TemplateEngine(TemplateEngineKey, RecordMixin, ABC):
                     for i, p in enumerate(path_parts)
                 ]
             )
+
+            # Apply include/exclude filters on the output relative path
+            output_name = str(output_relative_path)
+            include_patterns = include if include is not None else ["*"]
+            exclude_patterns = exclude if exclude is not None else []
+            if not any(fnmatch.fnmatch(output_name, p) for p in include_patterns):
+                continue
+            if any(fnmatch.fnmatch(output_name, p) for p in exclude_patterns):
+                continue
 
             # Read template file content and render
             template_text = template_file.read_text(encoding="utf-8")

@@ -126,7 +126,7 @@ def build_package_data(package_namespace: str, all_packages: tuple[str, ...]) ->
         if pkg_settings.package_test_dependencies:
             combined_test_dependencies.extend(pkg_settings.package_test_dependencies)
 
-    return {
+    data = {
         "package_name": package_settings.package_name,  # Readable name, e.g., "Runtime"
         "package_namespace": package_namespace,  # Dot-delimited package namespace, e.g., 'cl.runtime'
         "package_path": "/".join(package_namespace.split(".")),  # Slash-delimited package namespace, e.g., 'cl/runtime'
@@ -148,6 +148,8 @@ def build_package_data(package_namespace: str, all_packages: tuple[str, ...]) ->
         "isort_known_stubs": isort_known_stubs,
         "isort_sections": sections,
     }
+
+    return data, package_settings.package_init_include, package_settings.package_init_exclude
 
 
 def init_packages() -> None:
@@ -178,10 +180,16 @@ def init_packages() -> None:
             continue
         processed_roots.add(package_root)
 
-        # Build template data with isort configuration
-        data = build_package_data(package, all_packages)
+        # Build template data with isort configuration and include/exclude patterns
+        data, init_include, init_exclude = build_package_data(package, all_packages)
 
-        engine.render_dir(input_dir=template_dir, output_dir=package_root, data=data)
+        engine.render_dir(
+            input_dir=template_dir,
+            output_dir=package_root,
+            data=data,
+            include=init_include,
+            exclude=init_exclude,
+        )
 
 
 if __name__ == "__main__":

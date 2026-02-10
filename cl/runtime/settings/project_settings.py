@@ -51,5 +51,11 @@ class ProjectSettings(Settings):
     project_dependencies: Sequence[str] = required()
     """Field 'dependencies' under [project] in pyproject.toml, skip if not specified."""
 
+    project_init_include: Sequence[str] | None = None
+    """Glob patterns for files to include in init_project output, defaults to ['*'] if not specified."""
+
+    project_init_exclude: Sequence[str] | None = None
+    """Glob patterns for files to exclude from init_project output, applied after include. Defaults to [] if not specified."""
+
     def __init(self) -> None:
         """Use instead of __init__ in the builder pattern, invoked by the build method in base to derived order."""
