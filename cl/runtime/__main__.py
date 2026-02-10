@@ -22,6 +22,7 @@ locate.append_sys_path("../../..")
 
 import logging.config
 import os
+import sys
 import webbrowser
 import uvicorn
 from fastapi import FastAPI
@@ -97,6 +98,34 @@ ServerUtil.include_routers(server_app)
 _LOGGER = logging.getLogger(__name__)
 
 
+def _start_celery_quietly() -> str | None:
+    """Start Celery workers with console output suppressed.
+
+    All Celery setup messages are written to the log file but not displayed on the console,
+    preventing them from hiding interactive user prompts. Returns error message on failure, None on success.
+    """
+    root_logger = logging.getLogger()
+    # Temporarily remove console handlers so Celery setup messages only go to the log file
+    console_handlers = [h for h in root_logger.handlers if getattr(h, "stream", None) in (sys.stdout, sys.stderr)]
+    for h in console_handlers:
+        root_logger.removeHandler(h)
+    try:
+        celery_delete_existing_tasks()
+        CeleryQueue.run_start_queue()
+        if CelerySettings.instance().celery_multiprocess_pool:
+            from cl.runtime.tasks.celery.worker_health_monitor import WorkerHealthMonitor
+
+            WorkerHealthMonitor.start_monitoring()
+        return None
+    except Exception as e:
+        _LOGGER.error(f"Celery setup failed: {e}", exc_info=True)
+        return str(e)
+    finally:
+        # Restore console handlers
+        for h in console_handlers:
+            root_logger.addHandler(h)
+
+
 def run_backend(*, interactive: bool = False) -> None:
     """Run REST backend, request user approvals if required and interactive is true."""
 
@@ -128,19 +157,7 @@ def run_backend(*, interactive: bool = False) -> None:
         else:
             raise ErrorUtil.enum_value_error(env_kind, EnvKind)
 
-        # TODO: !!! This only works for the Mongo celery backend
-        if CelerySettings.instance().celery_is_embedded_worker:
-            celery_delete_existing_tasks()
-
-            # Start Celery workers (will exit when the current process exits)
-            CeleryQueue.run_start_queue()
-
-            # Start health monitoring for multiprocess pool
-            if CelerySettings.instance().celery_multiprocess_pool:
-                from cl.runtime.tasks.celery.worker_health_monitor import WorkerHealthMonitor
-
-                WorkerHealthMonitor.start_monitoring()
-
+        # Ask about frontend installation before Celery setup to prevent setup messages from hiding the prompt
         frontend_settings = FrontendSettings.instance()
 
         # If frontend is not installed, ask user to install it from GitHub (only in interactive mode)
@@ -158,6 +175,16 @@ def run_backend(*, interactive: bool = False) -> None:
                 _LOGGER.warning(
                     f"Static frontend files of version '{frontend_settings.frontend_version}' are not installed. "
                     f"Skipping installation prompt in non-interactive mode."
+                )
+
+        # Start Celery with console output suppressed (messages go to log file only)
+        # TODO: !!! This only works for the Mongo celery backend
+        if CelerySettings.instance().celery_is_embedded_worker:
+            celery_error = _start_celery_quietly()
+            if celery_error:
+                print(
+                    f"\nERROR: Celery task queue failed to start: {celery_error}\n"
+                    f"Task execution will not be available. Check the log file for details."
                 )
 
         if frontend_settings.is_frontend_installed():
