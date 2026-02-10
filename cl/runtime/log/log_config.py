@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import copy
 import logging
 import os
 import socket
@@ -280,3 +281,17 @@ logging_config = {
         },
     },
 }
+
+
+def _make_celery_worker_logging_config():
+    """Logging config for Celery workers that only logs to file, not console."""
+    config = copy.deepcopy(logging_config)
+    config["handlers"].pop("stdout_handler", None)
+    config["handlers"].pop("stderr_handler", None)
+    config["loggers"][""]["handlers"] = [
+        h for h in config["loggers"][""]["handlers"] if h not in ("stdout_handler", "stderr_handler")
+    ]
+    return config
+
+
+celery_worker_logging_config = _make_celery_worker_logging_config()

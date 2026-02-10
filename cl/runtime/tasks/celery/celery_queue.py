@@ -32,7 +32,7 @@ from cl.runtime.contexts.context_manager import active
 from cl.runtime.contexts.context_snapshot import ContextSnapshot
 from cl.runtime.db.data_source import DataSource
 from cl.runtime.log.log_config import celery_empty_logging_config
-from cl.runtime.log.log_config import logging_config
+from cl.runtime.log.log_config import celery_worker_logging_config
 from cl.runtime.server.env import Env
 from cl.runtime.settings.celery_settings import CelerySettings
 from cl.runtime.tasks.task import Task
@@ -224,7 +224,7 @@ class CeleryQueue(TaskQueue):
             worker_process = multiprocessing.Process(
                 target=celery_start_queue_callable,
                 daemon=True,
-                kwargs={"log_config": logging_config},
+                kwargs={"log_config": celery_worker_logging_config},
             )
             worker_process.start()
             cls.__celery_worker_process = worker_process

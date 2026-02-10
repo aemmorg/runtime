@@ -22,7 +22,7 @@ from dataclasses import field
 from typing import ClassVar
 from typing import Dict
 from typing import Optional
-from cl.runtime.log.log_config import logging_config
+from cl.runtime.log.log_config import celery_worker_logging_config
 from cl.runtime.settings.celery_settings import CelerySettings
 from cl.runtime.tasks.celery.worker_metrics import WorkerMetrics
 
@@ -147,7 +147,7 @@ class WorkerProcessManager:
             kwargs={
                 "worker_id": worker_id,
                 "worker_name": worker_name,
-                "log_config": logging_config,
+                "log_config": celery_worker_logging_config,
             },
         )
 

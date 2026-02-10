@@ -99,15 +99,16 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def _start_celery_quietly() -> str | None:
-    """Start Celery workers with console output suppressed.
+    """Start Celery workers with routine console output suppressed.
 
-    All Celery setup messages are written to the log file but not displayed on the console,
-    preventing them from hiding interactive user prompts. Returns error message on failure, None on success.
+    Routine (non-error) Celery setup messages are written to the log file but not displayed on the console,
+    preventing them from hiding interactive user prompts. Errors are still displayed via stderr.
+    Returns error message on failure, None on success.
     """
     root_logger = logging.getLogger()
-    # Temporarily remove console handlers so Celery setup messages only go to the log file
-    console_handlers = [h for h in root_logger.handlers if getattr(h, "stream", None) in (sys.stdout, sys.stderr)]
-    for h in console_handlers:
+    # Only remove the stdout handler (routine messages), keep stderr handler so errors are still visible
+    stdout_handlers = [h for h in root_logger.handlers if getattr(h, "stream", None) is sys.stdout]
+    for h in stdout_handlers:
         root_logger.removeHandler(h)
     try:
         celery_delete_existing_tasks()
@@ -121,8 +122,8 @@ def _start_celery_quietly() -> str | None:
         _LOGGER.error(f"Celery setup failed: {e}", exc_info=True)
         return str(e)
     finally:
-        # Restore console handlers
-        for h in console_handlers:
+        # Restore stdout handlers
+        for h in stdout_handlers:
             root_logger.addHandler(h)
 
 
