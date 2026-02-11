@@ -16,31 +16,31 @@ import re
 from typing import Pattern
 from cl.runtime.primitive.char_util import CharUtil
 
-_alphanumeric_re: Pattern = re.compile(r"[^a-zA-Z0-9 .]")
+_ALPHANUMERIC_RE: Pattern = re.compile(r"[^a-zA-Z0-9 .]")
 """Match sequences where all characters are either letters or digits, also allowing dot and space."""
 
-_alphanumeric_or_underscore_re: Pattern = re.compile(r"[^a-zA-Z0-9 ._]")
+_ALPHANUMERIC_OR_UNDERSCORE_RE: Pattern = re.compile(r"[^a-zA-Z0-9 ._]")
 """Match sequences where all characters are either letters or digits or an underscore, also allowing dot and space."""
 
-_all_cap_re: Pattern = re.compile(r"([a-z])([A-Z])")
+_ALL_CAP_RE: Pattern = re.compile(r"([a-z])([A-Z])")
 """Match sequences where a lowercase letter ([a-z]) is immediately followed by an uppercase letter ([A-Z])"""
 
-_lower_to_digit_re: Pattern = re.compile(r"([a-z])(\d)")
+_LOWER_TO_DIGIT_RE: Pattern = re.compile(r"([a-z])(\d)")
 """Pattern to add underscores between lowercase letter and digit (e.g., "Abc2" -> "Abc_2")."""
 
-_upper_digit_to_word_re: Pattern = re.compile(r"([A-Z]\d+)([A-Z][a-z])")
+_UPPER_DIGIT_TO_WORD_RE: Pattern = re.compile(r"([A-Z]\d+)([A-Z][a-z])")
 """Pattern to add underscores between uppercase+digit(s) and a new word (e.g., "T0Key" -> "T0_Key")."""
 
-_upper_to_digit_re: Pattern = re.compile(r"([A-Z])(\d+)(?=[^_\d]|$)")
+_UPPER_TO_DIGIT_RE: Pattern = re.compile(r"([A-Z])(\d+)(?=[^_\d]|$)")
 """Pattern to add underscores between uppercase letter and digit(s) not already handled (e.g., "B2" -> "B_2")."""
 
-_consecutive_cap_re: Pattern = re.compile(r"([A-Z])([A-Z])")
+_CONSECUTIVE_CAP_RE: Pattern = re.compile(r"([A-Z])([A-Z])")
 """This pattern looks for uppercase sequences and adds an underscore between them if needed"""
 
-_digit_underscore_violations_re: Pattern = re.compile(r"(?<=\d)_(?=\d)|(?<![_\d])\d")
+_DIGIT_UNDERSCORE_VIOLATIONS_RE: Pattern = re.compile(r"(?<=\d)_(?=\d)|(?<![_\d])\d")
 """Digit without preceding underscore or underscore between digits pattern"""
 
-_digit_without_space_re: Pattern = re.compile(r"(?<! )\d")
+_DIGIT_WITHOUT_SPACE_RE: Pattern = re.compile(r"(?<! )\d")
 """Digit without space pattern"""
 
 
@@ -60,15 +60,15 @@ class CaseUtil:
             return value
         cls.check_pascal_case(value)
         # Add underscores between consecutive uppercase letters
-        result = _consecutive_cap_re.sub(r"\1_\2", value)
+        result = _CONSECUTIVE_CAP_RE.sub(r"\1_\2", value)
         # Handle lowercase to uppercase transitions
-        result = _all_cap_re.sub(r"\1_\2", result)
+        result = _ALL_CAP_RE.sub(r"\1_\2", result)
         # Insert underscore between lowercase letter and digit
-        result = _lower_to_digit_re.sub(r"\1_\2", result)
+        result = _LOWER_TO_DIGIT_RE.sub(r"\1_\2", result)
         # Insert underscore between uppercase+digit(s) and a new word (e.g., T0Key -> T0_Key)
-        result = _upper_digit_to_word_re.sub(r"\1_\2", result)
+        result = _UPPER_DIGIT_TO_WORD_RE.sub(r"\1_\2", result)
         # Insert underscore between uppercase letter and digit(s) in remaining cases
-        result = _upper_to_digit_re.sub(r"\1_\2", result)
+        result = _UPPER_TO_DIGIT_RE.sub(r"\1_\2", result)
 
         # Convert the final result to lowercase
         return result.lower()
@@ -251,9 +251,9 @@ class CaseUtil:
     def _check_non_alphanumeric(cls, value: str, format_: str, allow_underscore: bool) -> None:
         """Error message stating the string does not follow format because it contains non-alphanumeric characters."""
         if allow_underscore:
-            non_alphanumeric = re.findall(_alphanumeric_or_underscore_re, value)
+            non_alphanumeric = re.findall(_ALPHANUMERIC_OR_UNDERSCORE_RE, value)
         else:
-            non_alphanumeric = list(set(re.findall(_alphanumeric_re, value)))
+            non_alphanumeric = list(set(re.findall(_ALPHANUMERIC_RE, value)))
         if non_alphanumeric:
             non_alphanumeric_names = ", ".join(CharUtil.describe_char(char) for char in non_alphanumeric)
             other_than_underscore_msg = " other than underscore" if allow_underscore else ""
@@ -304,7 +304,7 @@ class CaseUtil:
         """Error message stating string does not follow the custom rule for digit separators"""
         # snake_case must have an underscore in front of digits
         # snake_case forbids underscore between digits
-        if _digit_underscore_violations_re.search(value):
+        if _DIGIT_UNDERSCORE_VIOLATIONS_RE.search(value):
             raise RuntimeError(
                 f"String {value} is not snake_case because it does not follow the rule "
                 f"for separators in front and between digits.",
@@ -314,7 +314,7 @@ class CaseUtil:
     def _check_title_case_digit_separator(cls, value: str) -> None:
         """Error message stating string does not follow the custom rule for separators in front of digits"""
         # Title Case must have a space in front of digits
-        if _digit_without_space_re.search(value):
+        if _DIGIT_WITHOUT_SPACE_RE.search(value):
             raise RuntimeError(
                 f"String {value} is not Title Case because it does not follow the rule "
                 f"for separators in front of digits.",
@@ -325,7 +325,7 @@ class CaseUtil:
         """Error message stating string does not follow the custom rule for digit separators"""
         # Make a round trip from snake_case to PascalCase and back to snake_case to check
         # if the value stays the same
-        if _digit_underscore_violations_re.search(value):
+        if _DIGIT_UNDERSCORE_VIOLATIONS_RE.search(value):
             raise RuntimeError(
                 f"String {value} is not UPPER_CASE because it does not follow the rule "
                 f"for separators in front and between digits.",
