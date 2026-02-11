@@ -14,8 +14,8 @@
 
 import os
 import re
-from fnmatch import fnmatch
 from typing import Sequence
+from cl.runtime.prebuild.source_util import SourceUtil
 from cl.runtime.primitive.string_util import StringUtil
 from cl.runtime.project.project_layout import ProjectLayout
 from cl.runtime.settings.package_settings import PackageSettings
@@ -103,41 +103,34 @@ class CopyrightUtil:
             List of tuples (copyright_header, file_path) for all matched source files.
         """
 
-        if file_include_patterns is None:
-            file_include_patterns = ["*.py"]
-        if file_exclude_patterns is None:
-            file_exclude_patterns = ["__init__.py", "_version.py"]
-
+        # Build a mapping from each package root directory to its copyright header
         packages = PackageSettings.instance().get_packages()
-        result = []
-        all_root_paths = set()
-
+        root_to_header: dict[str, str] = {}
         for package in packages:
             package_root = ProjectLayout.get_package_root(package)
             copyright_header = cls.read_copyright_header(package_root)
+            if (x := ProjectLayout.get_package_source_root(package)) is not None:
+                root_to_header[os.path.normpath(x)] = copyright_header
+            if (x := ProjectLayout.get_package_stubs_root(package)) is not None:
+                root_to_header[os.path.normpath(x)] = copyright_header
+            if (x := ProjectLayout.get_package_tests_root(package)) is not None:
+                root_to_header[os.path.normpath(x)] = copyright_header
 
-            # Add paths to source, stubs, and test directories
-            package_root_paths = []
-            if (x := ProjectLayout.get_package_source_root(package)) is not None and x not in all_root_paths:
-                package_root_paths.append(x)
-                all_root_paths.add(x)
-            if (x := ProjectLayout.get_package_stubs_root(package)) is not None and x not in all_root_paths:
-                package_root_paths.append(x)
-                all_root_paths.add(x)
-            if (x := ProjectLayout.get_package_tests_root(package)) is not None and x not in all_root_paths:
-                package_root_paths.append(x)
-                all_root_paths.add(x)
+        # Get all source file paths using SourceUtil
+        file_paths = SourceUtil.get_source_files(
+            file_include_patterns=file_include_patterns,
+            file_exclude_patterns=file_exclude_patterns,
+        )
 
-            if not package_root_paths:
-                continue
-
-            for root_path in package_root_paths:
-                for dir_path, dir_names, filenames in os.walk(root_path):
-                    filenames = [x for x in filenames if any(fnmatch(x, y) for y in file_include_patterns)]
-                    filenames = [x for x in filenames if not any(fnmatch(x, y) for y in file_exclude_patterns)]
-                    for filename in filenames:
-                        file_path = os.path.join(dir_path, filename)
-                        result.append((copyright_header, str(file_path)))
+        # Match each file to its copyright header by longest matching root prefix
+        result = []
+        sorted_roots = sorted(root_to_header.keys(), key=len, reverse=True)
+        for file_path in file_paths:
+            normalized = os.path.normpath(file_path)
+            for root in sorted_roots:
+                if normalized.startswith(root + os.sep) or normalized == root:
+                    result.append((root_to_header[root], file_path))
+                    break
 
         return result
 
