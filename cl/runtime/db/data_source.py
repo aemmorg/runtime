@@ -56,6 +56,7 @@ from cl.runtime.schema.type_hint import TypeHint
 from cl.runtime.schema.type_info import TypeInfo
 from cl.runtime.serializers.key_serializers import KeySerializers
 from cl.runtime.server.env import Env
+from cl.runtime.settings.db_settings import DbSettings
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -138,12 +139,17 @@ class DataSource(DataSourceKey, RecordMixin):
         # Initialize backup loaded tables tracking set
         self._backup_loaded_tables = set()
 
-        # Default backup to CsvDb unless main DB is a CsvDb or we are in TEST env
-        if self._backup is None:
-            from cl.runtime.db.csv.csv_db import CsvDb
-
-            if not isinstance(self._get_db(), CsvDb) and not active_or_default(Env).is_test():
-                self._backup = CsvDb(db_id=f"{self._get_db().db_id}_backup").build()
+        # Create backup from db_backup_type setting if specified, skip in TEST env
+        if self._backup is None and not active_or_default(Env).is_test():
+            db_backup_type_name = DbSettings.instance().db_backup_type
+            if db_backup_type_name is not None:
+                backup_type = TypeInfo.from_type_name(db_backup_type_name)
+                if isinstance(self._get_db(), backup_type):
+                    raise RuntimeError(
+                        f"Backup type '{db_backup_type_name}' is the same as the main DB type "
+                        f"'{type(self._get_db()).__name__}' for db_id='{self._get_db().db_id}'."
+                    )
+                self._backup = backup_type(db_id=f"{self._get_db().db_id}_backup").build()
 
     def __enter__(self) -> Self:
         """Supports 'with' operator for resource initialization and disposal."""

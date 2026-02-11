@@ -33,6 +33,9 @@ class DbSettings(Settings):
     db_type: str = required()  # TODO: !! Refactor to use to_object from settings
     """Database class name."""
 
+    db_backup_type: str | None = None  # TODO: !! Refactor to use to_object from settings
+    """Database backup class name."""
+
     db_client_uri: str | None = None
     """URI provided to the database client."""
 
