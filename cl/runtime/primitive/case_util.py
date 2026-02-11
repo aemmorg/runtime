@@ -25,8 +25,14 @@ _alphanumeric_or_underscore_re: Pattern = re.compile(r"[^a-zA-Z0-9 ._]")
 _all_cap_re: Pattern = re.compile(r"([a-z])([A-Z])")
 """Match sequences where a lowercase letter ([a-z]) is immediately followed by an uppercase letter ([A-Z])"""
 
-_digit_separator_re: Pattern = re.compile(r"([a-zA-Z])(\d)")
-"""Pattern to add underscores before digits (e.g., "Abc2" -> "abc_2")"""
+_lower_to_digit_re: Pattern = re.compile(r"([a-z])(\d)")
+"""Pattern to add underscores between lowercase letter and digit (e.g., "Abc2" -> "Abc_2")."""
+
+_upper_digit_to_word_re: Pattern = re.compile(r"([A-Z]\d+)([A-Z][a-z])")
+"""Pattern to add underscores between uppercase+digit(s) and a new word (e.g., "T0Key" -> "T0_Key")."""
+
+_upper_to_digit_re: Pattern = re.compile(r"([A-Z])(\d+)(?=[^_\d]|$)")
+"""Pattern to add underscores between uppercase letter and digit(s) not already handled (e.g., "B2" -> "B_2")."""
 
 _consecutive_cap_re: Pattern = re.compile(r"([A-Z])([A-Z])")
 """This pattern looks for uppercase sequences and adds an underscore between them if needed"""
@@ -57,8 +63,12 @@ class CaseUtil:
         result = _consecutive_cap_re.sub(r"\1_\2", value)
         # Handle lowercase to uppercase transitions
         result = _all_cap_re.sub(r"\1_\2", result)
-        # Insert underscore before digits
-        result = _digit_separator_re.sub(r"\1_\2", result)
+        # Insert underscore between lowercase letter and digit
+        result = _lower_to_digit_re.sub(r"\1_\2", result)
+        # Insert underscore between uppercase+digit(s) and a new word (e.g., T0Key -> T0_Key)
+        result = _upper_digit_to_word_re.sub(r"\1_\2", result)
+        # Insert underscore between uppercase letter and digit(s) in remaining cases
+        result = _upper_to_digit_re.sub(r"\1_\2", result)
 
         # Convert the final result to lowercase
         return result.lower()

@@ -32,6 +32,7 @@ def test_pascal_to_snake_case():
         ("Abc2", "abc_2"),
         ("Abc2D", "abc_2d"),
         ("Abc2Def", "abc_2def"),
+        ("AbcT0Key", "abc_t0_key"),
         # From PascalCase without dot delimiter
         ("AbcDef", "abc_def"),
         # From PascalCase with dot delimiter
