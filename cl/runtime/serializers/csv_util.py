@@ -100,11 +100,17 @@ class CsvUtil:
                 writer.writerows(updated_rows)
         return is_valid
 
+    # Pattern for values that look like dates (contain / or month names)
+    _DATE_LIKE_RE = re.compile(
+        r"(?:\d{1,2}/\d{1,2}/|\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec))",
+        re.IGNORECASE,
+    )
+
     @classmethod
     def normalize_date_str(cls, value: str) -> str:
         """Normalize an Excel-modified date string to ISO-8601 format (yyyy-mm-dd).
 
-        Handles common Excel date formats such as M/D/YYYY, MM/DD/YYYY, and 'Month D, YYYY'.
+        Handles common Excel en-US date formats such as M/D/YYYY, MM/DD/YYYY, and 'Month D, YYYY'.
         Returns the original string if it cannot be recognized as a date.
         """
 
@@ -112,6 +118,11 @@ class CsvUtil:
 
         # Already in ISO format
         if cls._ISO_DATE_RE.match(value):
+            return value
+
+        # Only attempt parsing if the value looks like a date (contains / separator or month name)
+        # This prevents dateutil from interpreting bare numbers like "42" as dates
+        if not cls._DATE_LIKE_RE.search(value):
             return value
 
         # Try dateutil parsing as a fallback for Excel-reformatted dates

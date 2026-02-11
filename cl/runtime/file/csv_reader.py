@@ -153,6 +153,13 @@ class CsvReader(Reader):
 
         # Normalize chars and set None for empty strings
         row_dict = {CharUtil.normalize(k): CharUtil.normalize_or_none(v) for k, v in row_dict.items()}
+
+        # Normalize Excel-modified formats (thousand separators in numbers, locale-specific dates)
+        row_dict = {
+            k: CsvUtil.normalize_numeric_str(CsvUtil.normalize_date_str(v)) if v is not None else v
+            for k, v in row_dict.items()
+        }
+
         row_dict["_type"] = typename(record_type)
 
         result = _SERIALIZER.deserialize(row_dict).build()
