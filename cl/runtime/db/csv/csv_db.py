@@ -28,23 +28,21 @@ from cl.runtime.records.record_mixin import TRecord
 from cl.runtime.records.type_check import TypeCheck
 from cl.runtime.records.typename import typename
 from cl.runtime.serializers.data_serializers import DataSerializers
+from cl.runtime.serializers.key_serializers import KeySerializers
 
 _DATA_SERIALIZER = DataSerializers.FOR_CSV
 """Serializer for CSV data serialization and deserialization."""
 
+_KEY_SERIALIZER = KeySerializers.TUPLE
+"""Serializer for keys used in deduplication and lookup."""
+
 
 @dataclass(slots=True, kw_only=True)
 class CsvDb(Db):
-    """Db implementation that stores records as append-only CSV files with an in-memory cache for queries."""
-
-    _cache: Db | None = None
-    """Caller-provided Db implementation for in-memory querying, defaults to BasicMongoMockDb."""
+    """Db implementation that stores records as append-only CSV files."""
 
     csv_dir: str | None = None
     """Directory where CSV files are stored, defaults to {project_root}/records."""
-
-    _loaded_tables: set | None = None
-    """Tracks which key_types have been loaded from CSV into cache."""
 
     def __init(self) -> None:
         """Use instead of __init__ in the builder pattern, invoked by the build method in base to derived order."""
@@ -58,15 +56,6 @@ class CsvDb(Db):
             from cl.runtime.project.project_layout import ProjectLayout
 
             self.csv_dir = os.path.join(ProjectLayout.get_project_root(), self.csv_dir)
-
-        # Default cache to BasicMongoMockDb
-        if self._cache is None:
-            from cl.runtime.db.mongo.basic_mongo_mock_db import BasicMongoMockDb
-
-            self._cache = BasicMongoMockDb(db_id=f"{self.db_id}_cache").build()
-
-        # Initialize the set of loaded tables
-        self._loaded_tables = set()
 
     def is_empty(self) -> bool:
         """Return true if no CSV files exist in csv_dir."""
@@ -92,18 +81,10 @@ class CsvDb(Db):
         self._check_dataset(dataset)
         self._check_tenant(tenant)
 
-        # Ensure CSV is loaded into cache
-        self._ensure_table_loaded(key_type, dataset=dataset, tenant=tenant)
-
-        # Delegate to cache
-        return self._cache.load_many(
-            key_type,
-            keys,
-            dataset=dataset,
-            tenant=tenant,
-            project_to=project_to,
-            sort_order=sort_order,
-        )
+        # Load all records then filter by requested keys
+        all_records = self._load_all(key_type, dataset=dataset, tenant=tenant, sort_order=sort_order)
+        requested_keys = set(_KEY_SERIALIZER.serialize(k) for k in keys)
+        return tuple(r for r in all_records if _KEY_SERIALIZER.serialize(r.get_key()) in requested_keys)
 
     def load_all(
         self,
@@ -124,21 +105,48 @@ class CsvDb(Db):
         self._check_dataset(dataset)
         self._check_tenant(tenant)
 
-        # Ensure CSV is loaded into cache
-        self._ensure_table_loaded(key_type, dataset=dataset, tenant=tenant)
+        csv_file_path = self._get_csv_file_path(key_type)
+        if not os.path.exists(csv_file_path):
+            return tuple()
 
-        # Delegate to cache
-        return self._cache.load_all(
-            key_type,
-            dataset=dataset,
-            tenant=tenant,
-            cast_to=cast_to,
-            restrict_to=restrict_to,
-            project_to=project_to,
-            sort_order=sort_order,
-            limit=limit,
-            skip=skip,
-        )
+        base_type_name = typename(key_type).removesuffix("Key")
+
+        # Read CSV and deduplicate by key (last-key-wins)
+        records_by_key = {}
+        with open(csv_file_path, mode="r", encoding="utf-8") as file:
+            csv_reader = csv.DictReader(file)
+            for row_dict in csv_reader:
+                # Normalize characters and convert empty strings to None
+                row_dict = {CharUtil.normalize(k): CharUtil.normalize_or_none(v) for k, v in row_dict.items()}
+
+                # Set _type from the CSV column if absent or empty, default to base type name
+                if row_dict.get("_type") is None:
+                    row_dict["_type"] = base_type_name
+
+                # Deserialize and build the record
+                record = _DATA_SERIALIZER.deserialize(row_dict).build()
+                record_key = _KEY_SERIALIZER.serialize(record.get_key())
+                records_by_key[record_key] = record
+
+        records = list(records_by_key.values())
+
+        # Apply restrict_to filter
+        if restrict_to is not None:
+            records = [r for r in records if isinstance(r, restrict_to)]
+
+        # Apply sort
+        if sort_order == SortOrder.DESC:
+            records.sort(key=lambda r: _KEY_SERIALIZER.serialize(r.get_key()), reverse=True)
+        else:
+            records.sort(key=lambda r: _KEY_SERIALIZER.serialize(r.get_key()))
+
+        # Apply skip and limit
+        if skip is not None and skip > 0:
+            records = records[skip:]
+        if limit is not None:
+            records = records[:limit]
+
+        return tuple(records)
 
     def load_by_query(
         self,
@@ -184,9 +192,6 @@ class CsvDb(Db):
         if not records:
             return
 
-        # Ensure the table is loaded first so cache has existing data
-        self._ensure_table_loaded(key_type, dataset=dataset, tenant=tenant)
-
         csv_file_path = self._get_csv_file_path(key_type)
 
         # Serialize all records
@@ -231,15 +236,6 @@ class CsvDb(Db):
             for sr in serialized_records:
                 writer.writerow(sr)
 
-        # Save to cache
-        self._cache.save_many(
-            key_type,
-            records,
-            dataset=dataset,
-            tenant=tenant,
-            save_policy=save_policy,
-        )
-
     def delete_many(
         self,
         key_type: type[KeyMixin],
@@ -261,68 +257,19 @@ class CsvDb(Db):
         raise NotImplementedError(f"{typename(type(self))} does not support delete_by_query.")
 
     def close_connection(self) -> None:
-        """Close connection and release resources."""
-        if self._cache is not None:
-            self._cache.close_connection()
-        self._loaded_tables = set()
+        """No connections to close for file-based storage."""
+        pass  # TODO: Close file connection in this case
 
     def _drop_db_do_not_call_directly(self) -> None:
         """DO NOT CALL DIRECTLY, call drop_db() instead."""
-        # Close cache connection
-        if self._cache is not None:
-            self._cache.close_connection()
-
         # Remove CSV directory
         if self.csv_dir and os.path.exists(self.csv_dir):
             shutil.rmtree(self.csv_dir)
-
-        # Reset internal state
-        self._loaded_tables = set()
 
     def _get_csv_file_path(self, key_type: type[KeyMixin]) -> str:
         """Get the CSV file path for the given key type."""
         table_name = typename(key_type).removesuffix("Key")
         return os.path.join(self.csv_dir, f"{table_name}.csv")
-
-    def _ensure_table_loaded(self, key_type: type[KeyMixin], *, dataset: str, tenant: str) -> None:
-        """Load CSV file for the given key_type into cache if not already loaded."""
-
-        if key_type in self._loaded_tables:
-            return
-
-        csv_file_path = self._get_csv_file_path(key_type)
-
-        if os.path.exists(csv_file_path):
-            # Default type name from the key type
-            base_type_name = typename(key_type).removesuffix("Key")
-
-            with open(csv_file_path, mode="r", encoding="utf-8") as file:
-                csv_reader = csv.DictReader(file)
-                records = []
-                for row_dict in csv_reader:
-                    # Normalize characters and convert empty strings to None
-                    row_dict = {CharUtil.normalize(k): CharUtil.normalize_or_none(v) for k, v in row_dict.items()}
-
-                    # Set _type from the CSV column if absent or empty, default to base type name
-                    if row_dict.get("_type") is None:
-                        row_dict["_type"] = base_type_name
-
-                    # Deserialize and build the record
-                    record = _DATA_SERIALIZER.deserialize(row_dict).build()
-                    records.append(record)
-
-                if records:
-                    # Save all records into cache with REPLACE so last-key-wins
-                    self._cache.save_many(
-                        key_type,
-                        records,
-                        dataset=dataset,
-                        tenant=tenant,
-                        save_policy=SavePolicy.REPLACE,
-                    )
-
-        # Mark this table as loaded
-        self._loaded_tables.add(key_type)
 
     @staticmethod
     def _rewrite_csv_with_new_header(csv_file_path: str, new_fieldnames: list[str]) -> None:
