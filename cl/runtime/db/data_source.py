@@ -21,6 +21,7 @@ from typing import cast
 from typing import final
 from more_itertools import consume
 from cl.runtime.contexts.context_manager import active
+from cl.runtime.contexts.context_manager import active_or_default
 from cl.runtime.db.data_source_key import DataSourceKey
 from cl.runtime.db.dataset import Dataset
 from cl.runtime.db.dataset_key import DatasetKey
@@ -54,6 +55,7 @@ from cl.runtime.records.typename import typeof
 from cl.runtime.schema.type_hint import TypeHint
 from cl.runtime.schema.type_info import TypeInfo
 from cl.runtime.serializers.key_serializers import KeySerializers
+from cl.runtime.server.env import Env
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -92,6 +94,12 @@ class DataSource(DataSourceKey, RecordMixin):
     _pending_replacements: list[RecordMixin] | None = None
     """Records that will be replaced on commit."""
 
+    _backup: Db | None = None
+    """Optional backup Db (CsvDb) for durable file storage."""
+
+    _backup_loaded_tables: set | None = None
+    """Tracks which key_types have been loaded from backup into the main DB."""
+
     def get_key(self) -> DataSourceKey:
         return DataSourceKey(data_source_id=self.data_source_id).build()
 
@@ -126,6 +134,16 @@ class DataSource(DataSourceKey, RecordMixin):
 
         # Initialize the list of pending deletes and inserts
         self._clear_pending_operations()
+
+        # Initialize backup loaded tables tracking set
+        self._backup_loaded_tables = set()
+
+        # Default backup to CsvDb unless main DB is a CsvDb or we are in TEST env
+        if self._backup is None:
+            from cl.runtime.db.csv.csv_db import CsvDb
+
+            if not isinstance(self._get_db(), CsvDb) and not active_or_default(Env).is_test():
+                self._backup = CsvDb(db_id=f"{self._get_db().db_id}_backup").build()
 
     def __enter__(self) -> Self:
         """Supports 'with' operator for resource initialization and disposal."""
@@ -162,10 +180,13 @@ class DataSource(DataSourceKey, RecordMixin):
     def is_empty(self, *, consider_parents: bool) -> bool:
         """
         Return true if the data source contains no collections, considering
-        collections in parent data sources if consider_parents=True.
+        backup and parent data sources if consider_parents=True.
         """
         if not self._get_db().is_empty():
             # DB of this data source is not empty, return False irrespective of include_parents value
+            return False
+        elif self._backup is not None and not self._backup.is_empty():
+            # Backup has data, return False
             return False
         elif self.parent is None or not consider_parents:
             # DB of this data source is empty and either parent is None or include_parents is False, return True
@@ -333,6 +354,10 @@ class DataSource(DataSourceKey, RecordMixin):
         # Group keys by table
         keys_to_load_grouped_by_key_type = self._group_inputs_by_key_type(keys_to_load)
 
+        # Ensure each table is loaded from backup before reading from main DB
+        for key_type in keys_to_load_grouped_by_key_type:
+            self._ensure_loaded_from_backup(key_type)
+
         # Select sort order to use for the DB call
         if sort_order == SortOrder.INPUT:
             # For INPUT, use UNORDERED for the DB call as
@@ -441,6 +466,9 @@ class DataSource(DataSourceKey, RecordMixin):
             skip: Number of records to skip (for pagination)
         """
         assert TypeCheck.guard_key_type(key_type)
+
+        # Ensure table is loaded from backup before reading from main DB
+        self._ensure_loaded_from_backup(key_type)
 
         result = self._get_db().load_all(
             key_type=key_type,
@@ -570,6 +598,10 @@ class DataSource(DataSourceKey, RecordMixin):
             limit: Maximum number of records to return (for pagination)
             skip: Number of records to skip (for pagination)
         """
+        # Ensure table is loaded from backup before reading from main DB
+        key_type = query.get_target_type().get_key_type()
+        self._ensure_loaded_from_backup(key_type)
+
         result = self._get_db().load_by_query(
             query,
             dataset=self.dataset.dataset_id,
@@ -613,6 +645,10 @@ class DataSource(DataSourceKey, RecordMixin):
             query: Contains predicates to match
             restrict_to: Include only this type and its subtypes, skip other types
         """
+        # Ensure table is loaded from backup before reading from main DB
+        key_type = query.get_target_type().get_key_type()
+        self._ensure_loaded_from_backup(key_type)
+
         result = self._get_db().count_by_query(
             query,
             dataset=self.dataset.dataset_id,
@@ -754,6 +790,10 @@ class DataSource(DataSourceKey, RecordMixin):
             query: Contains predicates to match
             restrict_to: Delete only records of this type and its subtypes, skip other types
         """
+        # Ensure table is loaded from backup before deleting from main DB
+        key_type = query.get_target_type().get_key_type()
+        self._ensure_loaded_from_backup(key_type)
+
         self._get_db().delete_by_query(
             query,
             dataset=self.dataset.dataset_id,
@@ -841,6 +881,31 @@ class DataSource(DataSourceKey, RecordMixin):
                         tenant=self.tenant.tenant_id,
                         save_policy=SavePolicy.REPLACE,
                     )
+
+            # Sync writes to backup (append-only, no deletes)
+            if self._backup is not None:
+                if self._pending_insertions:
+                    for key_type, records_for_key_type in self._group_inputs_by_key_type(
+                        self._pending_insertions
+                    ).items():
+                        self._backup.save_many(
+                            key_type,
+                            records_for_key_type,
+                            dataset=self.dataset.dataset_id,
+                            tenant=self.tenant.tenant_id,
+                            save_policy=SavePolicy.INSERT,
+                        )
+                if self._pending_replacements:
+                    for key_type, records_for_key_type in self._group_inputs_by_key_type(
+                        self._pending_replacements
+                    ).items():
+                        self._backup.save_many(
+                            key_type,
+                            records_for_key_type,
+                            dataset=self.dataset.dataset_id,
+                            tenant=self.tenant.tenant_id,
+                            save_policy=SavePolicy.REPLACE,
+                        )
         except Exception as e:
             # Clear all pending operations before propagating
             self._clear_pending_operations()
@@ -873,6 +938,30 @@ class DataSource(DataSourceKey, RecordMixin):
         self._pending_deletions = []
         self._pending_insertions = []
         self._pending_replacements = []
+
+    def _ensure_loaded_from_backup(self, key_type: type[KeyMixin]) -> None:
+        """Load records from backup into the main DB on first access to a table."""
+        if self._backup is None:
+            return
+        if key_type in self._backup_loaded_tables:
+            return
+
+        # Load all records from backup for this key_type
+        records = self._backup.load_all(
+            key_type,
+            dataset=self.dataset.dataset_id,
+            tenant=self.tenant.tenant_id,
+        )
+        if records:
+            self._get_db().save_many(
+                key_type,
+                records,
+                dataset=self.dataset.dataset_id,
+                tenant=self.tenant.tenant_id,
+                save_policy=SavePolicy.REPLACE,
+            )
+
+        self._backup_loaded_tables.add(key_type)
 
     def get_key_types(self) -> tuple[type, ...]:
         """Return stored key types in alphabetical order of type name."""
