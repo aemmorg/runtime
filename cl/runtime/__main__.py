@@ -148,11 +148,17 @@ def run_backend(*, interactive: bool = False) -> None:
             else:
                 _LOGGER.info("DB is not empty, skip preloading of records.")
         elif env_kind in (EnvKind.DEV, EnvKind.TEMP):
-            # Drop the existing DB in DEV and TEMP environments and always preload
+            # Drop the existing DB (ask the user for approval if interactive is True)
             _LOGGER.info("Dropping existing DB...")
             ds.drop_db(interactive=interactive)
-            _LOGGER.info("Preloading records...")
-            PreloadConfiguration().build().run_configure()
+            if ds.is_empty(consider_parents=True):
+                # Preload only if data source is empty and its parents, if any, are also empty
+                _LOGGER.info("Data source is empty, begin preloading...")
+                PreloadConfiguration().build().run_configure()
+                _LOGGER.info("Preloading complete.")
+            else:
+                # Otherwise skip preloading
+                _LOGGER.info("Data source has data, skip preloading.")
         elif env_kind == EnvKind.TEST:
             raise RuntimeError("The backend is not intended to be run for env_kind=TEST.")
         else:
