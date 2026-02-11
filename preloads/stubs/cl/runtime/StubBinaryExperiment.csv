@@ -1,2 +1,2 @@
 experiment_id,cases,num_trials
-StubBinaryExperiment21,"[""StubParam1"",""StubParam2""]","""5"""
+StubBinaryExperiment21,"[""StubParam1"",""StubParam2""]",5

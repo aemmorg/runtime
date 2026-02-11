@@ -1,2 +1,2 @@
 experiment_id,class_labels,cases,num_trials
-StubClassifierExperiment21,"[""A"", ""B"", ""C""]","[""StubParam1"",""StubParam2""]","""5"""
+StubClassifierExperiment21,"[""A"", ""B"", ""C""]","[""StubParam1"",""StubParam2""]",5
