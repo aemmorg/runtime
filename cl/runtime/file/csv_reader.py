@@ -128,7 +128,7 @@ class CsvReader(Reader):
         if files_with_error:
             files_list = "".join([f"    {file}\n" for file in files_with_error])
             msg = (
-                f"Found values that should be wrapped in quotes to stop Excel from modifying them on save.\n"
+                f"Found values with unnecessary inner quotes (leftover from old triple-quoting).\n"
                 f"RECOMMENDED ACTION: Run fix_csv_quotes script to fix.\n{files_list}"
             )
             if not apply_fix:

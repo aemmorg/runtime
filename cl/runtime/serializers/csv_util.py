@@ -15,24 +15,20 @@
 import csv
 import os
 import re
-from dateutil.parser import parse
 
 
 class CsvUtil:
-    """Utilities for CSV serialization."""
+    """Utilities for CSV serialization matching Excel's standard CSV quoting behavior (RFC 4180)."""
 
-    # Precompiled Regex, months are valid for Anglophone locales only
-    _NUMERIC_RE = re.compile(r"[0-9]")
-    _ALPHA_RE = re.compile(r"[A-Za-z]")
-    _MONTH_RE = re.compile(
-        r"\b(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|"
-        r"aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b",
-        re.IGNORECASE,
-    )
+    # Characters that trigger quoting in Excel CSV output
+    _SPECIAL_CHARS_RE = re.compile(r'[,"\r\n]')
+
+    # ISO-8601 date pattern (yyyy-mm-dd)
+    _ISO_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
     @classmethod
     def strip_quotes(cls, value: str) -> str:
-        """Strip the surrounding single quotes if present, return the argument if not present."""
+        """Strip the surrounding double quotes if present, return the argument if not present."""
         if value.startswith('"') and value.endswith('"'):
             # Only if both leading and trailing quote is present
             return value[1:-1]
@@ -46,48 +42,34 @@ class CsvUtil:
 
     @classmethod
     def requires_quotes(cls, value: str) -> bool:
-        """
-        Return True if quotes are required to prevent Excel from reformatting the value on save, namely
-        dates (including with month in words), ints, floats and percentages. The result is the same
-        irrespective of whether or not the value is already surrounded by quotes.
-        surrounded by quotes.
+        """Return True if quotes are required per Excel's CSV output rules (RFC 4180).
+
+        Excel quotes a value only when it contains a comma, double quote, carriage return, or newline.
+        Numbers and dates are NOT quoted (unlike the previous behavior that quoted them to prevent
+        Excel from reformatting).
         """
 
-        # Strip the existing surrounding quotes if present, pass through the argument if not present
+        # Strip the existing surrounding quotes if present
         value = cls.strip_quotes(value)
 
-        # True if the value contains dates or numbers
-        if cls._NUMERIC_RE.search(value):
-            if not cls._ALPHA_RE.search(value):
-                # No letters, return True
-                return True
-            elif cls._MONTH_RE.search(value):
-                # Has months, check if date parsing succeeds
-                try:
-                    parse(value, fuzzy=False)
-                    # Recognized as a pure date
-                    return True
-                except:  # noqa
-                    # Not a pure date even though it has month substrings, return False
-                    return False
-            else:
-                # Not a pure number or date, return False
-                return False
-        else:
-            # Otherwise return False
-            return False
+        # Quote when the value contains special characters that would break CSV parsing
+        return bool(cls._SPECIAL_CHARS_RE.search(value))
 
     @classmethod
     def should_wrap(cls, value: str) -> bool:
         """Return True if quotes are required but not present, False in all other cases."""
         requires_quotes = cls.requires_quotes(value)
         has_quotes = cls.has_quotes(value)
-        result = requires_quotes and not has_quotes
-        return result
+        return requires_quotes and not has_quotes
 
     @classmethod
     def check_or_fix_quotes(cls, file_path: str, *, apply_fix: bool) -> bool:
-        """Return true if the file has values that must be wrapped, save the modified file is apply_fix is True."""
+        """Check that CSV follows Excel-standard quoting with no unnecessary inner quotes.
+
+        Detects leftover inner quotes from old triple-quoting (e.g. a parsed value of '"1.2"'
+        that came from '\"\"\"1.2\"\"\"' in raw CSV). Strips them if apply_fix is True.
+        Returns True if the file already matches Excel's quoting, False if changes are needed.
+        """
 
         is_valid = True
         updated_rows = []
@@ -96,16 +78,13 @@ class CsvUtil:
             for row in reader:
                 updated_row = []
                 for value in row:
-                    # Valid only if none of the values should be wrapped
-                    should_wrap = cls.should_wrap(value)
-                    wrapped_value = f'"{value}"' if should_wrap else value
-                    # Do not wrap lists or dicts stored as strings
-                    if wrapped_value and wrapped_value.startswith('"['):  # TODO: ! Add dict exclusion
-                        wrapped_value = wrapped_value[1:]
-                    if wrapped_value and wrapped_value.endswith(']"'):  # TODO: ! Add dict exclusion
-                        wrapped_value = wrapped_value[:-1]
-                    is_valid = wrapped_value == value
-                    updated_row.append(wrapped_value)
+                    # Strip leftover inner quotes that were added by old triple-quoting logic
+                    if cls.has_quotes(value):
+                        stripped = cls.strip_quotes(value)
+                        is_valid = False
+                        updated_row.append(stripped)
+                    else:
+                        updated_row.append(value)
                 updated_rows.append(updated_row)
 
         # Overwrite only if apply_fix is True and is_valid is False
@@ -116,8 +95,49 @@ class CsvUtil:
                     delimiter=",",
                     quotechar='"',
                     quoting=csv.QUOTE_MINIMAL,
-                    escapechar="\\",
-                    lineterminator=os.linesep,
+                    lineterminator="\n",
                 )
                 writer.writerows(updated_rows)
         return is_valid
+
+    @classmethod
+    def normalize_date_str(cls, value: str) -> str:
+        """Normalize an Excel-modified date string to ISO-8601 format (yyyy-mm-dd).
+
+        Handles common Excel date formats such as M/D/YYYY, MM/DD/YYYY, and 'Month D, YYYY'.
+        Returns the original string if it cannot be recognized as a date.
+        """
+
+        value = cls.strip_quotes(value)
+
+        # Already in ISO format
+        if cls._ISO_DATE_RE.match(value):
+            return value
+
+        # Try dateutil parsing as a fallback for Excel-reformatted dates
+        try:
+            from dateutil.parser import parse
+
+            parsed = parse(value, dayfirst=False)
+            return f"{parsed.year:04}-{parsed.month:02}-{parsed.day:02}"
+        except (ValueError, OverflowError):
+            return value
+
+    @classmethod
+    def normalize_numeric_str(cls, value: str) -> str:
+        """Normalize an Excel-modified numeric string by stripping thousand separators.
+
+        Handles formats like '1,234.56' -> '1234.56' and '1,234' -> '1234'.
+        Returns the original string if removing commas does not produce a valid number.
+        """
+
+        value = cls.strip_quotes(value)
+
+        if "," in value:
+            stripped = value.replace(",", "")
+            try:
+                float(stripped)
+                return stripped
+            except ValueError:
+                return value
+        return value
