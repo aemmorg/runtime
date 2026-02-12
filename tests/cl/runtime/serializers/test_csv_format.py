@@ -29,7 +29,7 @@ def test_csv_format():
         fix=False,
         # Prevent fixing of the unit test samples
         file_exclude_patterns=[
-            "invalid_csv_format.csv",
+            "invalid_csv_*.csv",
         ],
     )
 

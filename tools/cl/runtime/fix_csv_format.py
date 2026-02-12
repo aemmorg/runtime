@@ -49,6 +49,6 @@ if __name__ == '__main__':
         verbose=True,
         # Prevent fixing of the unit test samples
         file_exclude_patterns=[
-            "invalid_csv_format.csv",
+            "invalid_csv_*.csv",
         ]
     )

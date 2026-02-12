@@ -66,18 +66,22 @@ def test_load_all(default_db_fixture):
 
 
 def test_check_or_fix_format(work_dir_fixture):
-    """Test CsvReader._check_or_fix_file() with valid and invalid CSV format samples.
+    """Test CsvReader.check_or_fix_file() with valid and invalid CSV format samples.
 
     Fixture files:
-    - valid_csv_format.csv: Excel-standard format (no inner quotes) -> passes validation
-    - invalid_csv_format.csv: has triple-quoted values (old format) -> fails validation
+    - valid_csv_format.csv: Excel-standard format -> passes validation
+    - invalid_csv_date_format.csv: Excel-reformatted date (e.g. 'May 1, 2003') -> fails validation
+    - invalid_csv_number_format.csv: number with thousand separator (e.g. '1,234.56') -> fails validation
+    - invalid_csv_quotes.csv: leftover inner quotes from old triple-quoting -> fails validation
     """
 
     # Valid file passes all checks
     assert CsvReader.check_or_fix_file("valid_csv_format.csv", fix=False)
 
-    # Invalid files has at least one invalid input
-    assert not CsvReader.check_or_fix_file("invalid_csv_format.csv", fix=False)
+    # Each invalid file has at least one invalid value
+    assert not CsvReader.check_or_fix_file("invalid_csv_date_format.csv", fix=False)
+    assert not CsvReader.check_or_fix_file("invalid_csv_number_format.csv", fix=False)
+    assert not CsvReader.check_or_fix_file("invalid_csv_quotes.csv", fix=False)
 
 if __name__ == "__main__":
     pytest.main([__file__])
