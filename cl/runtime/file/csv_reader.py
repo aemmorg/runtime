@@ -89,7 +89,7 @@ class CsvReader(Reader):
         *,
         dirs: Sequence[str],
         ext: str,
-        apply_fix: bool,
+        fix: bool,
         verbose: bool = False,
         file_include_patterns: Sequence[str] | None = None,
         file_exclude_patterns: Sequence[str] | None = None,
@@ -103,7 +103,7 @@ class CsvReader(Reader):
         Args:
             dirs: Directories where file search is performed
             ext: File extension to search for without the leading dot (e.g., "csv")
-            apply_fix: If True, modify CSV so each field containing numbers or symbols is surrounded by quotes
+            fix: If True, modify CSV to match the formatting rules for quotes, numbers and dates
             verbose: Print messages about fixes to stdout if specified
             file_include_patterns: Optional list of filename glob patterns to include
             file_exclude_patterns: Optional list of filename glob patterns to exclude
@@ -121,7 +121,7 @@ class CsvReader(Reader):
         files_with_error = []
         for file_path in file_paths:
             # Load the file
-            is_valid = CsvUtil.check_or_fix_quotes(file_path, apply_fix=apply_fix)
+            is_valid = CsvUtil.check_or_fix_quotes(file_path, fix=fix)
             if not is_valid:
                 files_with_error.append(file_path)
 
@@ -131,7 +131,7 @@ class CsvReader(Reader):
                 f"Found values with unnecessary inner quotes (leftover from old triple-quoting).\n"
                 f"RECOMMENDED ACTION: Run fix_csv_quotes script to fix.\n{files_list}"
             )
-            if not apply_fix:
+            if not fix:
                 raise RuntimeError(msg)
             elif verbose:
                 print(msg)

@@ -45,7 +45,7 @@ if __name__ == '__main__':
     CsvReader.check_or_fix_quotes(
         dirs=tuple(dirs),
         ext="csv",
-        apply_fix=True,
+        fix=True,
         verbose=True,
         # Prevent fixing of the unit test samples
         file_exclude_patterns=[

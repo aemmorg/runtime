@@ -26,7 +26,7 @@ def test_csv_preload_quotes():
     csv_reader.check_or_fix_quotes(
         dirs=preload_settings.preload_dirs,
         ext="csv",
-        apply_fix=False,
+        fix=False,
         # Prevent fixing of the unit test samples
         file_exclude_patterns=[
             "unescaped_date.csv",

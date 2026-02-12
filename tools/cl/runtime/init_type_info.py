@@ -30,7 +30,7 @@ def init_type_info() -> None:
 
     # Create __init__.py files first to avoid missing classes in directories without __init__.py
     print("Adding __init__.py files if any are missing...")
-    InitFileUtil.check_init_files(apply_fix=True, verbose=False)
+    InitFileUtil.check_or_fix_init_files(fix=True, verbose=False)
 
     # Rebuild type cache and save TypeInfo.csv file to the bootstrap resources directory
     print("Initializing the type cache...")

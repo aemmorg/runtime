@@ -63,12 +63,16 @@ class CsvUtil:
         return requires_quotes and not has_quotes
 
     @classmethod
-    def check_or_fix_quotes(cls, file_path: str, *, apply_fix: bool) -> bool:
+    def check_or_fix_quotes(cls, file_path: str, *, fix: bool) -> bool:
         """Check that CSV follows Excel-standard quoting with no unnecessary inner quotes.
 
         Detects leftover inner quotes from old triple-quoting (e.g. a parsed value of '"1.2"'
-        that came from '\"\"\"1.2\"\"\"' in raw CSV). Strips them if apply_fix is True.
+        that came from '\"\"\"1.2\"\"\"' in raw CSV). Strips them if fix is True.
         Returns True if the file already matches Excel's quoting, False if changes are needed.
+
+        Args:
+            file_path: Path to the CSV file to check or fix
+            fix: If True, modify the CSV file to fix any quoting issues; if False, only check and return validity
         """
 
         is_valid = True
@@ -87,8 +91,8 @@ class CsvUtil:
                         updated_row.append(value)
                 updated_rows.append(updated_row)
 
-        # Overwrite only if apply_fix is True and is_valid is False
-        if apply_fix and not is_valid:
+        # Overwrite only if fix is True and is_valid is False
+        if fix and not is_valid:
             with open(file_path, "w", newline="", encoding="utf-8") as output_file:
                 writer = csv.writer(
                     output_file,

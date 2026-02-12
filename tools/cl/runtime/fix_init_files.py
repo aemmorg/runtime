@@ -25,4 +25,4 @@ from cl.runtime.prebuild.init_file_util import InitFileUtil
 if __name__ == '__main__':
 
     # Create __init__.py files in subdirectories except for tests
-    InitFileUtil.check_init_files(apply_fix=True, verbose=True)
+    InitFileUtil.check_or_fix_init_files(fix=True, verbose=True)

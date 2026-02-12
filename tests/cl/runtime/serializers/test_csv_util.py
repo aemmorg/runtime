@@ -396,13 +396,13 @@ def test_check_or_fix_file(work_dir_fixture):
     """
 
     # File already in Excel-standard format passes
-    assert CsvUtil.check_or_fix_quotes("valid.csv", apply_fix=False)
+    assert CsvUtil.check_or_fix_quotes("valid.csv", fix=False)
 
     # File with old triple-quoted number is detected as invalid (leftover inner quotes)
-    assert not CsvUtil.check_or_fix_quotes("unescaped_date.csv", apply_fix=False)
+    assert not CsvUtil.check_or_fix_quotes("unescaped_date.csv", fix=False)
 
     # File with old triple-quoted date is detected as invalid (leftover inner quotes)
-    assert not CsvUtil.check_or_fix_quotes("unescaped_float.csv", apply_fix=False)
+    assert not CsvUtil.check_or_fix_quotes("unescaped_float.csv", fix=False)
 
 
 if __name__ == "__main__":

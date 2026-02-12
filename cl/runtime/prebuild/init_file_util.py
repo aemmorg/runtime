@@ -21,10 +21,10 @@ class InitFileUtil:
     """Helper class for working with __init__.py files."""
 
     @classmethod
-    def check_init_files(
+    def check_or_fix_init_files(
         cls,
         *,
-        apply_fix: bool,
+        fix: bool,
         verbose: bool = False,
     ) -> None:
         """
@@ -32,7 +32,7 @@ class InitFileUtil:
         Optionally create when missing.
 
         Args:
-            apply_fix: If True, create an empty __init__.py file when missing
+            fix: If True, create an empty __init__.py file when missing
             verbose: Print messages about fixes to stdout if specified
         """
 
@@ -60,7 +60,7 @@ class InitFileUtil:
                     init_file_path = os.path.join(dir_path, "__init__.py")
                     if not os.path.exists(init_file_path):
                         missing_files.append(str(init_file_path))
-                        if apply_fix:
+                        if fix:
                             # Create an empty __init__.py file if it is missing but other .py files are present
                             with open(init_file_path, "w", encoding="utf-8") as f:
                                 pass
@@ -69,7 +69,7 @@ class InitFileUtil:
             missing_files_msg = "__init__.py file(s):\n" + "".join(
                 [f"    {missing_file}\n" for missing_file in missing_files]
             )
-            if not apply_fix:
+            if not fix:
                 raise RuntimeError(f"Found missing {missing_files_msg}")
             elif verbose:
                 print(f"Created {missing_files_msg}")

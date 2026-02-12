@@ -20,7 +20,7 @@ def test_init_files():
     """Prebuild test to check that __init__.py is present in all code directories."""
 
     # Check that init files are present in each source directory except for tests, report an error if not found
-    InitFileUtil.check_init_files(apply_fix=False)
+    InitFileUtil.check_or_fix_init_files(fix=False)
 
 
 if __name__ == "__main__":
