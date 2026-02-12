@@ -35,7 +35,7 @@ class SourceUtil:
         Args:
             package: Optional dot-delimited package name to filter by (e.g., 'cl.runtime')
             file_include_patterns: Optional list of filename glob patterns to include (default: ['*.py'])
-            file_exclude_patterns: Optional list of filename glob patterns to exclude (default: ['__init__.py', '_version.py'])
+            file_exclude_patterns: Optional list of filename glob patterns to exclude (default: ['__init__.py'])
 
         Returns:
             List of absolute file paths for all matched source files.
@@ -44,7 +44,7 @@ class SourceUtil:
         if file_include_patterns is None:
             file_include_patterns = ["*.py"]
         if file_exclude_patterns is None:
-            file_exclude_patterns = ["__init__.py", "_version.py"]
+            file_exclude_patterns = ["__init__.py"]
 
         all_packages = PackageSettings.instance().get_packages()
         if package is not None:

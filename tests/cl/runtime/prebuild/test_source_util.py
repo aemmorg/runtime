@@ -40,7 +40,7 @@ def test_source_util():
     """Test SourceUtil.get_source_files with package parameter against an independent OS file count."""
 
     package = "cl.runtime"
-    exclude_names = ("__init__.py", "_version.py")
+    exclude_names = ("__init__.py",)
 
     # Get file count from SourceUtil
     source_files = SourceUtil.get_source_files(package=package)

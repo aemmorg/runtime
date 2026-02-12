@@ -57,18 +57,19 @@ def test_correct_docstrings():
 
 def test_docstrings():
     """Prebuild test to check that docstrings comply with pydocstyle formatting rules."""
-    # Test that all source files have correct docstring format (exclude intentionally-wrong stub)
-    DocstringUtil.validate_docstrings(file_exclude_patterns=["_version.py", "stub_wrong_*"])
+    # Test that all source files have correct docstring format
+    DocstringUtil.validate_docstrings()
 
 
 def test_fix_docstrings():
     """Test that fix_docstrings corrects auto-fixable pydocstyle violations in a stub file."""
-    stub_path = os.path.join(_STUBS_DIR, "stub_wrong_docstrings.py")
+    invalid_docstrings_filename = "stub_invalid_docstrings.py"
+    stub_path = os.path.join(_STUBS_DIR, invalid_docstrings_filename)
     assert os.path.isfile(stub_path), f"Stub file not found: {stub_path}"
 
     # Verify the stub file has violations before fixing
     before_count = _count_ruff_d_violations(stub_path)
-    assert before_count > 0, f"Expected pydocstyle violations in stub_wrong_docstrings.py, found {before_count}"
+    assert before_count > 0, f"Expected pydocstyle violations in {invalid_docstrings_filename}, found {before_count}"
 
     # Copy to a temp file and fix it
     with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp:
