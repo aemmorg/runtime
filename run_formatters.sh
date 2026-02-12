@@ -22,3 +22,7 @@ echo "Format using black"
 black -q cl --config=pyproject.toml
 black -q stubs --config=pyproject.toml
 black -q tests --config=pyproject.toml
+
+echo ""
+echo "Fix docstring formatting using ruff"
+ruff check --select D --ignore D203,D213,D202 --fix --unsafe-fixes cl stubs tests

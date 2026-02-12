@@ -48,6 +48,11 @@ class StubWrongDocstrings:
         """
         pass
 
+    def blank_line_after_docstring(self) -> None:
+        """Summary followed by a blank line."""
+
+        pass
+
     @classmethod
     def class_method_multi_line(cls) -> None:
         """

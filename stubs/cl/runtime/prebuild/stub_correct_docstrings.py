@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Stub module with correctly formatted docstrings for testing."""
+
 
 class StubCorrectDocstrings:
     """Stub class with correctly formatted multiline docstrings (summary on the opening quotes line)."""
@@ -35,6 +37,7 @@ class StubCorrectDocstrings:
 
         Returns:
             An empty string.
+
         """
         return ""
 
@@ -44,6 +47,7 @@ class StubCorrectDocstrings:
         Notes:
             - First note
             - Second note
+
         """
         pass
 

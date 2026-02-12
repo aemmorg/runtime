@@ -20,45 +20,59 @@ from cl.runtime.prebuild.source_util import SourceUtil
 _MAX_CMD_BATCH = 200
 """Maximum number of file paths per ruff invocation to stay within command-line length limits."""
 
+_RUFF_SELECT = ["D"]
+"""Ruff rule selectors for docstring checks (all pydocstyle rules)."""
+
+_RUFF_IGNORE = ["D203", "D213"]
+"""Ruff rules to ignore: D203 conflicts with D211, D213 conflicts with D212."""
+
 
 class MultilineDocstringUtil:
-    """Helper class for detecting and fixing multiline docstrings where the opening quotes are on a separate line."""
+    """Helper class for detecting and fixing docstring formatting issues using ruff pydocstyle rules."""
 
     @classmethod
-    def _run_ruff_d212(
+    def _run_ruff_docstring_check(
         cls,
         file_paths: list[str],
         *,
         fix: bool = False,
+        extra_ignore_rules: Sequence[str] | None = None,
     ) -> tuple[int, str, str]:
-        """Run ruff D212 check on the given files, optionally applying fixes.
+        """Run ruff pydocstyle checks on the given files, optionally applying fixes.
 
         Args:
             file_paths: List of absolute file paths to check
             fix: If True, apply fixes in place
+            extra_ignore_rules: Optional list of additional ruff rule codes to ignore (e.g. ["D202"])
 
         Returns:
             Tuple of (total_violation_count, combined_stdout, combined_stderr).
-        """
 
+        """
         total_violations = 0
         all_stdout = []
         all_stderr = []
 
+        select_arg = ",".join(_RUFF_SELECT)
+        ignore_rules = list(_RUFF_IGNORE)
+        if extra_ignore_rules:
+            ignore_rules.extend(extra_ignore_rules)
+        ignore_arg = ",".join(ignore_rules)
+
         for i in range(0, len(file_paths), _MAX_CMD_BATCH):
             batch = file_paths[i : i + _MAX_CMD_BATCH]
-            cmd = [sys.executable, "-m", "ruff", "check", "--select", "D212"]
+            cmd = [sys.executable, "-m", "ruff", "check", "--select", select_arg, "--ignore", ignore_arg]
             if fix:
-                cmd.append("--fix")
+                cmd.extend(["--fix", "--unsafe-fixes"])
             cmd.extend(batch)
             result = subprocess.run(cmd, capture_output=True, text=True)
             if result.stdout:
                 all_stdout.append(result.stdout)
             if result.stderr:
                 all_stderr.append(result.stderr)
-            # Count violations from output lines matching the D212 pattern
+            # Count violations from output lines matching the D-rule pattern
             for line in result.stdout.splitlines():
-                if ": D212 " in line:
+                if ": D" in line and " [" in line:
                     total_violations += 1
 
         return total_violations, "\n".join(all_stdout), "\n".join(all_stderr)
@@ -69,16 +83,19 @@ class MultilineDocstringUtil:
         *,
         file_include_patterns: Sequence[str] | None = None,
         file_exclude_patterns: Sequence[str] | None = None,
+        extra_ignore_rules: Sequence[str] | None = None,
     ) -> None:
-        """Test that no multiline docstrings have the opening quotes on a separate line.
+        """Test that docstrings comply with pydocstyle formatting rules.
 
         Raises RuntimeError with a list of violations if any are found.
 
         Args:
             file_include_patterns: Optional list of filename glob patterns to include
             file_exclude_patterns: Optional list of filename glob patterns to exclude
-        """
+            extra_ignore_rules: Optional list of additional ruff rule codes to ignore on top of the
+                default ignore list (e.g. ["D202"] to skip the no-blank-line-after-docstring check)
 
+        """
         if file_exclude_patterns is None:
             file_exclude_patterns = ["_version.py"]
 
@@ -90,11 +107,13 @@ class MultilineDocstringUtil:
         if not source_files:
             return
 
-        violation_count, stdout, stderr = cls._run_ruff_d212(source_files, fix=False)
+        violation_count, stdout, stderr = cls._run_ruff_docstring_check(
+            source_files, fix=False, extra_ignore_rules=extra_ignore_rules,
+        )
 
         if violation_count > 0:
             raise RuntimeError(
-                f"Multi-line docstring summary should start at the first line (D212) "
+                f"Docstring formatting violations (pydocstyle D rules) "
                 f"in {violation_count} location(s):\n{stdout}"
             )
 
@@ -105,15 +124,18 @@ class MultilineDocstringUtil:
         verbose: bool = False,
         file_include_patterns: Sequence[str] | None = None,
         file_exclude_patterns: Sequence[str] | None = None,
+        extra_ignore_rules: Sequence[str] | None = None,
     ) -> None:
-        """Fix multiline docstrings where the opening quotes are on a separate line.
+        """Fix auto-fixable docstring formatting issues using ruff pydocstyle rules.
 
         Args:
             verbose: Print messages about fixes to stdout if specified
             file_include_patterns: Optional list of filename glob patterns to include
             file_exclude_patterns: Optional list of filename glob patterns to exclude
-        """
+            extra_ignore_rules: Optional list of additional ruff rule codes to ignore on top of the
+                default ignore list (e.g. ["D202"] to skip the no-blank-line-after-docstring check)
 
+        """
         if file_exclude_patterns is None:
             file_exclude_patterns = ["_version.py"]
 
@@ -127,22 +149,26 @@ class MultilineDocstringUtil:
                 print("No source files found.")
             return
 
-        # First count existing violations
-        violation_count, _, _ = cls._run_ruff_d212(source_files, fix=False)
+        # First count existing fixable violations
+        violation_count, _, _ = cls._run_ruff_docstring_check(
+            source_files, fix=False, extra_ignore_rules=extra_ignore_rules,
+        )
 
         if violation_count == 0:
             if verbose:
-                print("All multiline docstrings already have summary on the first line.")
+                print("All docstrings comply with pydocstyle formatting rules.")
             return
 
         # Apply fixes
-        cls._run_ruff_d212(source_files, fix=True)
+        cls._run_ruff_docstring_check(source_files, fix=True, extra_ignore_rules=extra_ignore_rules)
 
         # Verify fixes were applied
-        remaining, _, _ = cls._run_ruff_d212(source_files, fix=False)
+        remaining, _, _ = cls._run_ruff_docstring_check(
+            source_files, fix=False, extra_ignore_rules=extra_ignore_rules,
+        )
 
         if verbose:
             fixed_count = violation_count - remaining
-            print(f"Fixed multiline docstring opening quotes in {fixed_count} location(s).")
+            print(f"Fixed docstring formatting in {fixed_count} location(s).")
             if remaining > 0:
                 print(f"Warning: {remaining} violation(s) could not be auto-fixed.")

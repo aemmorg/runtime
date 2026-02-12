@@ -20,9 +20,17 @@ locate.append_sys_path("../../..")
 import cl.runtime.bootstrap
 # isort: on
 
+import sys
 from cl.runtime.prebuild.multiline_docstring_util import MultilineDocstringUtil
 
 if __name__ == '__main__':
 
-    # Fix multiline docstrings where the opening quotes are on a separate line
-    MultilineDocstringUtil.fix_multiline_docstrings(verbose=True)
+    # Parse --ignore D202,D301 style arguments to skip specific rules for this run
+    extra_ignore_rules = None
+    args = sys.argv[1:]
+    for i, arg in enumerate(args):
+        if arg == "--ignore" and i + 1 < len(args):
+            extra_ignore_rules = [r.strip() for r in args[i + 1].split(",") if r.strip()]
+
+    # Fix docstring formatting issues using ruff pydocstyle rules
+    MultilineDocstringUtil.fix_multiline_docstrings(verbose=True, extra_ignore_rules=extra_ignore_rules)

@@ -25,46 +25,46 @@ _STUBS_DIR = os.path.normpath(
     os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "stubs", "cl", "runtime", "prebuild")
 )
 
+_RUFF_D_ARGS = [sys.executable, "-m", "ruff", "check", "--select", "D", "--ignore", "D203,D213,D202"]
+"""Base ruff command for all pydocstyle checks."""
 
-def _run_ruff_d212_on_file(file_path: str) -> int:
-    """Run ruff D212 check on a single file and return the number of violations."""
+
+def _count_ruff_d_violations(file_path: str) -> int:
+    """Run ruff pydocstyle checks on a single file and return the number of violations."""
     result = subprocess.run(
-        [sys.executable, "-m", "ruff", "check", "--select", "D212", file_path],
+        _RUFF_D_ARGS + [file_path],
         capture_output=True,
         text=True,
     )
     count = 0
     for line in result.stdout.splitlines():
-        if ": D212 " in line:
+        if ": D" in line and " [" in line:
             count += 1
     return count
 
 
 def test_correct_docstrings():
-    """Test that the stub file with correct docstrings has no D212 violations."""
-
+    """Test that the stub file with correct docstrings has no pydocstyle violations."""
     stub_path = os.path.join(_STUBS_DIR, "stub_correct_docstrings.py")
     assert os.path.isfile(stub_path), f"Stub file not found: {stub_path}"
-    violation_count = _run_ruff_d212_on_file(stub_path)
-    assert violation_count == 0, f"Expected 0 D212 violations in stub_correct_docstrings.py, found {violation_count}"
+    violation_count = _count_ruff_d_violations(stub_path)
+    assert violation_count == 0, f"Expected 0 pydocstyle violations in stub_correct_docstrings.py, found {violation_count}"
 
 
 def test_multiline_docstrings():
-    """Prebuild test to check that no multiline docstrings have opening quotes on a separate line."""
-
-    # Test that all source files have correct multiline docstring format
+    """Prebuild test to check that docstrings comply with pydocstyle formatting rules."""
+    # Test that all source files have correct docstring format
     MultilineDocstringUtil.validate_multiline_docstrings()
 
 
 def test_fix_multiline_docstrings():
-    """Test that fix_multiline_docstrings corrects D212 violations in a stub file."""
-
+    """Test that fix_multiline_docstrings corrects auto-fixable pydocstyle violations in a stub file."""
     stub_path = os.path.join(_STUBS_DIR, "stub_wrong_docstrings.py")
     assert os.path.isfile(stub_path), f"Stub file not found: {stub_path}"
 
     # Verify the stub file has violations before fixing
-    before_count = _run_ruff_d212_on_file(stub_path)
-    assert before_count > 0, f"Expected D212 violations in stub_wrong_docstrings.py, found {before_count}"
+    before_count = _count_ruff_d_violations(stub_path)
+    assert before_count > 0, f"Expected pydocstyle violations in stub_wrong_docstrings.py, found {before_count}"
 
     # Copy to a temp file and fix it
     with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp:
@@ -74,14 +74,22 @@ def test_fix_multiline_docstrings():
 
         # Run ruff fix on the temp copy
         subprocess.run(
-            [sys.executable, "-m", "ruff", "check", "--select", "D212", "--fix", tmp_path],
+            _RUFF_D_ARGS + ["--fix", "--unsafe-fixes", tmp_path],
             capture_output=True,
             text=True,
         )
 
-        # Verify no violations remain after fixing
-        after_count = _run_ruff_d212_on_file(tmp_path)
-        assert after_count == 0, f"Expected 0 D212 violations after fix, found {after_count}"
+        # Verify no fixable violations remain after fixing
+        result = subprocess.run(
+            _RUFF_D_ARGS + [tmp_path],
+            capture_output=True,
+            text=True,
+        )
+        fixable_count = 0
+        for line in result.stdout.splitlines():
+            if "[*]" in line and ": D" in line:
+                fixable_count += 1
+        assert fixable_count == 0, f"Expected 0 fixable pydocstyle violations after fix, found {fixable_count}"
     finally:
         os.unlink(tmp_path)
 
