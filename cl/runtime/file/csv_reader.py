@@ -162,14 +162,13 @@ class CsvReader(Reader):
 
         if files_with_error:
             files_list = "".join([f"    {file}\n" for file in files_with_error])
-            msg = (
-                f"{error_description}\n"
-                f"RECOMMENDED ACTION: Run fix_csv_format script to fix.\n{files_list}"
-            )
             if not fix:
-                raise RuntimeError(msg)
+                raise RuntimeError(
+                    f"{error_description}\n"
+                    f"Recommended action: run fix_csv_format script to fix.\n{files_list}"
+                )
             elif verbose:
-                print(msg)
+                print(f"Corrected CSV format in the following files:\n{files_list}")
         elif verbose:
             files_list = "".join([f"    {x}\n" for x in sorted(file_paths)])
             print(f"Verified CSV format in the following files:\n{files_list}")
