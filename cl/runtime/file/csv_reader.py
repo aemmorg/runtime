@@ -85,13 +85,12 @@ class CsvReader(Reader):
         return tuple(result)
 
     @classmethod
-    def _check_or_fix_file(cls, file_path: str, *, fix: bool, value_fn: Callable[[str], str]) -> bool:
+    def check_or_fix_file(cls, file_path: str, *, fix: bool) -> bool:
         """Check and optionally fix values in a single CSV file.
 
         Args:
             file_path: Path to the CSV file to check or fix
             fix: If True, overwrite the file with fixed values; if False, only check
-            value_fn: Function that takes a cell value and returns the normalized value
         Returns:
             True if the file is already valid, False if changes are needed
         """
@@ -103,7 +102,7 @@ class CsvReader(Reader):
             for row in reader:
                 updated_row = []
                 for value in row:
-                    updated_value = value_fn(value)
+                    updated_value = CsvUtil.normalize_value(value)
                     if updated_value != value:
                         is_valid = False
                     updated_row.append(updated_value)
@@ -115,7 +114,7 @@ class CsvReader(Reader):
                     output_file,
                     delimiter=",",
                     quotechar='"',
-                    quoting=csv.QUOTE_MINIMAL,
+                    quoting=csv.QUOTE_MINIMAL,  # noqa
                     lineterminator="\n",
                 )
                 writer.writerows(updated_rows)
@@ -155,7 +154,7 @@ class CsvReader(Reader):
 
         files_with_error = []
         for file_path in file_paths:
-            is_valid = cls._check_or_fix_file(file_path, fix=fix, value_fn=CsvUtil.normalize_value)
+            is_valid = cls.check_or_fix_file(file_path, fix=fix)
             if not is_valid:
                 files_with_error.append(file_path)
 

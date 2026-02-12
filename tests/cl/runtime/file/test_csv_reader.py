@@ -17,13 +17,14 @@ from cl.runtime.contexts.context_manager import active
 from cl.runtime.db.data_source import DataSource
 from cl.runtime.file.csv_reader import CsvReader
 from cl.runtime.qa.qa_util import QaUtil
+from cl.runtime.serializers.csv_util import CsvUtil
 from stubs.cl.runtime.records.for_dataclasses.stub_dataclass_composite import StubDataclassComposite
 from stubs.cl.runtime.records.for_dataclasses.stub_dataclass_derived import StubDataclassDerived
 from stubs.cl.runtime.records.for_dataclasses.stub_dataclass_key import StubDataclassKey
 from stubs.cl.runtime.records.for_dataclasses.stub_dataclass_nested_fields import StubDataclassNestedFields
 
 
-def test_csv_reader(default_db_fixture):
+def test_load_all(default_db_fixture):
     """Test CsvFileUtil class."""
 
     # Create a new instance of local cache for the test
@@ -63,6 +64,20 @@ def test_csv_reader(default_db_fixture):
         record = active(DataSource).load_one(expected_record.get_key())
         assert record == expected_record
 
+
+def test_check_or_fix_format(work_dir_fixture):
+    """Test CsvReader._check_or_fix_file() with valid and invalid CSV format samples.
+
+    Fixture files:
+    - valid_csv_format.csv: Excel-standard format (no inner quotes) -> passes validation
+    - invalid_csv_format.csv: has triple-quoted values (old format) -> fails validation
+    """
+
+    # Valid file passes all checks
+    assert CsvReader.check_or_fix_file("valid_csv_format.csv", fix=False)
+
+    # Invalid files has at least one invalid input
+    assert not CsvReader.check_or_fix_file("invalid_csv_format.csv", fix=False)
 
 if __name__ == "__main__":
     pytest.main([__file__])

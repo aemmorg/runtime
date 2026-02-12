@@ -29,8 +29,7 @@ def test_csv_format():
         fix=False,
         # Prevent fixing of the unit test samples
         file_exclude_patterns=[
-            "unescaped_date.csv",
-            "unescaped_float.csv",
+            "invalid_csv_format.csv",
         ],
     )
 

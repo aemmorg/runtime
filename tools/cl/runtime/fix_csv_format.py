@@ -49,7 +49,6 @@ if __name__ == '__main__':
         verbose=True,
         # Prevent fixing of the unit test samples
         file_exclude_patterns=[
-            "unescaped_date.csv",
-            "unescaped_float.csv",
+            "invalid_csv_format.csv",
         ]
     )
