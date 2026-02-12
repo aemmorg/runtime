@@ -18,7 +18,7 @@ import subprocess
 import sys
 import tempfile
 import pytest
-from cl.runtime.prebuild.multiline_docstring_util import MultilineDocstringUtil
+from cl.runtime.prebuild.docstring_util import DocstringUtil
 
 
 _STUBS_DIR = os.path.normpath(
@@ -55,14 +55,14 @@ def test_correct_docstrings():
     assert violation_count == 0, f"Expected 0 pydocstyle violations in stub_correct_docstrings.py, found {violation_count}"
 
 
-def test_multiline_docstrings():
+def test_docstrings():
     """Prebuild test to check that docstrings comply with pydocstyle formatting rules."""
     # Test that all source files have correct docstring format (exclude intentionally-wrong stub)
-    MultilineDocstringUtil.validate_multiline_docstrings(file_exclude_patterns=["_version.py", "stub_wrong_*"])
+    DocstringUtil.validate_docstrings(file_exclude_patterns=["_version.py", "stub_wrong_*"])
 
 
-def test_fix_multiline_docstrings():
-    """Test that fix_multiline_docstrings corrects auto-fixable pydocstyle violations in a stub file."""
+def test_fix_docstrings():
+    """Test that fix_docstrings corrects auto-fixable pydocstyle violations in a stub file."""
     stub_path = os.path.join(_STUBS_DIR, "stub_wrong_docstrings.py")
     assert os.path.isfile(stub_path), f"Stub file not found: {stub_path}"
 

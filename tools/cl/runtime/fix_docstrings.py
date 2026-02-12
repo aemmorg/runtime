@@ -21,7 +21,7 @@ import cl.runtime.bootstrap
 # isort: on
 
 import sys
-from cl.runtime.prebuild.multiline_docstring_util import MultilineDocstringUtil
+from cl.runtime.prebuild.docstring_util import DocstringUtil
 
 if __name__ == '__main__':
 
@@ -33,4 +33,4 @@ if __name__ == '__main__':
             extra_ignore_rules = [r.strip() for r in args[i + 1].split(",") if r.strip()]
 
     # Fix docstring formatting issues using ruff pydocstyle rules
-    MultilineDocstringUtil.fix_multiline_docstrings(verbose=True, extra_ignore_rules=extra_ignore_rules)
+    DocstringUtil.fix_docstrings(verbose=True, extra_ignore_rules=extra_ignore_rules)

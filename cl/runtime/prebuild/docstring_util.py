@@ -33,7 +33,7 @@ _RUFF_IGNORE = [
 """Ruff pydocstyle rules to ignore (remove from this list as violations are fixed)."""
 
 
-class MultilineDocstringUtil:
+class DocstringUtil:
     """Helper class for detecting and fixing docstring formatting issues using ruff pydocstyle rules."""
 
     @classmethod
@@ -84,7 +84,7 @@ class MultilineDocstringUtil:
         return total_violations, "\n".join(all_stdout), "\n".join(all_stderr)
 
     @classmethod
-    def validate_multiline_docstrings(
+    def validate_docstrings(
         cls,
         *,
         file_include_patterns: Sequence[str] | None = None,
@@ -124,7 +124,7 @@ class MultilineDocstringUtil:
             )
 
     @classmethod
-    def fix_multiline_docstrings(
+    def fix_docstrings(
         cls,
         *,
         verbose: bool = False,
