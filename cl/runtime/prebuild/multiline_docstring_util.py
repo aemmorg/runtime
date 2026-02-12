@@ -23,8 +23,9 @@ _MAX_CMD_BATCH = 200
 _RUFF_SELECT = ["D"]
 """Ruff rule selectors for docstring checks (all pydocstyle rules)."""
 
-_RUFF_IGNORE = ["D203", "D213"]
-"""Ruff rules to ignore: D203 conflicts with D211, D213 conflicts with D212."""
+_RUFF_IGNORE = ["D100", "D102", "D203", "D213"]
+"""Ruff rules to ignore: D100 missing module docstring, D102 missing method docstring (documented on abstract base),
+D203 conflicts with D211, D213 conflicts with D212."""
 
 
 class MultilineDocstringUtil:

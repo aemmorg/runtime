@@ -25,7 +25,7 @@ _STUBS_DIR = os.path.normpath(
     os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "stubs", "cl", "runtime", "prebuild")
 )
 
-_RUFF_D_ARGS = [sys.executable, "-m", "ruff", "check", "--select", "D", "--ignore", "D203,D213,D202"]
+_RUFF_D_ARGS = [sys.executable, "-m", "ruff", "check", "--select", "D", "--ignore", "D100,D102,D202,D203,D213"]
 """Base ruff command for all pydocstyle checks."""
 
 
