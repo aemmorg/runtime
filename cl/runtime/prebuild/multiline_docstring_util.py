@@ -64,7 +64,7 @@ class MultilineDocstringUtil:
         return total_violations, "\n".join(all_stdout), "\n".join(all_stderr)
 
     @classmethod
-    def test_multiline_docstrings(
+    def validate_multiline_docstrings(
         cls,
         *,
         file_include_patterns: Sequence[str] | None = None,

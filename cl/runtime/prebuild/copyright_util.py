@@ -229,7 +229,7 @@ class CopyrightUtil:
                 print("All copyright headers and trailing blank lines are correct.")
 
     @classmethod
-    def test_copyright_headers(
+    def validate_copyright_headers(
         cls,
         *,
         file_include_patterns: Sequence[str] | None = None,

@@ -20,7 +20,7 @@ def test_copyright_headers():
     """Prebuild test to check that the specified copyright header is present in all code directories."""
 
     # Test that copyright headers are correct and followed by a blank line
-    CopyrightUtil.test_copyright_headers()
+    CopyrightUtil.validate_copyright_headers()
 
 
 if __name__ == "__main__":

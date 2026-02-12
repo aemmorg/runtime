@@ -53,7 +53,7 @@ def test_multiline_docstrings():
     """Prebuild test to check that no multiline docstrings have opening quotes on a separate line."""
 
     # Test that all source files have correct multiline docstring format
-    MultilineDocstringUtil.test_multiline_docstrings()
+    MultilineDocstringUtil.validate_multiline_docstrings()
 
 
 def test_fix_multiline_docstrings():
