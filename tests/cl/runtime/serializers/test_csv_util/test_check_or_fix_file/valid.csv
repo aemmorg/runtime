@@ -2,4 +2,4 @@ name,value
 text no comma,text
 text with comma,"text,text"
 number,1.2
-date,"May 1, 2003"
+date,2003-05-01
