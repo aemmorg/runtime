@@ -1,0 +1,5 @@
+YAML content:
+_type: StubDataclassDerived
+id: test_content_id
+derived_str_field: test_content_value
+

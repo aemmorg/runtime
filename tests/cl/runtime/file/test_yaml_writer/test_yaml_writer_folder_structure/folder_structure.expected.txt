@@ -1,0 +1,9 @@
+Folder structure:
+
+StubDataclass/
+  - id_0.yaml
+  - id_1.yaml
+
+StubDataclassComposite/
+  - prim_0;key_0a;key_0b.yaml
+  - prim_1;key_1a;key_1b.yaml

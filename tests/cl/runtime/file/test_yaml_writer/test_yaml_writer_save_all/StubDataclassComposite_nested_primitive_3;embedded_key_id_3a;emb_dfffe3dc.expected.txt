@@ -1,0 +1,7 @@
+_type: StubDataclassComposite
+primitive: nested_primitive_3
+embedded_1:
+  id: embedded_key_id_3a
+embedded_2:
+  id: embedded_key_id_3b
+

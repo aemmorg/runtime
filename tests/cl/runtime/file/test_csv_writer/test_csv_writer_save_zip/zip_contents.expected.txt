@@ -1,0 +1,4 @@
+ZIP file name: Export_YYYYMMDD_HHMMSS_StubDataclass_StubDataclassComposite.zip
+Files in ZIP:
+  - StubDataclassComposite.csv
+  - StubDataclassDerived.csv

@@ -12,13 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import hashlib
 import os
 import re
+import urllib.parse
 from fnmatch import fnmatch
 from typing import Sequence
 from typing import TypeGuard
 from cl.runtime.primitive.case_util import CaseUtil
+from cl.runtime.primitive.datetime_util import DatetimeUtil
+from cl.runtime.records.record_mixin import RecordMixin
+from cl.runtime.records.typename import typename
 from cl.runtime.schema.type_info import TypeInfo
+from cl.runtime.serializers.key_serializers import KeySerializers
 
 _INVALID_FILENAME_SYMBOLS = r'/\\<>:"|?*\x00\n'
 """Invalid filename symbols."""
@@ -200,3 +206,72 @@ class FileUtil:
             if raise_on_fail:
                 raise RuntimeError(f"Filename '{type_from_filename}' is not a valid type. " f"Error: {e}")
         return record_type
+
+    @classmethod
+    def get_dirname_for_record(cls, record: RecordMixin) -> str:
+        """Get directory name for a record based on its key type.
+
+        Args:
+            record: Record to get directory name for
+
+        Returns:
+            Directory name based on key type name without 'Key' suffix
+        """
+        return typename(record.get_key_type()).removesuffix("Key")
+
+    @classmethod
+    def get_filename_for_record(cls, record: RecordMixin, *, max_length: int = 50, ext: str = "json") -> str:
+        """Create a valid file path from record type name and serialized key.
+
+        Args:
+            record: Record to create file path from
+            max_length: Maximum length of the resulting filename (default 50)
+            ext: File extension without leading dot (default 'json')
+
+        Returns:
+            Valid file path with dir_name/filename.ext structure, prohibited symbols percent-encoded
+        """
+        # Serialize the key and percent-encode prohibited filename symbols
+        serialized_key = KeySerializers.DELIMITED.serialize(record.get_key())
+        filename = urllib.parse.quote(serialized_key, safe=";-_.~")
+
+        # Limit filename length, adding hash suffix for uniqueness when truncating
+        if len(filename) > max_length:
+            hash_suffix = hashlib.md5(filename.encode()).hexdigest()[:8]
+            truncate_len = max_length - len(hash_suffix) - 1  # -1 for underscore separator
+            filename = f"{filename[:truncate_len]}_{hash_suffix}"
+
+        # Add extension
+        filename = f"{filename}.{ext}"
+
+        return filename
+
+    @classmethod
+    def get_archive_name_for_records(
+        cls, records: Sequence[RecordMixin], *, max_length: int = 60, ext: str = "zip"
+    ) -> str:
+        """Create a valid archive filename from list of records.
+
+        Args:
+            records: Sequence of records to create archive name from
+            max_length: Maximum length of the resulting filename without extension (default 50)
+            ext: File extension without leading dot (default 'zip')
+
+        Returns:
+            Archive filename with format Export_YYYYMMDD_HHMMSS_Type1_Type2.ext,
+            truncated with hash suffix if exceeds max_length
+        """
+        timestamp = DatetimeUtil.now().strftime("%Y%m%d_%H%M%S")
+        dirs_in_archive = "_".join(sorted(set(cls.get_dirname_for_record(r) for r in records))) if records else ""
+        archive_name = f"Export_{timestamp}_{dirs_in_archive}" if dirs_in_archive else f"Export_{timestamp}"
+
+        # Limit filename length, adding hash suffix for uniqueness when truncating
+        if len(archive_name) > max_length:
+            hash_suffix = hashlib.md5(dirs_in_archive.encode()).hexdigest()[:8]
+            truncate_len = max_length - len(hash_suffix) - 1  # -1 for underscore separator
+            archive_name = f"{archive_name[:truncate_len]}_{hash_suffix}"
+
+        # Add extension
+        archive_name = f"{archive_name}.{ext}"
+
+        return archive_name

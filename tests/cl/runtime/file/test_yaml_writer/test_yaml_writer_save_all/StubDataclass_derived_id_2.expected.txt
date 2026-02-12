@@ -1,0 +1,4 @@
+_type: StubDataclassDerived
+id: derived_id_2
+derived_str_field: test_derived_str_field_value_2
+

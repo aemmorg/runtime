@@ -13,23 +13,18 @@
 # limitations under the License.
 
 from dataclasses import dataclass
-from cl.runtime.file.file_kind import FileKind
 from cl.runtime.records.for_dataclasses.dataclass_mixin import DataclassMixin
 from cl.runtime.records.for_dataclasses.extensions import required
+from cl.runtime.records.key_mixin import KeyMixin
 
 
-@dataclass(slots=True, kw_only=True)
-class FileData(DataclassMixin):
-    """Display the specified embedded binary content."""
+@dataclass(slots=True, eq=False)
+class WriterKey(DataclassMixin, KeyMixin):
+    """Write records to the specified storage."""
 
-    name: str | None = None  # TODO: Consider revising to filename
-    """Content name."""
+    writer_id: str = required()
+    """Unique writer identifier."""
 
-    file_kind: FileKind | None = None
-    """Format of the file contents, some values match to more than one file extension."""
-
-    relative_path: str | None = None
-    """Relative path within a container, e.g. preloads folder, ZIP archive."""
-
-    file_bytes: bytes = required()
-    """Embedded binary content to be displayed as the current view."""
+    @classmethod
+    def get_key_type(cls) -> type[KeyMixin]:
+        return WriterKey

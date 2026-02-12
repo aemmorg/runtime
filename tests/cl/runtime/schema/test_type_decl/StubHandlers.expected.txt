@@ -100,6 +100,12 @@ declare:
             one file extension.
           optional: true
         - value:
+            type_: String
+          name: RelativePath
+          comment: Relative path within a container, e.g. preloads folder, ZIP 
+            archive.
+          optional: true
+        - value:
             type_: Binary
           name: FileBytes
           comment: Embedded binary content to be displayed as the current view.
@@ -244,6 +250,12 @@ declare:
           name: FileKind
           comment: Format of the file contents, some values match to more than 
             one file extension.
+          optional: true
+        - value:
+            type_: String
+          name: RelativePath
+          comment: Relative path within a container, e.g. preloads folder, ZIP 
+            archive.
           optional: true
         - value:
             type_: Binary

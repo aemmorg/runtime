@@ -1,0 +1,10 @@
+{
+  "_type": "StubDataclassComposite",
+  "primitive": "nested_primitive_1",
+  "embedded_1": {
+    "id": "embedded_key_id_1a"
+  },
+  "embedded_2": {
+    "id": "embedded_key_id_1b"
+  }
+}

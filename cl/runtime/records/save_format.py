@@ -12,42 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from enum import IntEnum
 from enum import auto
+from enum import IntEnum
 
 
-class FileKind(IntEnum):
-    """Format of the file contents, some values match to more than one file extension."""
-
-    JPG = auto()
-    """JPEG image."""
-
-    HTML = auto()
-    """HTML content."""
-
-    PLOTLY = auto()
-    """The output provided by Plotly Graphing Library."""
-
-    PNG = auto()
-    """PNG image."""
-
-    SVG = auto()
-    """SVG image."""
-
-    CSV = auto()
-    """CSV data."""
+class SaveFormat(IntEnum):
+    """Format used to save or export records."""
 
     JSON = auto()
-    """JSON data."""
+    """JSON format."""
 
     YAML = auto()
-    """YAML data."""
+    """YAML format."""
 
-    ZIP = auto()
-    """ZIP archive."""
-
-    PDF = auto()
-    """PDF document."""
-
-    XLSX = auto()
-    """Excel file."""
+    CSV = auto()
+    """CSV format."""

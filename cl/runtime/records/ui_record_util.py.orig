@@ -12,25 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
-import os
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Iterable
-from typing import Sequence
+from typing import Iterable, Sequence
+
 from cl.runtime.contexts.context_manager import active
 from cl.runtime.db.data_source import DataSource
+<<<<<<< HEAD
+=======
+from cl.runtime.file.json_writer import JsonWriter
+from cl.runtime.primitive.case_util import CaseUtil
+>>>>>>> 5e3d4a282 (Add JsonWriter for writing json files in preloads format.)
 from cl.runtime.file.csv_writer import CsvWriter
 from cl.runtime.file.file_data import FileData
-from cl.runtime.file.file_kind import FileKind
-from cl.runtime.file.file_util import FileUtil
-from cl.runtime.file.json_writer import JsonWriter
-from cl.runtime.file.yaml_writer import YamlWriter
 from cl.runtime.records.for_dataclasses.dataclass_mixin import DataclassMixin
 from cl.runtime.records.protocols import is_record_type
 from cl.runtime.records.record_mixin import RecordMixin
 from cl.runtime.records.record_panel import RecordPanel
-from cl.runtime.records.save_format import SaveFormat
 from cl.runtime.schema.dependency_parser import DependencyParser
 from cl.runtime.schema.handler_declare_decl import HandlerDeclareDecl
 from cl.runtime.schema.type_decl import TypeDecl
@@ -38,95 +36,34 @@ from cl.runtime.schema.type_hint import TypeHint
 from cl.runtime.schema.type_info import TypeInfo
 from cl.runtime.serializers.data_serializers import DataSerializers
 from cl.runtime.serializers.key_serializers import KeySerializers
-from cl.runtime.settings.preload_settings import PreloadSettings
 from cl.runtime.views.view_persistence_util import ViewPersistenceUtil
 
-_LOGGER = logging.getLogger(__name__)
-
-# Create serializers
 _KEY_SERIALIZER = KeySerializers.DELIMITED
+"""Used for key serialization."""
+
 _CSV_SERIALIZER = DataSerializers.FOR_CSV
 
 
 @dataclass(slots=True, kw_only=True)
 class UiRecordUtil(DataclassMixin):  # TODO: Move to the appropriate directory
-    """
-    Utility type to provide additional functionality for working with records.
-    """
+    """Utility type to provide additional functionality for working with records."""
 
     @classmethod
     def run_export_records(
-        cls,
-        type_to_export: str,
-        keys: list[str],
-        with_dependencies: bool = False,
-        export_format: SaveFormat = SaveFormat.JSON,
-    ) -> FileData:
-        """Export records as a downloadable ZIP archive.
-
-        Args:
-            type_to_export: Type name of the records to export
-            keys: List of serialized keys identifying records to export
-            with_dependencies: If True, include all dependent records
-            export_format: Format for serialization (default JSON)
-
-        Returns:
-            FileData object containing the ZIP archive with serialized records
-        """
+            cls,
+            type_to_export: str,
+            keys: list[str],
+            with_dependencies: bool = False,
+    ) -> None:
+        """Export records from the database combined into a single file and zipped into a single archive."""
         records = cls._get_records(
             type_to_export=type_to_export,
             keys=keys,
             with_dependencies=with_dependencies,
         )
 
-        # TODO (Roman): Support other save formats
-        if export_format == SaveFormat.JSON:
-            writer = JsonWriter().build()
-        elif export_format == SaveFormat.YAML:
-            writer = YamlWriter().build()
-        elif export_format == SaveFormat.CSV:
-            writer = CsvWriter().build()
-        else:
-            raise RuntimeError(f"Export format {export_format} currently not supported.")
-
-        result = writer.to_zip(records)
-        return result
-
-    @classmethod
-    def run_save_permanently_records(
-        cls,
-        type_to_save: str,
-        keys: list[str],
-        with_dependencies: bool = False,
-        save_format: SaveFormat = SaveFormat.JSON,
-    ) -> None:
-        """Save records to the preloads directory for permanent storage.
-
-        Args:
-            type_to_save: Type name of the records to save
-            keys: List of serialized keys identifying records to save
-            with_dependencies: If True, include all dependent records
-            save_format: Format for serialization (default JSON)
-        """
-        records = cls._get_records(
-            type_to_export=type_to_save,
-            keys=keys,
-            with_dependencies=with_dependencies,
-        )
-
-        # TODO (Roman): Support other save formats
-        if save_format == SaveFormat.JSON:
-            writer = JsonWriter().build()
-        elif save_format == SaveFormat.YAML:
-            writer = YamlWriter().build()
-        elif save_format == SaveFormat.CSV:
-            writer = CsvWriter().build()
-        else:
-            raise RuntimeError(f"Save format {save_format.name} is currently not supported.")
-
-        files = writer.to_files(records)
-        for file in files:
-            cls._save_permanently(file)
+        json_writer = JsonWriter().build()
+        json_writer.save_records(records)
 
     @classmethod
     def run_get_record_panels(cls, type_name: str, key: str) -> list[RecordPanel]:
@@ -186,10 +123,111 @@ class UiRecordUtil(DataclassMixin):  # TODO: Move to the appropriate directory
             return None
 
     @classmethod
+<<<<<<< HEAD
     def _is_viewer(cls, handler: HandlerDeclareDecl) -> bool:
         return handler.type_ == "Viewer"
+=======
+    def _get_panel_content(
+        cls,
+        type_name: str,
+        key: str,
+        panel_id: str,
+        params: dict[str, Any] | None = None,
+    ):
+        """Run viewer and process result."""
+        type_ = TypeInfo.from_type_name(type_name)
+        if not is_record_type(type_):
+            raise RuntimeError(f"Type {type_name} is not a record type.")
+        key_type = type_.get_key_type()
+
+        # Deserialize the key, use empty string for key type with no fields
+        key_obj = _KEY_SERIALIZER.deserialize(key, TypeHint.for_type(key_type))
+
+        # Load record from the database
+        record = active(DataSource).load_one(key_obj)
+        actual_type = type(record)
+
+        # Check if the selected type has the needed viewer and get its name (only viewer's label is provided)
+        if cls._check_if_view_is_dynamic(actual_type, panel_id):
+            # Extract viewer from record and run
+            viewer = getattr(record, CaseUtil.pascal_to_snake_case(panel_id))
+            viewer_result = viewer()
+            view = cls._process_viewer_result(viewer_result, view_for=record.get_key(), view_name=panel_id)
+        else:
+            # Try to get persisted view for this record and panel_id
+            view = ViewPersistenceUtil.load_view_or_none(view_for=key_obj, view_name=panel_id)
+            if view is None:
+                raise RuntimeError(f"Type {typename(type(record))} has no view named '{panel_id}'.")
+
+        # Load nested keys and perform custom View object transformations.
+        view = view.materialize()
+
+        return view
 
     @classmethod
+    def _process_viewer_result(cls, viewer_result, view_for: KeyMixin, view_name: str) -> View:
+        """
+        Convert supported viewer result to the corresponding View object.
+
+        The following viewer results are supported:
+            - Record or list of records;
+            - Key or list of keys;
+            - Any View object;
+            - None value.
+        """
+
+        # Handle empty result.
+        if not viewer_result:
+            return EmptyView(view_for=view_for, view_name=view_name)
+
+        # If the result is a View object, fill in the missing key fields.
+        elif isinstance(viewer_result, View):
+            if viewer_result.view_for is None:
+                viewer_result.view_for = view_for
+
+            if viewer_result.view_name is None:
+                viewer_result.view_name = view_name
+
+            return viewer_result
+
+        # If the result is a Key, convert it to a KeyView.
+        elif is_key_type(type(viewer_result)):
+            return KeyView(view_for=view_for, view_name=view_name, key=viewer_result)
+
+        # If the result is a Record, convert it to a RecordView.
+        elif is_data_key_or_record_type(type(viewer_result)):
+            return RecordView(view_for=view_for, view_name=view_name, record=viewer_result)
+
+        # If the result is a list of keys or list of records, convert it to an appropriate View.
+        elif isinstance(viewer_result, (list, tuple)):
+            # Check iterable value type by first item.
+            first_item_type = type(viewer_result[0])  # TODO: Complete check instead of first item for viewer_result[0]
+            if is_key_type(first_item_type):
+                return KeyListView(view_for=view_for, view_name=view_name, keys=viewer_result)
+            elif is_record_type(first_item_type) or is_data_type(first_item_type):
+                return RecordListView(view_for=view_for, view_name=view_name, records=viewer_result)
+            else:
+                raise RuntimeError(
+                    f"If the viewer result is iterable it must be a list of keys, list of records or list of data. "
+                    f"Other is not supported. Received: {viewer_result}."
+                )
+        else:
+            raise RuntimeError(f"Unsupported viewer result of type '{type(viewer_result)}': {viewer_result}.")
+
+    @classmethod
+    def _get_viewer_labels(cls, type_: type) -> Generator[tuple[str, str, str], None, None]:
+        """Return the list of viewers' names, labels and their kinds."""
+        handlers = decl.handlers if (decl := TypeDecl.for_type(type_).declare) is not None else []
+        return ((h.name, h.label, cls._get_panel_kind(h)) for h in handlers if h.type_ == "Viewer")
+
+    @staticmethod
+    def _check_if_view_is_dynamic(type_: type, name: str) -> bool:
+        """Checks if viewer is implemented via view handler. True if yes, False otherwise."""
+        handlers = decl.handlers if (decl := TypeDecl.for_type(type_).declare) is not None else []
+        return any([h.name == name for h in handlers])
+
+    @classmethod
+>>>>>>> 5e3d4a282 (Add JsonWriter for writing json files in preloads format.)
     def _get_records(
         cls,
         type_to_export: str,
@@ -201,7 +239,10 @@ class UiRecordUtil(DataclassMixin):  # TODO: Move to the appropriate directory
         request_type = TypeInfo.from_type_name(type_to_export)
 
         keys = set(keys)  # remove duplicates
-        key_objs = [_KEY_SERIALIZER.deserialize(key, TypeHint.for_type(request_type.get_key_type())) for key in keys]
+        key_objs = [
+            _KEY_SERIALIZER.deserialize(key, TypeHint.for_type(request_type.get_key_type()))
+            for key in keys
+        ]
         records = active(DataSource).load_many(key_objs)
 
         if with_dependencies:
@@ -219,10 +260,10 @@ class UiRecordUtil(DataclassMixin):  # TODO: Move to the appropriate directory
 
     @classmethod
     def _get_records_grouped_by_type(
-        cls,
-        type_to_export: str,
-        keys: list[str],
-        with_dependencies: bool = False,
+            cls,
+            type_to_export: str,
+            keys: list[str],
+            with_dependencies: bool = False,
     ) -> dict[type, Iterable[RecordMixin]]:
         """Fetch records from the database and return them grouped by type."""
         records = cls._get_records(type_to_export=type_to_export, keys=keys, with_dependencies=with_dependencies)
@@ -232,35 +273,3 @@ class UiRecordUtil(DataclassMixin):  # TODO: Move to the appropriate directory
                 type_to_records[type(record)].append(record)
 
         return type_to_records
-
-    @staticmethod
-    def _save_permanently(file: FileData) -> None:
-        """Save the given file permanently to the preloads directory."""
-
-        # Build the permanent file path
-        path_chain = []
-        first_preload_dir = PreloadSettings.instance().preload_dirs[0]
-        file_kind_subdir_map = {
-            FileKind.JSON: "json",
-            FileKind.YAML: "yaml",
-            FileKind.CSV: "csv",
-        }
-
-        if file_kind_subdir := file_kind_subdir_map.get(file.file_kind):
-            path_chain.append(file_kind_subdir)
-        if file.relative_path:
-            path_chain.append(file.relative_path)
-        path_chain.append(file.name)
-
-        permanent_path = os.path.join(first_preload_dir, *path_chain)
-
-        # Ensure the path is valid
-        for p in path_chain:
-            FileUtil.guard_valid_path(p)
-
-        # Make the directory if not exists
-        os.makedirs(os.path.dirname(permanent_path), exist_ok=True)
-
-        # Write the file content to the permanent path
-        with open(permanent_path, mode="wb") as permanent_file:
-            permanent_file.write(file.file_bytes)

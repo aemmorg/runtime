@@ -1,0 +1,6 @@
+JSON content:
+{
+  "_type": "StubDataclassDerived",
+  "derived_str_field": "test_content_value",
+  "id": "test_content_id"
+}

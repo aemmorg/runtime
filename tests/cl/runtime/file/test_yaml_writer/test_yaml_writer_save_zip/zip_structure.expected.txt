@@ -1,0 +1,11 @@
+ZIP file name: Export_YYYYMMDD_HHMMSS_StubDataclass_StubDataclassComposite.zip
+Files in ZIP (with folder structure):
+
+  StubDataclass/
+    - derived_id_1.yaml
+    - derived_id_2.yaml
+
+  StubDataclassComposite/
+    - nested_primitive_1;embedded_key_id_1a;emb_98ffbec5.yaml
+    - nested_primitive_2;embedded_key_id_2a;emb_62fbf625.yaml
+    - nested_primitive_3;embedded_key_id_3a;emb_dfffe3dc.yaml

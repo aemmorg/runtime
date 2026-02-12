@@ -26,7 +26,7 @@ class Reader(ReaderKey, RecordMixin, ABC):
     """Read records from the specified storage and save them to the active data source."""
 
     def get_key(self) -> ReaderKey:
-        return ReaderKey(reader_id=self.reader_id).build().build()
+        return ReaderKey(reader_id=self.reader_id).build()
 
     def __init(self) -> None:
         """Use instead of __init__ in the builder pattern, invoked by the build method in base to derived order."""

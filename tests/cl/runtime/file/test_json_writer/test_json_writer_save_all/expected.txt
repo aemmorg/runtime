@@ -1,0 +1,3 @@
+Folder structure:
+  StubDataclass/ (5 files)
+  StubDataclassComposite/ (3 files)

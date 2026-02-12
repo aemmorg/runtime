@@ -1,0 +1,5 @@
+{
+  "_type": "StubDataclassDerived",
+  "id": "test_id_2",
+  "derived_str_field": "test_value_2"
+}

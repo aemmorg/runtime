@@ -17,6 +17,7 @@ from dataclasses import dataclass
 from io import StringIO
 from typing import Any
 from uuid import UUID
+from frozendict import frozendict
 from ruamel.yaml import YAML
 from ruamel.yaml import StringIO
 from ruamel.yaml.constructor import SafeConstructor
@@ -89,6 +90,12 @@ def type_representer(dumper, data):
         return dumper.represent_scalar("tag:yaml.org,2002:null", None, style=None)
 
 
+def frozendict_representer(dumper, data):
+    """Configure YAML class for serializing a frozendict field."""
+    # Convert frozendict to regular dict for YAML representation
+    return dumper.represent_mapping("tag:yaml.org,2002:map", dict(data))
+
+
 # Roundtrip (typ=rt) style for the YAML writer is required to follow the formatting instructions in representers
 yaml_writer = YAML(typ="rt")
 
@@ -102,6 +109,7 @@ yaml_writer.representer.add_representer(bytes, bytes_representer)
 yaml_writer.representer.add_representer(
     type, type_representer
 )  # Eliminate duplication between YamlEncoder and YamlSerializer
+yaml_writer.representer.add_representer(frozendict, frozendict_representer)
 
 
 class PrimitiveToStringConstructor(SafeConstructor):
