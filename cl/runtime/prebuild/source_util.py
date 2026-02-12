@@ -26,12 +26,14 @@ class SourceUtil:
     def get_source_files(
         cls,
         *,
+        package: str | None = None,
         file_include_patterns: Sequence[str] | None = None,
         file_exclude_patterns: Sequence[str] | None = None,
     ) -> list[str]:
-        """Get list of source file paths across all packages.
+        """Get list of source file paths across all packages or a single package.
 
         Args:
+            package: Optional dot-delimited package name to filter by (e.g., 'cl.runtime')
             file_include_patterns: Optional list of filename glob patterns to include (default: ['*.py'])
             file_exclude_patterns: Optional list of filename glob patterns to exclude (default: ['__init__.py', '_version.py'])
 
@@ -44,10 +46,18 @@ class SourceUtil:
         if file_exclude_patterns is None:
             file_exclude_patterns = ["__init__.py", "_version.py"]
 
-        packages = PackageSettings.instance().get_packages()
+        all_packages = PackageSettings.instance().get_packages()
+        if package is not None:
+            if package in all_packages:
+                packages = (package,)
+            else:
+                all_packages_str = "\n".join(all_packages)
+                raise RuntimeError(f"Package '{package}' not found in configured packages:\n{all_packages_str}")
+        else:
+            packages = all_packages
+
         result = []
         all_root_paths = set()
-
         for package in packages:
             # Add paths to source, stubs, and test directories
             package_root_paths = []
