@@ -96,6 +96,10 @@ test = [
 {% endfor %}]
 {%- endif %}
 
+[tool.ruff.lint]
+select = ["D"]
+ignore = ["D203", "D213", "D202"]
+
 [tool.pytest.ini_options]
 addopts = "-p no:warnings"
 asyncio_default_fixture_loop_scope = "function"
