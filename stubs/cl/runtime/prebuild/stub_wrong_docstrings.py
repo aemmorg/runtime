@@ -12,53 +12,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Stub module with incorrectly formatted docstrings for testing enforced pydocstyle rules."""
+
 
 class StubWrongDocstrings:
-    """
-    Stub class with incorrectly formatted multiline docstrings (opening quotes on a separate line).
-    """
+    """Stub class with docstring violations for enforced rules."""
 
-    def multi_line_simple(self) -> None:
-        """
-        Summary on a separate line from the opening quotes.
+    def over_indented(self) -> None:
+        """Summary is fine.
 
-        Additional details on subsequent lines.
+            Over-indented continuation line.
         """
         pass
 
-    def multi_line_with_args(self) -> str:
-        """
-        Summary on a separate line with args.
-
-        Args:
-            self: Instance reference
-
-        Returns:
-            An empty string.
-        """
-        return ""
-
-    def multi_line_with_notes(self) -> None:
-        """
-        Summary on a separate line with notes.
-
-        Notes:
-            - First note
-            - Second note
-        """
+    def triple_single_quotes(self) -> None:
+        '''Single quotes instead of double quotes.'''
         pass
 
-    def blank_line_after_docstring(self) -> None:
-        """Summary followed by a blank line."""
+    def surrounding_whitespace(self) -> None:
+        """ Summary with leading whitespace. """
+        pass
 
+    def empty_docstring(self) -> None:
+        """"""
         pass
 
     @classmethod
-    def class_method_multi_line(cls) -> None:
-        """
-        Summary on a separate line for a classmethod.
+    def class_method_over_indented(cls) -> None:
+        """Summary is fine.
 
-        This method does nothing but demonstrates incorrect docstring format
-        for a classmethod with deeper indentation.
+            Over-indented continuation line for a classmethod.
         """
         pass

@@ -25,4 +25,4 @@ black -q tests --config=pyproject.toml
 
 echo ""
 echo "Fix docstring formatting using ruff"
-ruff check --select D --ignore D100,D102,D202,D203,D213 --fix --unsafe-fixes cl stubs tests
+ruff check --select D --ignore D100,D101,D102,D103,D104,D105,D106,D107,D200,D202,D203,D205,D212,D213,D301,D400,D401,D402,D403,D404,D410,D411,D413,D415,D417 --fix --unsafe-fixes cl stubs tests

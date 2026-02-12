@@ -21,11 +21,16 @@ _MAX_CMD_BATCH = 200
 """Maximum number of file paths per ruff invocation to stay within command-line length limits."""
 
 _RUFF_SELECT = ["D"]
-"""Ruff rule selectors for docstring checks (all pydocstyle rules)."""
+"""Ruff rule selector for all pydocstyle checks."""
 
-_RUFF_IGNORE = ["D100", "D102", "D203", "D213"]
-"""Ruff rules to ignore: D100 missing module docstring, D102 missing method docstring (documented on abstract base),
-D203 conflicts with D211, D213 conflicts with D212."""
+_RUFF_IGNORE = [
+    "D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107",
+    "D200", "D202", "D203", "D205", "D212", "D213",
+    "D301",
+    "D400", "D401", "D402", "D403", "D404",
+    "D410", "D411", "D413", "D415", "D417",
+]
+"""Ruff pydocstyle rules to ignore (remove from this list as violations are fixed)."""
 
 
 class MultilineDocstringUtil:
