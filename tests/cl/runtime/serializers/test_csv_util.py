@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import pytest
+from cl.runtime.file.csv_reader import CsvReader
 from cl.runtime.serializers.csv_util import CsvUtil
 
 
@@ -387,7 +388,7 @@ def test_normalize_numeric_percentage():
 
 
 def test_check_or_fix_file(work_dir_fixture):
-    """Test CsvUtil.check_or_fix_quotes() detects and strips leftover inner quotes.
+    """Test CsvReader._check_or_fix_file() detects and strips leftover inner quotes.
 
     Fixture files:
     - valid.csv: Excel-standard format (no inner quotes) -> passes validation
@@ -396,13 +397,13 @@ def test_check_or_fix_file(work_dir_fixture):
     """
 
     # File already in Excel-standard format passes
-    assert CsvUtil.check_or_fix_quotes("valid.csv", fix=False)
+    assert CsvReader._check_or_fix_file("valid.csv", fix=False, value_fn=CsvUtil.strip_quotes)
 
     # File with old triple-quoted number is detected as invalid (leftover inner quotes)
-    assert not CsvUtil.check_or_fix_quotes("unescaped_date.csv", fix=False)
+    assert not CsvReader._check_or_fix_file("unescaped_date.csv", fix=False, value_fn=CsvUtil.strip_quotes)
 
     # File with old triple-quoted date is detected as invalid (leftover inner quotes)
-    assert not CsvUtil.check_or_fix_quotes("unescaped_float.csv", fix=False)
+    assert not CsvReader._check_or_fix_file("unescaped_float.csv", fix=False, value_fn=CsvUtil.strip_quotes)
 
 
 if __name__ == "__main__":

@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import csv
-import os
 import re
 
 
@@ -25,6 +23,12 @@ class CsvUtil:
 
     # ISO-8601 date pattern (yyyy-mm-dd)
     _ISO_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+    # Pattern for values that look like dates (contain / or month names)
+    _DATE_LIKE_RE = re.compile(
+        r"(?:\d{1,2}/\d{1,2}/|\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec))",
+        re.IGNORECASE,
+    )
 
     @classmethod
     def strip_quotes(cls, value: str) -> str:
@@ -61,54 +65,6 @@ class CsvUtil:
         requires_quotes = cls.requires_quotes(value)
         has_quotes = cls.has_quotes(value)
         return requires_quotes and not has_quotes
-
-    @classmethod
-    def check_or_fix_quotes(cls, file_path: str, *, fix: bool) -> bool:
-        """Check that CSV follows Excel-standard quoting with no unnecessary inner quotes.
-
-        Detects leftover inner quotes from old triple-quoting (e.g. a parsed value of '"1.2"'
-        that came from '\"\"\"1.2\"\"\"' in raw CSV). Strips them if fix is True.
-        Returns True if the file already matches Excel's quoting, False if changes are needed.
-
-        Args:
-            file_path: Path to the CSV file to check or fix
-            fix: If True, modify the CSV file to fix any quoting issues; if False, only check and return validity
-        """
-
-        is_valid = True
-        updated_rows = []
-        with open(file_path, "r", newline="", encoding="utf-8") as input_file:
-            reader = csv.reader(input_file)
-            for row in reader:
-                updated_row = []
-                for value in row:
-                    # Strip leftover inner quotes that were added by old triple-quoting logic
-                    if cls.has_quotes(value):
-                        stripped = cls.strip_quotes(value)
-                        is_valid = False
-                        updated_row.append(stripped)
-                    else:
-                        updated_row.append(value)
-                updated_rows.append(updated_row)
-
-        # Overwrite only if fix is True and is_valid is False
-        if fix and not is_valid:
-            with open(file_path, "w", newline="", encoding="utf-8") as output_file:
-                writer = csv.writer(
-                    output_file,
-                    delimiter=",",
-                    quotechar='"',
-                    quoting=csv.QUOTE_MINIMAL,
-                    lineterminator="\n",
-                )
-                writer.writerows(updated_rows)
-        return is_valid
-
-    # Pattern for values that look like dates (contain / or month names)
-    _DATE_LIKE_RE = re.compile(
-        r"(?:\d{1,2}/\d{1,2}/|\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec))",
-        re.IGNORECASE,
-    )
 
     @classmethod
     def normalize_date_str(cls, value: str) -> str:
@@ -158,122 +114,9 @@ class CsvUtil:
         return value
 
     @classmethod
-    def check_or_fix_dates(cls, file_path: str, *, fix: bool) -> bool:
-        """Check that CSV date values are in ISO-8601 format (yyyy-mm-dd).
-
-        Detects Excel-reformatted dates (e.g., M/D/YYYY, 'Month D, YYYY') and
-        normalizes them to ISO-8601 if fix is True.
-        Returns True if the file already has canonical date formats, False if changes are needed.
-
-        Args:
-            file_path: Path to the CSV file to check or fix
-            fix: If True, modify the CSV file to fix any date format issues; if False, only check
-        """
-
-        is_valid = True
-        updated_rows = []
-        with open(file_path, "r", newline="", encoding="utf-8") as input_file:
-            reader = csv.reader(input_file)
-            for row in reader:
-                updated_row = []
-                for value in row:
-                    normalized = cls.normalize_date_str(value)
-                    if normalized != value:
-                        is_valid = False
-                    updated_row.append(normalized)
-                updated_rows.append(updated_row)
-
-        if fix and not is_valid:
-            with open(file_path, "w", newline="", encoding="utf-8") as output_file:
-                writer = csv.writer(
-                    output_file,
-                    delimiter=",",
-                    quotechar='"',
-                    quoting=csv.QUOTE_MINIMAL,
-                    lineterminator="\n",
-                )
-                writer.writerows(updated_rows)
-        return is_valid
-
-    @classmethod
-    def check_or_fix_numbers(cls, file_path: str, *, fix: bool) -> bool:
-        """Check that CSV numeric values have no thousand separators.
-
-        Detects Excel-added thousand separators (e.g., '1,234.56') and
-        strips them if fix is True.
-        Returns True if no numeric values have thousand separators, False if changes are needed.
-
-        Args:
-            file_path: Path to the CSV file to check or fix
-            fix: If True, modify the CSV file to fix any number format issues; if False, only check
-        """
-
-        is_valid = True
-        updated_rows = []
-        with open(file_path, "r", newline="", encoding="utf-8") as input_file:
-            reader = csv.reader(input_file)
-            for row in reader:
-                updated_row = []
-                for value in row:
-                    normalized = cls.normalize_numeric_str(value)
-                    if normalized != value:
-                        is_valid = False
-                    updated_row.append(normalized)
-                updated_rows.append(updated_row)
-
-        if fix and not is_valid:
-            with open(file_path, "w", newline="", encoding="utf-8") as output_file:
-                writer = csv.writer(
-                    output_file,
-                    delimiter=",",
-                    quotechar='"',
-                    quoting=csv.QUOTE_MINIMAL,
-                    lineterminator="\n",
-                )
-                writer.writerows(updated_rows)
-        return is_valid
-
-    @classmethod
-    def check_or_fix_format(cls, file_path: str, *, fix: bool) -> bool:
-        """Check and optionally fix all CSV format issues in a single pass.
-
-        Combines all format checks: leftover inner quotes, Excel-reformatted dates,
-        and thousand separators in numbers.
-        Returns True if the file is already in canonical format, False if changes are needed.
-
-        Args:
-            file_path: Path to the CSV file to check or fix
-            fix: If True, modify the CSV file to fix all format issues; if False, only check
-        """
-
-        is_valid = True
-        updated_rows = []
-        with open(file_path, "r", newline="", encoding="utf-8") as input_file:
-            reader = csv.reader(input_file)
-            for row in reader:
-                updated_row = []
-                for value in row:
-                    updated_value = value
-                    # Strip leftover inner quotes from old triple-quoting
-                    if cls.has_quotes(updated_value):
-                        updated_value = cls.strip_quotes(updated_value)
-                    # Normalize Excel-reformatted dates to ISO-8601
-                    updated_value = cls.normalize_date_str(updated_value)
-                    # Strip thousand separators from numbers
-                    updated_value = cls.normalize_numeric_str(updated_value)
-                    if updated_value != value:
-                        is_valid = False
-                    updated_row.append(updated_value)
-                updated_rows.append(updated_row)
-
-        if fix and not is_valid:
-            with open(file_path, "w", newline="", encoding="utf-8") as output_file:
-                writer = csv.writer(
-                    output_file,
-                    delimiter=",",
-                    quotechar='"',
-                    quoting=csv.QUOTE_MINIMAL,
-                    lineterminator="\n",
-                )
-                writer.writerows(updated_rows)
-        return is_valid
+    def normalize_value(cls, value: str) -> str:
+        """Apply all normalizations to a CSV cell value: strip inner quotes, dates, and numbers."""
+        value = cls.strip_quotes(value)
+        value = cls.normalize_date_str(value)
+        value = cls.normalize_numeric_str(value)
+        return value

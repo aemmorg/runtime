@@ -14,6 +14,7 @@
 
 import csv
 from typing import Any
+from typing import Callable
 from typing import Sequence
 from cl.runtime.file.file_util import FileUtil
 from cl.runtime.file.reader import Reader
@@ -84,6 +85,43 @@ class CsvReader(Reader):
         return tuple(result)
 
     @classmethod
+    def _check_or_fix_file(cls, file_path: str, *, fix: bool, value_fn: Callable[[str], str]) -> bool:
+        """Check and optionally fix values in a single CSV file.
+
+        Args:
+            file_path: Path to the CSV file to check or fix
+            fix: If True, overwrite the file with fixed values; if False, only check
+            value_fn: Function that takes a cell value and returns the normalized value
+        Returns:
+            True if the file is already valid, False if changes are needed
+        """
+
+        is_valid = True
+        updated_rows = []
+        with open(file_path, "r", newline="", encoding="utf-8") as input_file:
+            reader = csv.reader(input_file)
+            for row in reader:
+                updated_row = []
+                for value in row:
+                    updated_value = value_fn(value)
+                    if updated_value != value:
+                        is_valid = False
+                    updated_row.append(updated_value)
+                updated_rows.append(updated_row)
+
+        if fix and not is_valid:
+            with open(file_path, "w", newline="", encoding="utf-8") as output_file:
+                writer = csv.writer(
+                    output_file,
+                    delimiter=",",
+                    quotechar='"',
+                    quoting=csv.QUOTE_MINIMAL,
+                    lineterminator="\n",
+                )
+                writer.writerows(updated_rows)
+        return is_valid
+
+    @classmethod
     def _run_file_check(
         cls,
         *,
@@ -93,7 +131,7 @@ class CsvReader(Reader):
         verbose: bool = False,
         file_include_patterns: Sequence[str] | None = None,
         file_exclude_patterns: Sequence[str] | None = None,
-        check_fn: Any,
+        value_fn: Callable[[str], str],
         error_description: str,
     ) -> None:
         """Common logic for directory-level check_or_fix methods.
@@ -105,7 +143,7 @@ class CsvReader(Reader):
             verbose: Print messages about fixes to stdout if specified
             file_include_patterns: Optional list of filename glob patterns to include
             file_exclude_patterns: Optional list of filename glob patterns to exclude
-            check_fn: CsvUtil classmethod to call for each file, signature (file_path, *, fix) -> bool
+            value_fn: Function that takes a cell value and returns the normalized value
             error_description: Description of the format issue for error/verbose messages
         """
 
@@ -118,7 +156,7 @@ class CsvReader(Reader):
 
         files_with_error = []
         for file_path in file_paths:
-            is_valid = check_fn(file_path, fix=fix)
+            is_valid = cls._check_or_fix_file(file_path, fix=fix, value_fn=value_fn)
             if not is_valid:
                 files_with_error.append(file_path)
 
@@ -165,7 +203,7 @@ class CsvReader(Reader):
             verbose=verbose,
             file_include_patterns=file_include_patterns,
             file_exclude_patterns=file_exclude_patterns,
-            check_fn=CsvUtil.check_or_fix_quotes,
+            value_fn=CsvUtil.strip_quotes,
             error_description="Found values with unnecessary inner quotes (leftover from old triple-quoting).",
         )
 
@@ -198,7 +236,7 @@ class CsvReader(Reader):
             verbose=verbose,
             file_include_patterns=file_include_patterns,
             file_exclude_patterns=file_exclude_patterns,
-            check_fn=CsvUtil.check_or_fix_dates,
+            value_fn=CsvUtil.normalize_date_str,
             error_description="Found date values not in ISO-8601 format.",
         )
 
@@ -231,7 +269,7 @@ class CsvReader(Reader):
             verbose=verbose,
             file_include_patterns=file_include_patterns,
             file_exclude_patterns=file_exclude_patterns,
-            check_fn=CsvUtil.check_or_fix_numbers,
+            value_fn=CsvUtil.normalize_numeric_str,
             error_description="Found numeric values with thousand separators.",
         )
 
@@ -267,7 +305,7 @@ class CsvReader(Reader):
             verbose=verbose,
             file_include_patterns=file_include_patterns,
             file_exclude_patterns=file_exclude_patterns,
-            check_fn=CsvUtil.check_or_fix_format,
+            value_fn=CsvUtil.normalize_value,
             error_description="Found CSV format issues (quotes, dates, or numbers).",
         )
 
