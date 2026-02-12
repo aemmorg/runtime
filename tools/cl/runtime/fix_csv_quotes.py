@@ -41,8 +41,8 @@ if __name__ == '__main__':
         if (x := ProjectLayout.get_package_preloads_root(package)) is not None and x not in dirs:
             dirs.add(x)
 
-    # Create __init__.py files in subdirectories except for tests
-    CsvReader.check_or_fix_quotes(
+    # Check and fix all CSV format issues (quotes, dates, numbers)
+    CsvReader.check_or_fix_csv_format(
         dirs=tuple(dirs),
         ext="csv",
         fix=True,

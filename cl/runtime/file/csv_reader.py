@@ -84,6 +84,59 @@ class CsvReader(Reader):
         return tuple(result)
 
     @classmethod
+    def _run_file_check(
+        cls,
+        *,
+        dirs: Sequence[str],
+        ext: str,
+        fix: bool,
+        verbose: bool = False,
+        file_include_patterns: Sequence[str] | None = None,
+        file_exclude_patterns: Sequence[str] | None = None,
+        check_fn: Any,
+        error_description: str,
+    ) -> None:
+        """Common logic for directory-level check_or_fix methods.
+
+        Args:
+            dirs: Directories where file search is performed
+            ext: File extension to search for without the leading dot (e.g., "csv")
+            fix: If True, modify CSV files to fix the detected issues; if False, only check
+            verbose: Print messages about fixes to stdout if specified
+            file_include_patterns: Optional list of filename glob patterns to include
+            file_exclude_patterns: Optional list of filename glob patterns to exclude
+            check_fn: CsvUtil classmethod to call for each file, signature (file_path, *, fix) -> bool
+            error_description: Description of the format issue for error/verbose messages
+        """
+
+        file_paths = FileUtil.enumerate_files(
+            dirs=dirs,
+            ext=ext,
+            file_include_patterns=file_include_patterns,
+            file_exclude_patterns=file_exclude_patterns,
+        )
+
+        files_with_error = []
+        for file_path in file_paths:
+            is_valid = check_fn(file_path, fix=fix)
+            if not is_valid:
+                files_with_error.append(file_path)
+
+        if files_with_error:
+            files_list = "".join([f"    {file}\n" for file in files_with_error])
+            msg = (
+                f"{error_description}\n"
+                f"RECOMMENDED ACTION: Run fix_csv_format script to fix.\n{files_list}"
+            )
+            if not fix:
+                raise RuntimeError(msg)
+            elif verbose:
+                print(msg)
+        elif verbose:
+            files_list = "".join([f"    {x}\n" for x in sorted(file_paths)])
+            print(f"Verified CSV format in the following files:\n{files_list}")
+
+    @classmethod
     def check_or_fix_quotes(
         cls,
         *,
@@ -94,50 +147,129 @@ class CsvReader(Reader):
         file_include_patterns: Sequence[str] | None = None,
         file_exclude_patterns: Sequence[str] | None = None,
     ) -> None:
-        """
-        Check csv preload files in all subdirectories of 'root_path' to ensure that each field that
-        is a number or date is surrounded by triple quotes in the CSV file (single quotes if opened in Excel).
-        This will prevent Excel modifying these fields on save (e.g., using locale-specific format for dates)
-        or triggering JSON loading.
+        """Check CSV files for unnecessary inner quotes leftover from old triple-quoting.
 
         Args:
             dirs: Directories where file search is performed
             ext: File extension to search for without the leading dot (e.g., "csv")
-            fix: If True, modify CSV to match the formatting rules for quotes, numbers and dates
+            fix: If True, strip the leftover inner quotes; if False, only check and report
             verbose: Print messages about fixes to stdout if specified
             file_include_patterns: Optional list of filename glob patterns to include
             file_exclude_patterns: Optional list of filename glob patterns to exclude
         """
 
-        # Enumerate files in the specified directories, taking into account include and exclude patterns
-        file_paths = FileUtil.enumerate_files(
+        cls._run_file_check(
             dirs=dirs,
             ext=ext,
+            fix=fix,
+            verbose=verbose,
             file_include_patterns=file_include_patterns,
             file_exclude_patterns=file_exclude_patterns,
+            check_fn=CsvUtil.check_or_fix_quotes,
+            error_description="Found values with unnecessary inner quotes (leftover from old triple-quoting).",
         )
 
-        # Iterate over filenames
-        files_with_error = []
-        for file_path in file_paths:
-            # Load the file
-            is_valid = CsvUtil.check_or_fix_quotes(file_path, fix=fix)
-            if not is_valid:
-                files_with_error.append(file_path)
+    @classmethod
+    def check_or_fix_dates(
+        cls,
+        *,
+        dirs: Sequence[str],
+        ext: str,
+        fix: bool,
+        verbose: bool = False,
+        file_include_patterns: Sequence[str] | None = None,
+        file_exclude_patterns: Sequence[str] | None = None,
+    ) -> None:
+        """Check CSV files for Excel-reformatted dates not in ISO-8601 format.
 
-        if files_with_error:
-            files_list = "".join([f"    {file}\n" for file in files_with_error])
-            msg = (
-                f"Found values with unnecessary inner quotes (leftover from old triple-quoting).\n"
-                f"RECOMMENDED ACTION: Run fix_csv_quotes script to fix.\n{files_list}"
-            )
-            if not fix:
-                raise RuntimeError(msg)
-            elif verbose:
-                print(msg)
-        elif verbose:
-            files_list = "".join([f"    {x}\n" for x in sorted(file_paths)])
-            print(f"Verified field wrapping in the following CSV preload files:\n{files_list}")
+        Args:
+            dirs: Directories where file search is performed
+            ext: File extension to search for without the leading dot (e.g., "csv")
+            fix: If True, normalize dates to ISO-8601 (yyyy-mm-dd); if False, only check and report
+            verbose: Print messages about fixes to stdout if specified
+            file_include_patterns: Optional list of filename glob patterns to include
+            file_exclude_patterns: Optional list of filename glob patterns to exclude
+        """
+
+        cls._run_file_check(
+            dirs=dirs,
+            ext=ext,
+            fix=fix,
+            verbose=verbose,
+            file_include_patterns=file_include_patterns,
+            file_exclude_patterns=file_exclude_patterns,
+            check_fn=CsvUtil.check_or_fix_dates,
+            error_description="Found date values not in ISO-8601 format.",
+        )
+
+    @classmethod
+    def check_or_fix_numbers(
+        cls,
+        *,
+        dirs: Sequence[str],
+        ext: str,
+        fix: bool,
+        verbose: bool = False,
+        file_include_patterns: Sequence[str] | None = None,
+        file_exclude_patterns: Sequence[str] | None = None,
+    ) -> None:
+        """Check CSV files for numeric values with thousand separators.
+
+        Args:
+            dirs: Directories where file search is performed
+            ext: File extension to search for without the leading dot (e.g., "csv")
+            fix: If True, strip thousand separators; if False, only check and report
+            verbose: Print messages about fixes to stdout if specified
+            file_include_patterns: Optional list of filename glob patterns to include
+            file_exclude_patterns: Optional list of filename glob patterns to exclude
+        """
+
+        cls._run_file_check(
+            dirs=dirs,
+            ext=ext,
+            fix=fix,
+            verbose=verbose,
+            file_include_patterns=file_include_patterns,
+            file_exclude_patterns=file_exclude_patterns,
+            check_fn=CsvUtil.check_or_fix_numbers,
+            error_description="Found numeric values with thousand separators.",
+        )
+
+    @classmethod
+    def check_or_fix_csv_format(
+        cls,
+        *,
+        dirs: Sequence[str],
+        ext: str,
+        fix: bool,
+        verbose: bool = False,
+        file_include_patterns: Sequence[str] | None = None,
+        file_exclude_patterns: Sequence[str] | None = None,
+    ) -> None:
+        """Check and optionally fix all CSV format issues in a single pass.
+
+        Combines all format checks: leftover inner quotes, Excel-reformatted dates,
+        and thousand separators in numbers.
+
+        Args:
+            dirs: Directories where file search is performed
+            ext: File extension to search for without the leading dot (e.g., "csv")
+            fix: If True, fix all format issues; if False, only check and report
+            verbose: Print messages about fixes to stdout if specified
+            file_include_patterns: Optional list of filename glob patterns to include
+            file_exclude_patterns: Optional list of filename glob patterns to exclude
+        """
+
+        cls._run_file_check(
+            dirs=dirs,
+            ext=ext,
+            fix=fix,
+            verbose=verbose,
+            file_include_patterns=file_include_patterns,
+            file_exclude_patterns=file_exclude_patterns,
+            check_fn=CsvUtil.check_or_fix_format,
+            error_description="Found CSV format issues (quotes, dates, or numbers).",
+        )
 
     @classmethod
     def _deserialize_row(cls, *, record_type: type, row_dict: dict[str, Any]) -> RecordMixin:
