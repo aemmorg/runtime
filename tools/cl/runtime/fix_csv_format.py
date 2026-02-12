@@ -42,7 +42,7 @@ if __name__ == '__main__':
             dirs.add(x)
 
     # Check and fix all CSV format issues (quotes, dates, numbers)
-    CsvReader.check_or_fix_csv_format(
+    CsvReader.check_or_fix_format(
         dirs=tuple(dirs),
         ext="csv",
         fix=True,

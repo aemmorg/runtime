@@ -17,13 +17,13 @@ from cl.runtime.file.csv_reader import CsvReader
 from cl.runtime.settings.preload_settings import PreloadSettings
 
 
-def test_csv_preload_quotes():
+def test_csv_format():
     """Prebuild test to check that CSV preloads follow the format rules."""
 
     # Get the list of preload CSV files where copyright header is missing, incorrect, or not followed by a blank line
     preload_settings = PreloadSettings.instance()
     csv_reader = CsvReader().build()
-    csv_reader.check_or_fix_quotes(
+    csv_reader.check_or_fix_format(
         dirs=preload_settings.preload_dirs,
         ext="csv",
         fix=False,
