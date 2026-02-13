@@ -13,6 +13,8 @@
 # limitations under the License.
 
 import re
+import plotly.graph_objects as go
+import plotly.io as pio
 
 
 class PlotlyUtil:
@@ -33,3 +35,26 @@ class PlotlyUtil:
         # Remove lowercase GUIDs (e.g., 1d6cd542-2bef-4533-9d0b-40e9723ce8f5)
         html = re.sub(r"[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}", "", html)
         return html
+
+    @classmethod
+    def plot_to_html(cls, plot: go.Figure, div_id: str | None = None) -> str:
+        """
+        Render the HTML and return as string.
+
+        Args:
+            plot: The plot to render.
+            div_id: The ID of the div element to render the plot into.
+        """
+        return pio.to_html(plot, full_html=False, include_plotlyjs="cdn", div_id=div_id)
+
+    @classmethod
+    def plot_to_html_bytes(cls, plot: go.Figure, div_id: str | None = None) -> bytes:
+        """
+        Render the HTML and return as bytes.
+
+        Args:
+            plot: The plot to render.
+            div_id: The ID of the div element to render the plot into.
+        """
+        html = cls.plot_to_html(plot=plot, div_id=div_id)
+        return html.encode("utf-8")

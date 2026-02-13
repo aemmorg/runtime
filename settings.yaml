@@ -61,6 +61,7 @@ default:
 # Test environment
 testing:
 
+  db_type: BasicMongoMockDb
   # Documented in QaSettings class
   qa_db_types:
     - SqliteDb

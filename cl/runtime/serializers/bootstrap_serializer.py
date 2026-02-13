@@ -38,7 +38,11 @@ from cl.runtime.records.protocols import is_key_type
 from cl.runtime.records.protocols import is_mapping_type
 from cl.runtime.records.protocols import is_sequence_type
 from cl.runtime.records.typename import typename
+from cl.runtime.records.typename import typeof
+from cl.runtime.schema.data_spec import DataSpec
 from cl.runtime.schema.type_hint import TypeHint
+from cl.runtime.schema.type_info import TypeInfo
+from cl.runtime.schema.type_schema import TypeSchema
 from cl.runtime.serializers.bool_format import BoolFormat
 from cl.runtime.serializers.bytes_format import BytesFormat
 from cl.runtime.serializers.date_format import DateFormat
@@ -59,11 +63,12 @@ from cl.runtime.serializers.type_format import TypeFormat
 from cl.runtime.serializers.type_inclusion import TypeInclusion
 from cl.runtime.serializers.type_placement import TypePlacement
 from cl.runtime.serializers.uuid_format import UuidFormat
+from cl.runtime.ui.control import Control
 
 
 @dataclass(slots=True, kw_only=True)
 class BootstrapSerializer(Serializer):
-    """Unidirectional serialization of object to a dictionary without type information."""
+    """Roundtrip serialization of object to a dictionary without type information."""
 
     none_format: NoneFormat = required()
     """Serialization format for None (pass through without conversion if not set)."""
@@ -124,6 +129,9 @@ class BootstrapSerializer(Serializer):
 
     pascalize_keys: bool | None = None
     """Pascalize keys during serialization if set."""
+
+    control_shallow_mode: bool = False
+    """If True, controls are processed only one level deep."""
 
     def serialize(self, data: Any, type_hint: TypeHint | None = None) -> Any:
         """Serialize data to a dictionary."""
@@ -337,7 +345,8 @@ class BootstrapSerializer(Serializer):
             # Allow keys that begin from _ in mapping classes, but not slotted classes
             result.update(
                 {
-                    k if not self.pascalize_keys else CaseUtil.snake_to_pascal_case(k): self._serialize(v)
+                    k if not self.pascalize_keys else CaseUtil.snake_to_pascal_case(k):
+                        self._serialize(v) if not self.control_shallow_mode else v
                     for k in slots
                     if not is_empty(v := getattr(data, k)) and not k.startswith("_")
                 }
@@ -346,6 +355,7 @@ class BootstrapSerializer(Serializer):
             if include_type_last:
                 # Include type information last based on include_type_last flag
                 result[self.type_field] = type_field
+
             return result
         else:
             # Did not match a supported data type
@@ -353,4 +363,78 @@ class BootstrapSerializer(Serializer):
 
     def deserialize(self, data: Any, type_hint: TypeHint | None = None) -> Any:
         """Deserialize a dictionary into object using type information extracted from the _type field."""
-        raise RuntimeError(f"{typename(type(self))} does not support deserialization.")
+
+        if type_hint is None:
+            if is_mapping_type(type(data)):
+                # Attempt to extract type information from the mapping data
+                if (type_name := data.get(self.type_field, None) if data else None) is not None:
+                    # Type name is specified, convert to Python type and look up the class
+                    type_ = TypeInfo.from_type_name(type_name)
+                    type_spec = TypeSchema.for_type(type_)
+                    type_hint = TypeHint.for_type(type_spec.type_)
+                else:
+                    raise RuntimeError(
+                        "Key '_type' is missing in the serialized data and type hint is not specified, "
+                        "cannot deserialize."
+                    )
+            else:
+                raise RuntimeError(
+                    f"Data is not a list or mapping, cannot deserialize without type_hint argument:\n"
+                    f"{ErrorUtil.wrap(data)}."
+                )
+
+        # Get parameters from the type chain, considering the possibility that it may be None
+        schema_type = type_hint.schema_type if type_hint is not None else None
+
+        if is_mapping_type(typeof(data)):
+            if schema_type is not None and is_mapping_type(schema_type):
+                # Deserialize into mutable dict if schema_type is a mapping
+                deserialized_type = dict
+            else:
+                # Otherwise deserialize as a slotted class
+                # Check if serialized data contains _type field
+                deserialized_type_name = data.get(self.type_field, None)
+                schema_type_name = typename(schema_type) if schema_type is not None else None
+                if deserialized_type_name is not None and deserialized_type_name != schema_type_name:
+                    # If _type field is present, it must be a subclass of schema_type
+                    deserialized_type = TypeInfo.from_type_name(deserialized_type_name)
+                    if not issubclass(deserialized_type, schema_type):
+                        raise RuntimeError(
+                            f"Field _type={deserialized_type_name} in serialized data\n"
+                            f"is not a subclass of schema type {typename(schema_type)}."
+                        )
+                elif schema_type is not None:
+                    # Otherwise use schema type if specified
+                    deserialized_type = schema_type
+                else:
+                    raise RuntimeError("Neither schema type nor _type field is provided for a mapping.")
+
+            # Get type spec
+            type_spec = TypeSchema.for_type(deserialized_type)
+            if not isinstance(type_spec, DataSpec):
+                raise RuntimeError(f"Type '{typename(deserialized_type)}' cannot be deserialized from a dictionary.")
+
+            # Get class and field dictionary for type_name
+            schema_class = type_spec.type_
+
+            # Deserialize into a dict
+            result_dict = {
+                (
+                    CaseUtil.pascale_to_snake_case_keep_trailing_underscore(field_key)
+                    if self.pascalize_keys
+                    else field_key
+                ): field_value
+                for field_key, field_value in data.items()
+                if not field_key.startswith("_")
+            }
+
+            # Construct an instance of the target type
+            result = schema_class(**result_dict)
+
+            # Invoke build and return
+            return result
+        else:
+            raise RuntimeError(
+                f"Cannot deserialize the following data using type hint '{type_hint.to_str()}':\n"
+                f"{ErrorUtil.wrap(data)}"
+            )

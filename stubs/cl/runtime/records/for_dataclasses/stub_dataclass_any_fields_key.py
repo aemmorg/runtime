@@ -17,7 +17,7 @@ from cl.runtime.records.for_dataclasses.dataclass_mixin import DataclassMixin
 from cl.runtime.records.key_mixin import KeyMixin
 
 
-@dataclass(slots=True, kw_only=True)
+@dataclass(slots=True, kw_only=True, eq=False)
 class StubDataclassAnyFieldsKey(DataclassMixin, KeyMixin):
 
     id: str = "id"

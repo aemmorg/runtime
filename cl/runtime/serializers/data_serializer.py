@@ -79,6 +79,9 @@ class DataSerializer(Serializer):
     pascalize_keys: bool | None = None
     """Pascalize keys during serialization if set."""
 
+    control_field: bool = False
+    """Flag that indicate on adding field special for controls."""
+
     def __validate(self) -> None:
         """Perform checks without changing the data."""
         if (self.inner_serializer is not None) ^ (self.inner_encoder is not None):
@@ -253,6 +256,12 @@ class DataSerializer(Serializer):
             if include_type_last:
                 # Include type information last based on include_type_last flag
                 result[self.type_field] = type_field
+
+            if hasattr(data, "control_path") and self.control_field:
+                key_name = "control_type"
+                key_name = CaseUtil.snake_to_pascal_case(key_name) if self.pascalize_keys else key_name
+                result[key_name] = data.get_control_type()
+
             return result
         else:
             raise RuntimeError(f"Cannot serialize data of type '{type(data)}'.")

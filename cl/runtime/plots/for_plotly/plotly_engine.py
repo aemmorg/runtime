@@ -14,7 +14,7 @@
 
 from dataclasses import dataclass
 import plotly.graph_objects as go
-import plotly.io as pio
+from cl.runtime.plots.for_plotly.plotly_util import PlotlyUtil
 from cl.runtime.plots.plot import Plot
 from cl.runtime.plots.plot_color import PlotColor
 from cl.runtime.plots.plot_line_style import PlotLineStyle
@@ -111,8 +111,7 @@ class PlotlyEngine(PlottingEngine):
                     itemsizing="constant",
                 ),
             )
-            html = pio.to_html(fig, full_html=False, include_plotlyjs="cdn", div_id=self.div_id)
-            return html.encode("utf-8")
+            return PlotlyUtil.plot_to_html_bytes(fig, div_id=self.div_id)
 
         elif isinstance(plot, ScatterPlot2D):
             # Render ScatterPlot2D to HTML
@@ -154,8 +153,7 @@ class PlotlyEngine(PlottingEngine):
                 yaxis=dict(range=plot.y_lim) if plot.y_lim else {},
                 showlegend=True,
             )
-            html = pio.to_html(fig, full_html=False, include_plotlyjs="cdn", div_id=self.div_id)
-            return html.encode("utf-8")
+            return PlotlyUtil.plot_to_html_bytes(fig, div_id=self.div_id)
         else:
             raise RuntimeError(f"{typenameof(self)} does not support rendering of {typenameof(plot)} to HTML.")
 

@@ -84,6 +84,7 @@ class DataSerializers:
         type_inclusion=TypeInclusion.ALWAYS,
         type_field="_t",
         pascalize_keys=True,
+        control_field=True,
     ).build()
     """Default bidirectional data serializer settings for UI."""
 
