@@ -15,7 +15,7 @@
 import pytest
 from cl.runtime.contexts.context_manager import active
 from cl.runtime.db.data_source import DataSource
-from cl.runtime.records.predicates import And
+from cl.runtime.records.predicates import And, Gte, Gt, Lt, Lte
 from cl.runtime.records.predicates import Exists
 from cl.runtime.records.predicates import In
 from cl.runtime.records.predicates import Not
@@ -27,7 +27,7 @@ from stubs.cl.runtime.records.for_dataclasses.stub_dataclass_primitive_fields_qu
 )
 
 
-def test_str_query(basic_mongo_mock_db_fixture):
+def test_str_query(multi_db_fixture):
     """Test query for a string field."""
 
     # Create test records and query and populate with sample data
@@ -56,6 +56,31 @@ def test_str_query(basic_mongo_mock_db_fixture):
     # assert to_key_str_field(active(DataSource).load_by_query(and_query)) == ["abc"]
     assert to_key_str_field(active(DataSource).load_by_query(exists_query)) == ["def", "xyz"]
     assert to_key_str_field(active(DataSource).load_by_query(does_not_exist_query)) == ["abc"]
+
+def test_int_query(multi_db_fixture):
+    """Test query for an int field."""
+
+    # Create test records and query and populate with sample data
+    records = [
+        StubDataclassPrimitiveFields(key_str_field="abc", obj_int_field=1, obj_str_field=None),
+        StubDataclassPrimitiveFields(key_str_field="def", obj_int_field=2),
+        StubDataclassPrimitiveFields(key_str_field="xyz", obj_int_field=3),
+    ]
+    records = [x.build() for x in records]
+    active(DataSource).insert_many(records, commit=True)
+
+    # Create queries
+    gte_query = StubDataclassPrimitiveFieldsQuery(obj_int_field=Gte(1)).build()
+    gt_query = StubDataclassPrimitiveFieldsQuery(obj_int_field=Gt(1)).build()
+    lte_query = StubDataclassPrimitiveFieldsQuery(obj_int_field=Lte(2)).build()
+    lt_query = StubDataclassPrimitiveFieldsQuery(obj_int_field=Lt(2)).build()
+
+    # Load query and assert expected result
+    to_key_str_field = lambda rec: [x.key_str_field for x in rec]
+    assert to_key_str_field(active(DataSource).load_by_query(gte_query)) == ["abc", "def", "xyz"]
+    assert to_key_str_field(active(DataSource).load_by_query(gt_query)) == ["def", "xyz"]
+    assert to_key_str_field(active(DataSource).load_by_query(lte_query)) == ["abc", "def"]
+    assert to_key_str_field(active(DataSource).load_by_query(lt_query)) == ["abc"]
 
 
 if __name__ == "__main__":
