@@ -336,6 +336,19 @@ class TypeInfo(BootstrapMixin):
 
     @classmethod
     @cached
+    def get_child_type_names(cls, type_: type, *, type_kind: TypeKind | None = None) -> tuple[str, ...]:
+        """Return a tuple of type names for child types (excluding self) that match the predicate.
+
+        Args:
+            type_: Type for which the result is returned
+            type_kind: Restrict to the specified type kind if provided (optional)
+        """
+        type_name = typename(type_)
+        all_names = cls.get_child_and_self_type_names(type_, type_kind=type_kind)
+        return tuple(name for name in all_names if name != type_name)
+
+    @classmethod
+    @cached
     def get_child_and_self_types(cls, type_: type, *, type_kind: TypeKind | None = None) -> tuple[type, ...]:
         """
         Return a tuple of type names for child types (inclusive of self) that match the predicate.

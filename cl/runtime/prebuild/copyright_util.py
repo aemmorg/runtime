@@ -229,6 +229,26 @@ class CopyrightUtil:
                 print("All copyright headers and trailing blank lines are correct.")
 
     @classmethod
+    def check_copyright_headers(
+        cls,
+        *,
+        fix_header: bool = False,
+        fix_trailing_blank_line: bool = True,
+        verbose: bool = False,
+    ) -> None:
+        """Check and optionally fix copyright headers in all source files.
+
+        Args:
+            fix_header: If True, fix incorrect/missing headers; if False, validate only
+            fix_trailing_blank_line: Also check/fix trailing blank lines after headers
+            verbose: Print messages about fixes to stdout if specified
+        """
+        if fix_header:
+            cls.fix_copyright_headers(verbose=verbose)
+        else:
+            cls.validate_copyright_headers()
+
+    @classmethod
     def validate_copyright_headers(
         cls,
         *,

@@ -172,6 +172,36 @@ class CsvReader(Reader):
             print(f"Verified CSV format in the following files:\n{files_list}")
 
     @classmethod
+    def check_or_fix_quotes(
+        cls,
+        *,
+        dirs: Sequence[str],
+        ext: str,
+        apply_fix: bool,
+        verbose: bool = False,
+        file_include_patterns: Sequence[str] | None = None,
+        file_exclude_patterns: Sequence[str] | None = None,
+    ) -> None:
+        """Check and optionally fix CSV quoting issues.
+
+        Args:
+            dirs: Directories where file search is performed
+            ext: File extension to search for without the leading dot (e.g., "csv")
+            apply_fix: If True, fix all quoting issues; if False, only check and report
+            verbose: Print messages about fixes to stdout if specified
+            file_include_patterns: Optional list of filename glob patterns to include
+            file_exclude_patterns: Optional list of filename glob patterns to exclude
+        """
+        cls.check_or_fix_format(
+            dirs=dirs,
+            ext=ext,
+            fix=apply_fix,
+            verbose=verbose,
+            file_include_patterns=file_include_patterns,
+            file_exclude_patterns=file_exclude_patterns,
+        )
+
+    @classmethod
     def _deserialize_row(cls, *, record_type: type, row_dict: dict[str, Any]) -> RecordMixin:
         """Deserialize row into a record.
         Args:
