@@ -26,7 +26,7 @@ _STUBS_DIR = os.path.normpath(
 )
 
 _RUFF_D_ARGS = [
-    sys.executable, "-m", "ruff", "check", "--select", "D", "--ignore",
+    sys.executable, "-m", "ruff", "check", "--output-format", "concise", "--select", "D", "--ignore",
     "D100,D101,D102,D103,D104,D105,D106,D107,D200,D202,D203,D205,D212,D213,"
     "D301,D400,D401,D402,D403,D404,D410,D411,D413,D415,D417",
 ]
