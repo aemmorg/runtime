@@ -19,6 +19,9 @@ from dataclasses import dataclass
 from uuid import UUID
 from cl.runtime.contexts.context_manager import active
 from cl.runtime.db.data_source import DataSource
+from cl.runtime.events.event_broker import EventBroker
+from cl.runtime.events.navigate_event import NavigateEvent
+from cl.runtime.events.refresh_event import RefreshEvent
 from cl.runtime.file.file_data import FileData
 from cl.runtime.log.exceptions.user_error import UserError
 from cl.runtime.qa.pytest.pytest_util import PytestUtil
@@ -26,6 +29,7 @@ from cl.runtime.records.record_mixin import RecordMixin
 from cl.runtime.records.typename import typename
 from stubs.cl.runtime.records.for_dataclasses.stub_dataclass import StubDataclass
 from stubs.cl.runtime.records.for_dataclasses.stub_dataclass_handlers_key import StubHandlersKey
+from stubs.cl.runtime.records.for_dataclasses.stub_dataclass_key import StubDataclassKey
 
 _logger = logging.getLogger(__name__)
 
@@ -336,3 +340,28 @@ class StubHandlers(StubHandlersKey, RecordMixin):
 
         active(DataSource).replace_one(record, commit=True)
         _logger.info(f"Record {record} has been saved to db from handler.")
+
+
+    def run_method_with_refresh_event(self):
+        """Stub method."""
+
+        # Get EventBroker and create event
+        event_broker = active(EventBroker)
+        events_topic = "events"
+        refresh_event = RefreshEvent().build()
+
+        # Publish event
+        event_broker.sync_publish(events_topic, refresh_event)
+
+    def run_method_with_navigate_event(self):
+        """Stub method."""
+
+        # Get EventBroker and create event
+        event_broker = active(EventBroker)
+        events_topic = "events"
+        navigate_event = NavigateEvent(
+            record_type_name=typename(StubDataclass), record_key=StubDataclassKey().build().id
+        ).build()
+
+        # Publish event
+        event_broker.sync_publish(events_topic, navigate_event)

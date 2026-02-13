@@ -304,6 +304,16 @@ declare:
         - Id
       name: Record
     static: false
+  - name: RunMethodWithNavigateEvent
+    label: Method With Navigate Event
+    comment: Stub method.
+    type_: Job
+    static: false
+  - name: RunMethodWithRefreshEvent
+    label: Method With Refresh Event
+    comment: Stub method.
+    type_: Job
+    static: false
   - name: RunStaticMethod1A
     label: Static Method 1A
     comment: Stub handler.

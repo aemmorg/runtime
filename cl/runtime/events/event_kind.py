@@ -39,3 +39,9 @@ class EventKind(IntEnum):
 
     NO_ACTIVE_TASKS = auto()
     """Event that there are no active tasks."""
+
+    REFRESH = auto()
+    """Event to trigger the refresh."""
+
+    NAVIGATE = auto()
+    """Event to trigger navigation to the new target type, record and view."""
