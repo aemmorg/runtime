@@ -53,14 +53,15 @@ class JsonlReader(Reader):
                 record_type = FileUtil.get_type_from_filename(file_path, raise_on_fail=False)
 
                 with open(file_path, mode="rb") as file:
-                    lines = file.readlines()
+                    data = file.read().strip()
 
-                    object_dicts = []
-                    for line in lines:
-                        stripped = line.strip()
-                        if not stripped:
-                            continue
-                        object_dicts.append(orjson.loads(stripped))
+                    if not data:
+                        continue
+
+                    # Parse all lines in a single orjson call by wrapping as a JSON array
+                    non_empty_lines = [line for line in data.split(b"\n") if line.strip()]
+                    json_bytes = b"[" + b",".join(non_empty_lines) + b"]"
+                    object_dicts = orjson.loads(json_bytes)
 
                     invalid_objects = {
                         index
