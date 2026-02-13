@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+import time
 import pytest
 from cl.runtime.contexts.context_manager import active
 from cl.runtime.db.data_source import DataSource
@@ -53,6 +55,40 @@ def test_check_or_fix_format(work_dir_fixture):
 
     # Invalid file has non-canonical formatting
     assert not JsonlReader.check_or_fix_file("invalid_jsonl_format.jsonl", fix=False)
+
+
+def test_performance(default_db_fixture, tmp_path):
+    """Time load_all for generated JSONL files of 100, 1000, and 10000 rows."""
+
+    row_counts = [100, 1000, 10000]
+    results = []
+
+    for row_count in row_counts:
+        # Generate JSONL file
+        lines = []
+        for i in range(1, row_count + 1):
+            lines.append(f'{{"derived_str_field":"test_derived_str_field_value_{i}","id":"derived_id_{i}"}}')
+        jsonl_path = os.path.join(str(tmp_path), "StubDataclassDerived.jsonl")
+        with open(jsonl_path, "wb") as f:
+            f.write("\n".join(lines).encode() + b"\n")
+
+        jsonl_reader = JsonlReader().build()
+        start = time.perf_counter()
+        records = jsonl_reader.load_all(dirs=[str(tmp_path)], ext="jsonl")
+        elapsed = time.perf_counter() - start
+
+        assert len(records) == row_count
+        results.append((row_count, elapsed))
+
+        # Clean up generated file before next iteration
+        os.remove(jsonl_path)
+
+    # Write bench CSV next to this test file
+    bench_path = os.path.join(os.path.dirname(__file__), "test_jsonl_reader.bench.csv")
+    with open(bench_path, "w", newline="", encoding="utf-8") as f:
+        f.write("Rows,TimeSec\n")
+        for row_count, elapsed in results:
+            f.write(f"{row_count},{elapsed:.6f}\n")
 
 
 if __name__ == "__main__":
