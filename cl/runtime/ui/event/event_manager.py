@@ -49,16 +49,16 @@ class EventManager:
         """
         Process an event received from the frontend.
 
-        :param event_dict: A dictionary representing a ``ControlEvent`` implementation.
+        Args:
+            event_dict: A dictionary representing a ``ControlEvent`` implementation.
             It must contain the ``"_t"`` key with the name of the ``ControlEvent`` subclass.
             Other keys must match the subclass attributes and their values must conform
             to the corresponding type hints.
 
             Some attribute values may be dictionaries representing a ``Variant``.
             Such dictionaries must also contain the ``"_t"`` key with the name of the
-            ``Variant`` subclass.
+            ``Variant`` subclass, for example:
 
-            Examples:
             ``{"_t": "ValueUpdateEvent", "Key": "Pressed", "Value": True}``
             ``{"_t": "PartialValueUpdateEvent", "Key": "Data", "Index": "1",
                "Value": {"_t": "IntVariant", "Metadata": None, "Value": 12}}``
@@ -66,7 +66,8 @@ class EventManager:
             The method may also receive ``keep_alive`` messages from the frontend,
             which do not produce any ``ControlEvent``.
 
-        :return: A list of ``ControlEvent`` objects produced by the dispatch.
+        Returns:
+            A list of ``ControlEvent`` objects produced by the dispatch.
         """
 
         if self._check_for_keep_alive_event(event_dict):
