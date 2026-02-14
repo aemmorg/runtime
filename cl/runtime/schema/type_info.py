@@ -539,7 +539,12 @@ class TypeInfo(BootstrapMixin):
                 rows = file.readlines()
         else:
             # Cache file does not exist, error message
-            raise RuntimeError(f"TypeInfo file is not found at {cache_filename}\n, run init_type_info to create.")
+            settings_env = os.environ.get("CL_SETTINGS_ENV", "development")
+            raise RuntimeError(
+                f"TypeInfo file is not found at {cache_filename}\n"
+                f"Environment: {settings_env}\n"
+                f"Recommended action: run init_type_info with CL_SETTINGS_ENV={settings_env} to create."
+            )
 
         # Iterate over the rows of TypeInfo preload
         for row_index, row in enumerate(rows):
@@ -645,7 +650,8 @@ class TypeInfo(BootstrapMixin):
     def _get_preload_filename(cls) -> str:
         """Get the filename for the qual name cache."""
         resources_root = ProjectLayout.get_resources_root()
-        result = os.path.join(resources_root, "bootstrap/TypeInfo.csv")
+        settings_env = os.environ.get("CL_SETTINGS_ENV", "development")
+        result = os.path.join(resources_root, settings_env, "bootstrap", "TypeInfo.csv")
         return result
 
     @classmethod

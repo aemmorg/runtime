@@ -28,6 +28,10 @@ from cl.runtime.settings.package_settings import PackageSettings
 def init_type_info() -> None:
     """Create __init__.py files to avoid missing directories and rebuild type cache."""
 
+    import os
+    settings_env = os.environ.get("CL_SETTINGS_ENV", "development")
+    print(f"Environment: {settings_env}")
+
     # Create __init__.py files first to avoid missing classes in directories without __init__.py
     print("Adding __init__.py files if any are missing...")
     InitFileUtil.check_or_fix_init_files(fix=True, verbose=False)
@@ -36,6 +40,8 @@ def init_type_info() -> None:
     print("Initializing the type cache...")
     packages = PackageSettings.instance().get_packages()
     TypeInfo.rebuild(packages=packages)
+
+    print(f"TypeInfo.csv written to: {TypeInfo._get_preload_filename()}")
 
 
 if __name__ == '__main__':
