@@ -273,6 +273,50 @@ invalid_db_name_symbols = r'/\\. "$*<>:|?'
 """Invalid MongoDB database name symbols."""
 ```
 
+### Settings
+
+Settings classes use Dynaconf to load configuration from YAML files and environment variables.
+Each subclass of `Settings` has a prefix derived from the class name by converting to snake_case
+and removing the `Settings` suffix (e.g., `ApiSettings` → `api_`, `DbSettings` → `db_`).
+All fields in the class must start with this prefix, and only Dynaconf fields matching
+the prefix are passed to the constructor.
+
+```python
+@dataclass(slots=True, kw_only=True)
+class ApiSettings(Settings):
+    """Configuration for the API server."""
+
+    api_hostname: str = "localhost"
+    """API server hostname."""
+
+    api_port: int = 7008
+    """API server port."""
+```
+
+The `instance()` method returns a cached singleton. Without `package`, it loads from
+the project root directory. With `package`, it loads from the package directory instead
+(e.g., `runtime/` for `cl.runtime`). These are independent — package settings are not
+merged with root settings.
+
+```python
+# Load from project root (settings.yaml, envvar prefix CL_)
+api_settings = ApiSettings.instance()
+
+# Load from package directory runtime/ (cl.runtime.settings.yaml, envvar prefix CL_RUNTIME_)
+package_settings = PackageSettings.instance(package="cl.runtime")
+```
+
+Within each context, sources are merged in this priority order (highest first):
+
+1. OS environment variables (prefix `CL_` for root, `CL_RUNTIME_` for `cl.runtime`)
+2. `.env` file
+3. `{filename}.local.yaml` (local overrides, not committed)
+4. `.secrets.yaml`
+5. `{filename}.yaml` (baseline defaults)
+
+Where `{filename}` is `settings` for root or `{namespace}.settings` for packages
+(e.g., `cl.runtime.settings`).
+
 ## Testing Standards
 
 ### Test Organization
