@@ -262,6 +262,17 @@ def serialize(self, data: Any, type_hint: TypeHint | None = None) -> Any:
     """
 ```
 
+## Import Guidelines
+
+**Never use inline imports to resolve circular import issues.** All imports must be at the top of the file following standard Python conventions.
+
+If you encounter circular import problems:
+1. First, try to find a proper architectural solution (e.g., dependency injection, restructuring modules, using protocols/abstract base classes)
+2. If the circular dependency seems unavoidable, pause and request instructions from the user rather than using inline imports as a workaround
+
+Inline imports make code harder to understand, violate PEP 8 style guidelines, and hide architectural problems that should be resolved properly.
+
+
 ### Naming Conventions
 
 - Boolean variables use auxiliary verbs: `is_active`, `has_permission`
