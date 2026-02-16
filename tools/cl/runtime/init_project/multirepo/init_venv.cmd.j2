@@ -17,7 +17,7 @@ echo Upgrade pip
 python -m pip install --upgrade pip
 
 echo.
-echo Install dependencies from pyproject.toml
-pip install --group test .
+echo Install dependencies from requirements.txt
+pip install -r requirements.txt
 
 :END
