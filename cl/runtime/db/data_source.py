@@ -140,9 +140,9 @@ class DataSource(DataSourceKey, RecordMixin):
         self._backup_loaded_tables = set()
 
         # Create backup from db_backup_type setting if specified, skip in TEST env
-        if self._backup is None and not active_or_default(Env).is_test():
+        if self._backup is None:
             db_backup_type_name = DbSettings.instance().db_backup_type
-            if db_backup_type_name is not None:
+            if db_backup_type_name is not None and not active_or_default(Env).is_test():
                 backup_type = TypeInfo.from_type_name(db_backup_type_name)
                 if isinstance(self._get_db(), backup_type):
                     raise RuntimeError(
