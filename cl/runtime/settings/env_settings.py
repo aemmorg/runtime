@@ -19,8 +19,10 @@ from cl.runtime.primitive.case_util import CaseUtil
 from cl.runtime.primitive.enum_util import EnumUtil
 from cl.runtime.primitive.identifier_util import IdentifierUtil
 from cl.runtime.project.project_layout import ProjectLayout
+from cl.runtime.project.resources_util import ResourcesUtil
 from cl.runtime.records.for_dataclasses.extensions import required
 from cl.runtime.records.typename import typename
+from cl.runtime.settings.dynaconf_loader import DynaconfLoader
 from cl.runtime.settings.env_kind import EnvKind
 from cl.runtime.settings.settings import Settings
 
@@ -109,14 +111,14 @@ class EnvSettings(Settings):
 
         if self.env_dir is None:
             # Default if not specified via Dynaconf
-            self.env_dir = ProjectLayout.get_resources_root()
+            self.env_dir = ResourcesUtil.get_resources_root()
         else:
             # Check env_dir for safety before substitution
             IdentifierUtil.guard_valid_identifier(self.env_dir, allow_braces=True, allow_directory_separators=True)
             # Perform variable substitution
             env_dir_vars = {
                 "project_root": ProjectLayout.get_project_root(),
-                "project_resources": ProjectLayout.get_resources_root(),  # TODO: Update after ProjectLayout changes
+                "project_resources": ResourcesUtil.get_resources_root(),  # TODO: Update after ProjectLayout changes
                 "env_id": self.env_id,
                 "env_kind": CaseUtil.upper_to_snake_case(self.env_kind.name),
                 "env_user": self.env_user,

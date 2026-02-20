@@ -92,11 +92,6 @@ class ProjectLayout:  # TODO: !!!! Derive from Settings or rename to ProjectUtil
         return PROJECT_ROOT
 
     @classmethod
-    def get_resources_root(cls) -> str:
-        """Contains resources that persist across multiple code runs."""
-        return os.path.join(PROJECT_ROOT, "resources")
-
-    @classmethod
     def get_package_root(cls, package: str) -> str:
         """
         Package root directory for the specified package, same as project root in monorepo layout

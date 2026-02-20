@@ -14,7 +14,11 @@
 
 import hashlib
 import os
+import posixpath
+
 from cl.runtime.project.project_layout import ProjectLayout
+from cl.runtime.project.resources_util import ResourcesUtil
+from cl.runtime.settings.dynaconf_loader import DynaconfLoader
 
 _MODULE_INFO_HEADERS = ("RelPath", "SHA256")
 """Headers of ModuleInfo preload file."""
@@ -53,12 +57,12 @@ class ModuleInfo:
         Returns:
             Dictionary mapping relative path to hex hash, or None if the file does not exist or is corrupt.
         """
-        filename = cls._get_filename()
-        if not os.path.exists(filename):
+        file_path = cls._get_file_path()
+        if not os.path.exists(file_path):
             return None
 
         result = {}
-        with open(filename, "r", encoding="utf-8") as f:
+        with open(file_path, "r", encoding="utf-8") as f:
             for line_index, line in enumerate(f):
                 line = line.strip()
                 if not line:
@@ -76,9 +80,9 @@ class ModuleInfo:
     @classmethod
     def save(cls, hashes: dict[str, str]) -> None:
         """Save ModuleInfo.csv to the bootstrap resources directory."""
-        filename = cls._get_filename()
-        os.makedirs(os.path.dirname(filename), exist_ok=True)
-        with open(filename, "w", encoding="utf-8") as f:
+        file_path = cls._get_file_path()
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        with open(file_path, "w", encoding="utf-8") as f:
             f.write(",".join(_MODULE_INFO_HEADERS) + "\n")
             for rel_path in sorted(hashes.keys()):
                 f.write(f"{rel_path},{hashes[rel_path]}\n")
@@ -96,7 +100,6 @@ class ModuleInfo:
         return current_hashes != saved_hashes
 
     @classmethod
-    def _get_filename(cls) -> str:
-        """Get the filename for ModuleInfo.csv."""
-        resources_root = ProjectLayout.get_resources_root()
-        return os.path.join(resources_root, "bootstrap/ModuleInfo.csv")
+    def _get_file_path(cls) -> str:
+        """Get file path for ModuleInfo.csv."""
+        return posixpath.normpath(posixpath.join(ResourcesUtil.get_bootstrap_root(), "ModuleInfo.csv"))

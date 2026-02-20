@@ -16,6 +16,9 @@
 # Ensure bootstrap module can be found and import to configure PYTHONPATH and other settings
 # This code block must remain at the top before any other imports
 import locate
+
+from cl.runtime.project.resources_util import ResourcesUtil
+
 locate.append_sys_path("../../..")
 import cl.runtime.bootstrap
 # isort: on
@@ -55,7 +58,7 @@ def init_type_info() -> None:
         current_hashes["settings.yaml"] = ModuleInfo.compute_file_hash(settings_yaml_path)
 
     # Check if TypeInfo.csv exists
-    type_info_path = os.path.join(ProjectLayout.get_resources_root(), "bootstrap/TypeInfo.csv")
+    type_info_path = os.path.join(ResourcesUtil.get_bootstrap_root(), "TypeInfo.csv")
     type_info_exists = os.path.exists(type_info_path)
 
     # Fast path: no changes detected and TypeInfo.csv exists
@@ -75,7 +78,7 @@ def init_type_info() -> None:
     ModuleInfo.save(current_hashes)
     print("Type cache rebuild complete.")
 
-    print(f"TypeInfo.csv written to: {TypeInfo._get_type_info_filename()}")
+    print(f"TypeInfo.csv written to: {TypeInfo._get_file_path()}")
 
 
 if __name__ == '__main__':

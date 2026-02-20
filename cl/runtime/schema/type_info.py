@@ -28,6 +28,7 @@ from cl.runtime.exceptions.error_util import ErrorUtil
 from cl.runtime.prebuild.import_util import ImportUtil
 from cl.runtime.primitive.enum_util import EnumUtil
 from cl.runtime.project.project_layout import ProjectLayout
+from cl.runtime.project.resources_util import ResourcesUtil
 from cl.runtime.records.bootstrap_mixin import BootstrapMixin
 from cl.runtime.records.for_dataclasses.extensions import required
 from cl.runtime.records.protocols import is_data_key_or_record_type
@@ -534,15 +535,15 @@ class TypeInfo(BootstrapMixin):
 
         # Read from the cache file
         # TODO: !!!!!!!! Move to CsvUtil
-        cache_filename = cls._get_type_info_filename()
-        if os.path.exists(cache_filename):
-            with open(cache_filename, "r", encoding="utf-8") as file:
+        cache_file_path = cls._get_file_path()
+        if os.path.exists(cache_file_path):
+            with open(cache_file_path, "r", encoding="utf-8") as file:
                 rows = file.readlines()
         else:
             # Cache file does not exist, error message
             settings_env = DynaconfLoader.instance().get_settings_env()
             raise RuntimeError(
-                f"TypeInfo file is not found at {cache_filename}\n"
+                f"TypeInfo file is not found at {cache_file_path}\n"
                 f"Environment: {settings_env}\n"
                 f"Recommended action: run init_type_info with {ENV_SWITCHER_ENVVAR}={settings_env} to create."
             )
@@ -560,7 +561,7 @@ class TypeInfo(BootstrapMixin):
                     expected_headers_str = ", ".join(_TYPE_INFO_HEADERS)
                     raise RuntimeError(
                         f"TypeInfo preload file has invalid headers.\n"
-                        f"Preload file: {cache_filename}\n"
+                        f"Preload file: {cache_file_path}\n"
                         f"Actual headers: {actual_headers_str}\n"
                         f"Expected headers: {expected_headers_str}\n"
                     )
@@ -612,9 +613,9 @@ class TypeInfo(BootstrapMixin):
     def _save(cls) -> None:
         """Save qual name cache to disk (overwrites the existing file)."""
         # Tuples of (type_name, qual_name) sorted by type name
-        cache_filename = cls._get_type_info_filename()
-        os.makedirs(os.path.dirname(cache_filename), exist_ok=True)
-        with open(cache_filename, "w", encoding="utf-8") as file:
+        cache_file_path = cls._get_file_path()
+        os.makedirs(os.path.dirname(cache_file_path), exist_ok=True)
+        with open(cache_file_path, "w", encoding="utf-8") as file:
             # Write header row
             file.write(",".join(_TYPE_INFO_HEADERS) + "\n")
 
@@ -648,11 +649,9 @@ class TypeInfo(BootstrapMixin):
         cls._module_dict = {}
 
     @classmethod
-    def _get_type_info_filename(cls) -> str:
+    def _get_file_path(cls) -> str:
         """Get the filename for the qual name cache."""
-        resources_root = ProjectLayout.get_resources_root()
-        settings_env = DynaconfLoader.instance().get_settings_env()
-        result = os.path.join(resources_root, settings_env, "bootstrap", "TypeInfo.csv")
+        result = os.path.join(ResourcesUtil.get_bootstrap_root(), "TypeInfo.csv")
         return result
 
     @classmethod
