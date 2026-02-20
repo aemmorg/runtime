@@ -48,6 +48,16 @@ class PlotlyUtil:
         return pio.to_html(plot, full_html=False, include_plotlyjs="cdn", div_id=div_id)
 
     @classmethod
+    def plot_to_png_bytes(cls, plot: go.Figure) -> bytes:
+        """
+        Render the plot to PNG and return as bytes.
+
+        Args:
+            plot: The plot to render.
+        """
+        return plot.to_image(format="png")
+
+    @classmethod
     def plot_to_html_bytes(cls, plot: go.Figure, div_id: str | None = None) -> bytes:
         """
         Render the HTML and return as bytes.
