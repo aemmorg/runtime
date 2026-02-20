@@ -31,4 +31,5 @@ from cl.runtime.qa.pytest.pytest_fixtures import event_broker_fixture  # noqa
 from cl.runtime.qa.pytest.pytest_fixtures import multi_db_fixture  # noqa
 from cl.runtime.qa.pytest.pytest_fixtures import sqlite_db_fixture  # noqa
 from cl.runtime.qa.pytest.pytest_fixtures import tenant_fixture  # noqa
+from cl.runtime.qa.pytest.pytest_fixtures import type_info_fixture  # noqa
 from cl.runtime.qa.pytest.pytest_fixtures import work_dir_fixture  # noqa

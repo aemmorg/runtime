@@ -27,11 +27,16 @@ from cl.runtime.db.sql.sqlite_db import SqliteDb
 from cl.runtime.db.tenant_key import TenantKey
 from cl.runtime.events.event_broker import EventBroker
 from cl.runtime.log.log_config import logging_config
+from cl.runtime.prebuild.init_file_util import InitFileUtil
+from cl.runtime.prebuild.module_info import ModuleInfo
+from cl.runtime.prebuild.source_util import SourceUtil
+from cl.runtime.project.project_layout import ProjectLayout
 from cl.runtime.qa.pytest.pytest_util import PytestUtil
 from cl.runtime.schema.type_info import TypeInfo
 from cl.runtime.server.env import Env
 from cl.runtime.settings.db_settings import DbSettings
 from cl.runtime.settings.env_kind import EnvKind
+from cl.runtime.settings.package_settings import PackageSettings
 from cl.runtime.settings.qa_settings import QaSettings
 from cl.runtime.settings.sse_settings import SseSettings
 from cl.runtime.tasks.celery.celery_queue import CeleryQueue
@@ -169,6 +174,38 @@ def work_dir_fixture(request: FixtureRequest) -> Iterator[str]:
 
     # Change directory back before exiting the test
     os.chdir(request.config.invocation_dir)  # noqa
+
+
+@pytest.fixture(scope="session", autouse=True)
+def type_info_fixture():
+    """Rebuild type cache once per test session if source files have changed."""
+
+    # Create __init__.py files first to avoid missing classes
+    InitFileUtil.check_or_fix_init_files(fix=True, verbose=False)
+
+    # Compute current file hashes
+    source_files = SourceUtil.get_source_files()
+    current_hashes = ModuleInfo.compute_hashes(source_files)
+
+    # Also hash settings.yaml since it controls which packages are scanned
+    settings_yaml_path = os.path.join(ProjectLayout.get_project_root(), "settings.yaml")
+    if os.path.exists(settings_yaml_path):
+        current_hashes["settings.yaml"] = ModuleInfo.compute_file_hash(settings_yaml_path)
+
+    # Check if TypeInfo.csv exists
+    type_info_file_path = TypeInfo._get_file_path()
+    type_info_exists = os.path.exists(type_info_file_path)
+
+    # Fast path: no changes detected and TypeInfo.csv exists
+    if not ModuleInfo.has_changes(current_hashes) and type_info_exists:
+        return
+
+    # Full rebuild
+    packages = PackageSettings.instance().get_packages()
+    TypeInfo.rebuild(packages=packages)
+
+    # Save updated hashes only after successful rebuild
+    ModuleInfo.save(current_hashes)
 
 
 @pytest.fixture(scope="session", autouse=True)
