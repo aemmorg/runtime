@@ -47,7 +47,7 @@ def test_reuse():
     """Test TypeInfo.rebuild method with force=False, this reuses the existing TypeInfo.csv file."""
     TypeInfo.rebuild(force=False)
 
-    
+
 def test_is_known_type():
     """Test is_known_type method."""
 

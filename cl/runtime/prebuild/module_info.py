@@ -47,12 +47,12 @@ class ModuleInfo:
         """
 
         # Relative paths include source files and settings files
-        monitored_files = SourceUtil.get_source_files() + DynaconfLoader.instance().get_settings_files()
+        abs_monitored_files = SourceUtil.get_abs_source_files() + DynaconfLoader.instance().get_abs_settings_files()
 
         # Combine with project_root to get absolute path and compute hashes
         project_root = ProjectLayout.get_project_root()
         result = {}
-        for abs_path in monitored_files:
+        for abs_path in abs_monitored_files:
             rel_path = os.path.relpath(abs_path, project_root).replace(os.sep, "/")
             result[rel_path] = cls.compute_file_hash(abs_path)
         return result
@@ -120,7 +120,7 @@ class ModuleInfo:
         """Includes source files and settings files for the current Dynaconf environment."""
 
         # Relative paths include source files and settings files
-        result = SourceUtil.get_source_files() + DynaconfLoader.instance().get_settings_files()
+        result = SourceUtil.get_abs_source_files() + DynaconfLoader.instance().get_abs_settings_files()
         return result
 
     @classmethod

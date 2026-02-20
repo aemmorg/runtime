@@ -37,13 +37,13 @@ def _count_py_files_via_os(directory: str, exclude_names: tuple[str, ...]) -> in
 
 
 def test_source_util():
-    """Test SourceUtil.get_source_files with package parameter against an independent OS file count."""
+    """Test SourceUtil.get_abs_source_files with package parameter against an independent OS file count."""
 
     package = "cl.runtime"
     exclude_names = ("__init__.py",)
 
     # Get file count from SourceUtil
-    source_files = SourceUtil.get_source_files(package=package)
+    source_files = SourceUtil.get_abs_source_files(package=package)
     source_util_count = len(source_files)
 
     # Get file count independently using OS commands on each package directory
@@ -64,10 +64,10 @@ def test_source_util():
 
 
 def test_source_util_invalid_package():
-    """Test that SourceUtil.get_source_files raises for an unknown package."""
+    """Test that SourceUtil.get_abs_source_files raises for an unknown package."""
 
     with pytest.raises(RuntimeError, match="not found in configured packages"):
-        SourceUtil.get_source_files(package="cl.nonexistent")
+        SourceUtil.get_abs_source_files(package="cl.nonexistent")
 
 
 if __name__ == "__main__":

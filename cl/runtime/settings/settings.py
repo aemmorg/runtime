@@ -48,15 +48,18 @@ class Settings(BootstrapMixin, ABC):
     @classmethod
     def get_prefix(cls) -> str:
         """
-        Dynaconf fields will be filtered by 'prefix_' before being passed to the settings class constructor.
+        Dynaconf fields will be filtered by '{prefix}_' before being passed to the settings class constructor.
         Defaults to the class name converted to snake_case with 'Settings' suffix removed.
 
         Notes:
             - If this method provides an override of the default prefix, the returned prefix must be lowercase
             - and must not start or end with underscore (but may include underscore separators)
+
+        Returns:
+            Prefix without the trailing underscore
         """
         result = CaseUtil.pascal_to_snake_case(typename(cls)).removesuffix("_settings")
-        result = result if result.endswith("_") else f"{result}_"
+        result = result.removesuffix("_") if result.endswith("_") else result
         return result
 
     @classmethod
@@ -80,7 +83,7 @@ class Settings(BootstrapMixin, ABC):
 
         # Get and validate the field prefix to filter Dynaconf fields for this settings class
         prefix = cls.get_prefix()
-        prefix_description = f"Dynaconf settings prefix '{prefix}' for {typename(cls)}"
+        prefix_description = f"Dynaconf settings prefix for {typename(cls)}"
         if prefix is None:
             raise RuntimeError(f"{prefix_description} is None.")
         if prefix == "":
@@ -89,32 +92,36 @@ class Settings(BootstrapMixin, ABC):
             raise RuntimeError(f"{prefix_description} must be lowercase.")
         if prefix.startswith("_"):
             raise RuntimeError(f"{prefix_description} must not start with an underscore.")
-        if not prefix.endswith("_"):
-            raise RuntimeError(f"{prefix_description} must end with an underscore.")
+        if prefix.endswith("_"):
+            raise RuntimeError(f"{prefix_description} must omit the trailing underscore.")
+
+        # Add the trailing underscore
+        prefix_with_underscore = f"{prefix}_"
 
         # Exclude fields without prefix from the base Settings class
         excluded_fields = ["settings_dir"]
         class_fields = [slot for slot in cls.get_field_names() if slot not in excluded_fields]
 
         # Check for the presence of other fields without prefix
-        class_fields_without_prefix = [slot for slot in class_fields if not slot.startswith(prefix)]
+        class_fields_without_prefix = [slot for slot in class_fields if not slot.startswith(prefix_with_underscore)]
         if class_fields_without_prefix:
             class_fields_without_prefix_str = "\n".join(class_fields_without_prefix)
             message = (
                 f"The following fields in class {typename(cls)} do not start with the prefix '{prefix}'\n"
-                f"returned by the '{typename(cls)}.get_prefix' method:\n{class_fields_without_prefix_str}"
+                f"returned by the '{typename(cls)}.get_prefix' method followed by underscore:\n"
+                f"{class_fields_without_prefix_str}"
             )
             raise RuntimeError(message)
 
-        # Create a new dictionary of fields that start with 'prefix_' among those present in DynaconfLoader
+        # Create a new dictionary of fields that start with '{prefix}_' among those present in DynaconfLoader
         # This may include fields that are not specified in the settings class
-        specified_fields = {k: v for k, v in loader.get_settings_dict().items() if k.startswith(prefix)}
+        specified_fields = {k: v for k, v in loader.get_field_dict().items() if k.startswith(prefix_with_underscore)}
 
         # Check that there are no fields in DynaconfLoader that start with 'prefix_' but are not included in cls
         if unknown_fields := [k for k in specified_fields if k not in class_fields]:
             raise RuntimeError(
-                f"The following fields with prefix '{prefix}' are defined in envvars, .env or settings files\n"
-                f"for the settings directory '{loader.get_settings_dir()}' but are not included in {typename(cls)}:\n"
+                f"The following fields with prefix '{prefix_with_underscore}' are defined in\n"
+                f"envvars, .env or settings files but are not included in '{typename(cls)}':\n"
                 f"{cls.get_fields_str(unknown_fields)}\n{loader.get_sources_str(prefix=prefix)}"
             )
 
@@ -128,9 +135,9 @@ class Settings(BootstrapMixin, ABC):
         # Check for missing required fields
         if missing_fields := [k for k in required_fields if k not in specified_fields]:
             raise RuntimeError(
-                f"The following fields with prefix '{prefix}' are not defined in envvars, .env or settings files\n"
-                f"for the settings directory but marked as required in the settings class: {typename(cls)}\n"
-                f"for the following prefix:\n\n{cls.get_fields_str(missing_fields)}\n\n"
+                f"The following fields with prefix '{prefix_with_underscore}' are not defined in\n"
+                f"envvars, .env or settings files but marked as required in '{typename(cls)}':\n"
+                f"{cls.get_fields_str(missing_fields)}\n\n"
                 f"{loader.get_sources_str(prefix=prefix)}"
             )
 

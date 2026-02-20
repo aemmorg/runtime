@@ -117,7 +117,7 @@ class CopyrightUtil:
                 root_to_header[os.path.normpath(x)] = copyright_header
 
         # Get all source file paths using SourceUtil
-        file_paths = SourceUtil.get_source_files(
+        file_paths = SourceUtil.get_abs_source_files(
             file_include_patterns=file_include_patterns,
             file_exclude_patterns=file_exclude_patterns,
         )

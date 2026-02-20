@@ -23,7 +23,7 @@ class SourceUtil:
     """Helper class for finding source files across all packages."""
 
     @classmethod
-    def get_source_files(
+    def get_abs_source_files(
         cls,
         *,
         package: str | None = None,

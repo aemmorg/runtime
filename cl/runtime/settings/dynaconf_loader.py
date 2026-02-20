@@ -80,19 +80,19 @@ class DynaconfLoader(BootstrapMixin):
     _settings_env: str = required()
     """Dynaconf settings environment in lowercase (distinct from EnvSettings.env_id)."""
 
-    _settings_dir: str = required()
-    """Absolute path to the settings directory."""
-
     _settings_filename: str = required()
     """Main settings filename without extension, additional settings filenames are formed by adding suffixes."""
 
     _settings_files_ext: str = required()
     """Settings files extension without the leading dot, does not apply to .secrets (defaults to 'yaml')."""
 
-    _settings_files: tuple[str, ...] = required()
+    _abs_settings_dir: str = required()
+    """Absolute path to the settings directory."""
+
+    _abs_settings_files: tuple[str, ...] = required()
     """The complete list of Dynaconf settings files used by this loader."""
 
-    _settings_dict: frozendict[str, Any] = required()
+    _field_dict: frozendict[str, Any] = required()
     """Dictionary of settings key-value pairs obtained from the Dynaconf object."""
 
     _package_dirs: frozendict[str, str] = required()
@@ -115,10 +115,10 @@ class DynaconfLoader(BootstrapMixin):
             # Use it to get the relative settings directory for the package
             rel_settings_dir = project_loader.get_package_dir(package=self.package)
             # Combine with project root to get the absolute path
-            self._settings_dir = os.path.normpath(os.path.join(project_root, rel_settings_dir))
+            self._abs_settings_dir = os.path.normpath(os.path.join(project_root, rel_settings_dir))
         else:
             # Settings directory is project root when package is not specified
-            self._settings_dir = project_root
+            self._abs_settings_dir = project_root
 
             # Set project loader to None if package is not specified
             project_loader = None
@@ -160,10 +160,10 @@ class DynaconfLoader(BootstrapMixin):
 
         # Combine settings file names with absolute settings directory path, including non-existent files
         # so the reporting by Dynaconf includes all settings files that may be used, even those not present
-        abs_settings_files = [os.path.normpath(os.path.join(self._settings_dir, x)) for x in rel_settings_files]
+        abs_settings_files = [os.path.normpath(os.path.join(self._abs_settings_dir, x)) for x in rel_settings_files]
 
         # Exclude non-existent files from get_settings_files
-        self._settings_files = tuple(x for x in abs_settings_files if os.path.exists(x))
+        self._abs_settings_files = tuple(x for x in abs_settings_files if os.path.exists(x))
 
         # Dynaconf settings in raw format (including system settings),
         # some keys may be strings instead of dictionaries or lists
@@ -188,9 +188,9 @@ class DynaconfLoader(BootstrapMixin):
             settings_dict["package_dirs"] = project_loader.get_package_dirs()
 
         # Make immutable
-        self._settings_dict = frozendict(settings_dict)
+        self._field_dict = frozendict(settings_dict)
 
-        if (package_dirs := self._settings_dict.get("package_dirs", None)) is not None:
+        if (package_dirs := self._field_dict.get("package_dirs", None)) is not None:
             if not is_mapping_type(type(package_dirs)):
                 raise RuntimeError(
                     "Field 'package_dirs' is specified but is not a mapping of package namespaces\n"
@@ -238,17 +238,17 @@ class DynaconfLoader(BootstrapMixin):
         """Dynaconf settings environment in lowercase (distinct from EnvSettings.env_id)."""
         return self._settings_env
 
-    def get_settings_dir(self) -> str:
+    def get_abs_settings_dir(self) -> str:
         """Absolute path to the settings directory."""
-        return self._settings_dir
+        return self._abs_settings_dir
 
-    def get_settings_files(self) -> tuple[str, ...]:
+    def get_abs_settings_files(self) -> tuple[str, ...]:
         """Abs path to Dynaconf settings files for the specified package or project root if package is not specified."""
-        return self._settings_files
+        return self._abs_settings_files
 
-    def get_settings_dict(self) -> frozendict[str, Any]:
+    def get_field_dict(self) -> frozendict[str, Any]:
         """Dictionary of settings key-value pairs obtained from the Dynaconf object."""
-        return self._settings_dict
+        return self._field_dict
 
     def get_package_dirs(self) -> frozendict[str, str]:
         """Get the mapping of package namespaces to package root directories relative to project root."""
@@ -264,22 +264,21 @@ class DynaconfLoader(BootstrapMixin):
     def get_sources_str(self, *, prefix: str) -> str:
         """Return the list of sources in the order of priority"""
 
-        # Combine Dynaconf envvar prefix with field prefix
-        field_prefix = f"{self._envvar_prefix}_{prefix.upper()}_"
-        sources_list = [f"Environment variables with prefix '{field_prefix}'"]
+        # Combine Dynaconf envvar prefix with field prefix (without the trailing underscore)
+        field_prefix = f"{self._envvar_prefix}_{prefix.upper()}"
+        sources_list = [f"Environment variables with prefix '{field_prefix}_'"]
 
         # Dotenv file source or message that it is not found
         if (env_file := find_dotenv()) != "":
             sources_list.append(f"Fields with prefix '{prefix}_' in .env file: {env_file}")
 
         # Dynaconf settings files
-        settings_files_str = ", ".join(self.get_settings_files())
-        sources_list.append(f"Fields with prefix '{prefix}_' in settings files: {settings_files_str}")
+        settings_files_str = "\n".join(f"    - {x}" for x in self.get_abs_settings_files())
+        sources_list.append(f"Fields with prefix '{prefix}_' in settings files:\n{settings_files_str}\n")
 
         # Convert sources list to string
         sources_str = "\n".join(f"  - {x}" for x in sources_list)
-        settings_dir_str = self.get_settings_dir()
-        result = f"Sources:\n{sources_str}\nSettings directory:\n  {settings_dir_str}\n"
+        result = f"Sources:\n{sources_str}\n"
         return result
 
     @classmethod
