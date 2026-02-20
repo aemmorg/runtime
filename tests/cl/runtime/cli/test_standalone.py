@@ -38,18 +38,18 @@ class TestRunCommand:
     """Tests for the run_command standalone bootstrap helper."""
 
     def test_parses_env(self):
-        """--env win_sqlite is parsed and stripped from args."""
+        """--env sample is parsed and stripped from args."""
         test_cmd = _make_test_command()
         saved = os.environ.pop("CL_SETTINGS_ENV", None)
         try:
             with (
-                patch("sys.argv", ["test_cmd", "--env", "win_sqlite", "--flag"]),
+                patch("sys.argv", ["test_cmd", "--env", "sample", "--flag"]),
                 patch("logging.config.dictConfig"),
             ):
                 with pytest.raises(SystemExit) as exc_info:
                     run_command(test_cmd)
                 assert exc_info.value.code == 0
-                assert os.environ.get(ENV_SWITCHER_ENVVAR) == "win_sqlite"
+                assert os.environ.get(ENV_SWITCHER_ENVVAR) == "sample"
         finally:
             if saved is not None:
                 os.environ["CL_SETTINGS_ENV"] = saved
@@ -57,18 +57,18 @@ class TestRunCommand:
                 os.environ.pop("CL_SETTINGS_ENV", None)
 
     def test_parses_env_equals(self):
-        """--env=win_sqlite form is parsed and stripped."""
+        """--env=sample form is parsed and stripped."""
         test_cmd = _make_test_command()
         saved = os.environ.pop("CL_SETTINGS_ENV", None)
         try:
             with (
-                patch("sys.argv", ["test_cmd", "--env=win_sqlite", "--flag"]),
+                patch("sys.argv", ["test_cmd", "--env=sample", "--flag"]),
                 patch("logging.config.dictConfig"),
             ):
                 with pytest.raises(SystemExit) as exc_info:
                     run_command(test_cmd)
                 assert exc_info.value.code == 0
-                assert os.environ.get(ENV_SWITCHER_ENVVAR) == "win_sqlite"
+                assert os.environ.get(ENV_SWITCHER_ENVVAR) == "sample"
         finally:
             if saved is not None:
                 os.environ["CL_SETTINGS_ENV"] = saved
@@ -96,7 +96,7 @@ class TestRunCommand:
         """Remaining args after --env stripping are passed to the Click command."""
         test_cmd = _make_test_command()
         with (
-            patch("sys.argv", ["test_cmd", "--env", "win_sqlite", "--flag", "--value", "hello"]),
+            patch("sys.argv", ["test_cmd", "--env", "sample", "--flag", "--value", "hello"]),
             patch("logging.config.dictConfig"),
         ):
             with pytest.raises(SystemExit) as exc_info:

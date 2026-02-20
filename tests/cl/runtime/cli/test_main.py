@@ -57,9 +57,9 @@ class TestCli:
         Note: --help on the group itself short-circuits before the callback runs,
         so we invoke a subcommand with --help to trigger the group callback.
         """
-        result = cli_runner.invoke(cli, ["--env", "win_sqlite", "init-db", "--help"])
+        result = cli_runner.invoke(cli, ["--env", "sample", "init-db", "--help"])
         assert result.exit_code == 0
-        patched_cli.assert_called_once_with("win_sqlite")
+        patched_cli.assert_called_once_with("sample")
 
     def test_no_env(self, cli_runner: CliRunner, patched_cli):
         """Without --env, apply_env_config is called with None."""

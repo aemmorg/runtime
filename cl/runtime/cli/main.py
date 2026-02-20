@@ -20,7 +20,7 @@ from cl.runtime.cli.plugin_discovery import PluginGroup
 
 
 @click.group(invoke_without_command=True, cls=PluginGroup)
-@click.option("--env", default=None, help="Dynaconf environment name (e.g. win_mongo, win_sqlite, docker).")
+@click.option("--env", default=None, help="Dynaconf environment name (e.g. development, staging, etc.).")
 @click.version_option(package_name="cl-runtime")
 @click.pass_context
 def cli(ctx: click.Context, env: str | None) -> None:

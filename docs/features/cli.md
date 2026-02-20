@@ -24,15 +24,15 @@ These options are available on every command and must appear **before** the subc
 
 | Option | Description |
 |--------|-------------|
-| `--env NAME` | Dynaconf environment name to activate (e.g. `win_mongo`, `win_sqlite`, `docker`). Maps to the `CL_SETTINGS_ENV` environment variable. When omitted, Dynaconf uses its default environment (`development`). |
+| `--env envname` | Dynaconf environment name to activate (e.g. `development`, `staging`, etc.). Maps to `CL_SETTINGS_ENV` environment variable. When omitted, Dynaconf uses its default environment (`development`). |
 | `--version` | Print the installed `cl-runtime` package version and exit. |
 | `--help` | Show the top-level help message with all available commands. |
 
 Example:
 
 ```bash
-python -m cl.runtime.cli --env win_sqlite init-db --force
-cl-runtime --env win_mongo run DataSourceTool RunExport
+python -m cl.runtime.cli --env sample init-db --force
+cl-runtime --env sample run DataSourceTool RunExport
 cl-runtime --version
 ```
 
@@ -52,7 +52,7 @@ Run any individual command as a Python module without going through the CLI grou
 ```bash
 python -m cl.runtime.cli.init_db_cmd --force
 python -m cl.runtime.cli.run_cmd MyType MyMethod --key k1
-python -m cl.runtime.cli.init_db_cmd --env win_sqlite --force
+python -m cl.runtime.cli.init_db_cmd --env sample --force
 ```
 
 The `--env NAME` option is supported on all standalone commands and is stripped before passing remaining args to the Click command.
@@ -73,7 +73,7 @@ The `--env NAME` option is supported on all standalone commands and is stripped 
 
 ```bash
 cl-runtime                    # enters REPL
-cl-runtime --env win_sqlite   # enters REPL with env override
+cl-runtime --env sample   # enters REPL with env sample
 ```
 
 ---
@@ -84,7 +84,7 @@ When invoked without a subcommand, the CLI enters an interactive REPL loop:
 
 ```bash
 cl-runtime                    # enters REPL
-cl-runtime --env win_sqlite   # enters REPL with env override
+cl-runtime --env sample       # enters REPL with env 'sample'
 cl-runtime init-db --force    # runs command and exits (unchanged)
 ```
 
