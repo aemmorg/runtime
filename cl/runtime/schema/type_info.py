@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 import os
 import sys
 from dataclasses import dataclass
@@ -26,6 +27,9 @@ from memoization import cached
 from more_itertools import consume
 from cl.runtime.exceptions.error_util import ErrorUtil
 from cl.runtime.prebuild.import_util import ImportUtil
+from cl.runtime.prebuild.init_file_util import InitFileUtil
+from cl.runtime.prebuild.module_info import ModuleInfo
+from cl.runtime.prebuild.source_util import SourceUtil
 from cl.runtime.primitive.enum_util import EnumUtil
 from cl.runtime.project.project_layout import ProjectLayout
 from cl.runtime.project.resources_util import ResourcesUtil
@@ -42,6 +46,7 @@ from cl.runtime.records.typename import qualname
 from cl.runtime.records.typename import typename
 from cl.runtime.schema.type_kind import TypeKind
 from cl.runtime.settings.dynaconf_loader import ENV_SWITCHER_ENVVAR, DynaconfLoader
+from cl.runtime.settings.package_settings import PackageSettings
 
 _TYPE_INFO_HEADERS = (
     "TypeName",
@@ -52,6 +57,9 @@ _TYPE_INFO_HEADERS = (
     "ChildNames",
 )
 """Headers of TypeInfo preload file."""
+
+
+_LOGGER = logging.getLogger(__name__)
 
 
 def is_schema_type(type_: type) -> bool:
@@ -155,16 +163,19 @@ class TypeInfo(BootstrapMixin):
         type_name: str,
         *,
         type_kind: TypeKind | None = None,
+        attempt_rebuilding_on_fail: bool = True,
         raise_on_fail: bool = True,
     ) -> bool:
         """
-        Return True if the type name is found in cache and matches type_kind  (if provided),
-        otherwise return False or raise an error depending on raise_on_fail.
+        Return True if the type name is found in cache and matches type_kind (if provided),
+        otherwise return False or raise an error depending on raise_on_fail. Rebuild cache
+        if TypeInfo does not exist.
 
         Args:
             type_name: Type name in PascalCase format
             type_kind: True only if matches the specified type kind if provided (optional)
-            raise_on_fail: If the check fails, return False or raise an error depending on raise_on_fail.
+            attempt_rebuilding_on_fail: Attempt to rebuild on fail, after that follow raise_on_fail if still not found
+            raise_on_fail: If the check fails, return False or raise an error depending on raise_on_fail
         """
         # Ensure the type cache is loaded from TypeInfo.csv, will not reload if already loaded
         cls._ensure_loaded()
@@ -192,6 +203,13 @@ class TypeInfo(BootstrapMixin):
         if found:
             # If found, type_kind was already checked
             return True
+        elif attempt_rebuilding_on_fail:
+            return cls.guard_known_type_name(
+                type_name,
+                type_kind=type_kind,
+                attempt_rebuilding_on_fail=False,  # Do not rebuild again if first rebuild failed
+                raise_on_fail=raise_on_fail,
+            )
         elif raise_on_fail:
             # Not found and raise_on_fail is True, raise
             raise RuntimeError(f"Type name {type_name} is not found the environment's package list.")
@@ -406,22 +424,53 @@ class TypeInfo(BootstrapMixin):
             raise RuntimeError(f"No common base is found for the following records:\n{record_type_names_str}")
 
     @classmethod
-    def rebuild(cls, *, packages: Sequence[str]) -> None:
+    def rebuild(
+            cls,
+            *,
+            force: bool | None = None,
+    ) -> None:
         """Reload types from packages and save a new TypeInfo.csv file to the bootstrap resources directory."""
+
+        if not force:
+            # Determine if TypeInfo.csv exists
+            type_info_path = os.path.join(ResourcesUtil.get_bootstrap_root(), "TypeInfo.csv")
+            type_info_exists = os.path.exists(type_info_path)
+
+            # Check for changes in ModuleInfo only if TypeInfo exists
+            if type_info_exists:
+
+                if not ModuleInfo.has_changes():
+                    _LOGGER.info("No source file changes detected, skipping type cache rebuild.")
+                    # Return from the method without rebuilding TypeInfo
+                    return
+                else:
+                    _LOGGER.info("Source file changes detected, rebuilding type cache...")
+            else:
+                _LOGGER.info("TypeInfo.csv not found, rebuilding ...")
+        else:
+            # Full rebuild due to force flag
+            _LOGGER.info("TypeInfo rebuild invoked with --force flag, rebuilding ...")
 
         # Clear the existing data
         cls._clear()
 
+        # Create __init__.py files first to avoid missing classes in directories without __init__.py
+        InitFileUtil.check_or_fix_init_files(fix=True, verbose=False)
+
         # Set the packages variable
-        packages = tuple(packages)
-        if not packages:
-            raise RuntimeError("Packages list provided to rebuild is None or empty.")
+        if not (packages := PackageSettings.instance().get_packages()):
+            raise RuntimeError("No packages are specified in settings.yaml")
 
         # Add each class after performing checks for duplicates
         consume(cls._add_type(type_) for type_ in ImportUtil.get_types(packages=packages, predicate=is_schema_type))
 
         # Overwrite the cache file on disk with the new data
         cls._save()
+
+        # Save new file hashes
+        ModuleInfo.save_hashes()
+
+        _LOGGER.info(f"Rebuild complete, TypeInfo.csv written to: {TypeInfo._get_type_info_file_path()}")
 
     @classmethod
     def _get_type_kind(cls, type_: type) -> TypeKind | None:
@@ -535,18 +584,13 @@ class TypeInfo(BootstrapMixin):
 
         # Read from the cache file
         # TODO: !!!!!!!! Move to CsvUtil
-        cache_file_path = cls._get_file_path()
+        cache_file_path = cls._get_type_info_file_path()
         if os.path.exists(cache_file_path):
             with open(cache_file_path, "r", encoding="utf-8") as file:
                 rows = file.readlines()
         else:
-            # Cache file does not exist, error message
-            settings_env = DynaconfLoader.instance().get_settings_env()
-            raise RuntimeError(
-                f"TypeInfo file is not found at {cache_file_path}\n"
-                f"Environment: {settings_env}\n"
-                f"Recommended action: run init_type_info with {ENV_SWITCHER_ENVVAR}={settings_env} to create."
-            )
+            # Cache file does not exist, rebuild
+            cls.rebuild()
 
         # Iterate over the rows of TypeInfo preload
         for row_index, row in enumerate(rows):
@@ -613,7 +657,7 @@ class TypeInfo(BootstrapMixin):
     def _save(cls) -> None:
         """Save qual name cache to disk (overwrites the existing file)."""
         # Tuples of (type_name, qual_name) sorted by type name
-        cache_file_path = cls._get_file_path()
+        cache_file_path = cls._get_type_info_file_path()
         os.makedirs(os.path.dirname(cache_file_path), exist_ok=True)
         with open(cache_file_path, "w", encoding="utf-8") as file:
             # Write header row
@@ -649,7 +693,7 @@ class TypeInfo(BootstrapMixin):
         cls._module_dict = {}
 
     @classmethod
-    def _get_file_path(cls) -> str:
+    def _get_type_info_file_path(cls) -> str:
         """Get the filename for the qual name cache."""
         result = os.path.join(ResourcesUtil.get_bootstrap_root(), "TypeInfo.csv")
         return result

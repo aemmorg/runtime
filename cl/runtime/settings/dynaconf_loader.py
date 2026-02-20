@@ -123,7 +123,7 @@ class DynaconfLoader(BootstrapMixin):
             # Set project loader to None if package is not specified
             project_loader = None
 
-        if (settings_files := self.get_envvar_value(SETTINGS_FILES_ENVVAR)) is not None:
+        if (rel_settings_files := self.get_envvar_value(SETTINGS_FILES_ENVVAR)) is not None:
             # TODO(Claude): Settings files are specified, ensure they do not include directory path
             pass
         else:
@@ -146,23 +146,24 @@ class DynaconfLoader(BootstrapMixin):
                 self._settings_filename = "settings"
 
             # Baseline settings file
-            settings_files = [f"{self._settings_filename}.{self._settings_files_ext}"]
+            rel_settings_files = [f"{self._settings_filename}.{self._settings_files_ext}"]
 
             # Settings for the Dynaconf environment, add only if the environment is not None
             if (settings_env := self.get_envvar_value(ENV_SWITCHER_ENVVAR)) is not None:
-                settings_files.append(f"{self._settings_filename}.{settings_env}.{self._settings_files_ext}")
+                rel_settings_files.append(f"{self._settings_filename}.{settings_env}.{self._settings_files_ext}")
 
             # Secrets file does not use package-specific prefix
-            settings_files.append(f".secrets.{self._settings_files_ext}")
+            rel_settings_files.append(f".secrets.{self._settings_files_ext}")
 
             # Local settings file overrides all others
-            settings_files.append(f"{self._settings_filename}.local.{self._settings_files_ext}")
+            rel_settings_files.append(f"{self._settings_filename}.local.{self._settings_files_ext}")
 
-            # Make immutable
-            self._settings_files = tuple(settings_files)
+        # Combine settings file names with absolute settings directory path, including non-existent files
+        # so the reporting by Dynaconf includes all settings files that may be used, even those not present
+        abs_settings_files = [os.path.normpath(os.path.join(self._settings_dir, x)) for x in rel_settings_files]
 
-        # Combine settings file names with absolute settings directory path
-        abs_settings_files = [os.path.normpath(os.path.join(self._settings_dir, x)) for x in self._settings_files]
+        # Exclude non-existent files from get_settings_files
+        self._settings_files = tuple(x for x in abs_settings_files if os.path.exists(x))
 
         # Dynaconf settings in raw format (including system settings),
         # some keys may be strings instead of dictionaries or lists
@@ -242,7 +243,7 @@ class DynaconfLoader(BootstrapMixin):
         return self._settings_dir
 
     def get_settings_files(self) -> tuple[str, ...]:
-        """Dynaconf settings files for the specified package or for project root if package is not specified."""
+        """Abs path to Dynaconf settings files for the specified package or project root if package is not specified."""
         return self._settings_files
 
     def get_settings_dict(self) -> frozendict[str, Any]:

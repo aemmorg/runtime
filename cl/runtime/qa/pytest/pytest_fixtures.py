@@ -42,12 +42,7 @@ from cl.runtime.settings.sse_settings import SseSettings
 from cl.runtime.tasks.celery.celery_queue import CeleryQueue
 from cl.runtime.tasks.celery.celery_queue import celery_app
 
-
-@pytest.fixture
-def tenant_fixture(request: FixtureRequest):
-    """Parametrize tenant_fixture to change tenant within test."""
-    return getattr(request, "param", None)
-
+# --- Helper functions ---
 
 def _db_fixture(request: FixtureRequest, *, db_type: type | None = None, tenant: str | None = None) -> Iterator[Db]:
     """Setup and teardown a temporary databases in DB of the specified type."""
@@ -84,6 +79,8 @@ def _db_fixture(request: FixtureRequest, *, db_type: type | None = None, tenant:
             # Delete all existing records in unit test DB after the test
             ds.drop_db()
 
+
+# --- Function fixtures ---
 
 @pytest.fixture(scope="function")
 def default_db_fixture(request: FixtureRequest, tenant_fixture) -> Iterator[Db]:
@@ -139,23 +136,10 @@ def multi_db_fixture(request, tenant_fixture) -> Iterator[Db]:
     """
     yield from _db_fixture(request, db_type=request.param, tenant=tenant_fixture)
 
-
-@pytest.fixture(scope="session")  # TODO: Use a named celery queue for each test
-def celery_queue_fixture():
-    """Pytest session fixture to start Celery test queue for test execution."""
-    print("Starting celery workers, will delete the existing tasks.")
-    CeleryQueue.delete_existing_tasks()
-
-    # Here we configure Celery to run in "eager mode":
-    # tasks are executed right away in the current process,
-    # without starting a worker or using the broker.
-    celery_app.conf.update(task_always_eager=True, task_eager_propagates=True)
-
-    with activate(CeleryQueue(queue_id="Test Handler Queue").build()):
-        yield
-
-    CeleryQueue.delete_existing_tasks()
-    print("Stopping celery workers and cleaning up tasks.")
+@pytest.fixture
+def tenant_fixture(request: FixtureRequest):
+    """Parametrize tenant_fixture to change tenant within test."""
+    return getattr(request, "param", None)
 
 
 @pytest.fixture(scope="function")
@@ -174,44 +158,6 @@ def work_dir_fixture(request: FixtureRequest) -> Iterator[str]:
 
     # Change directory back before exiting the test
     os.chdir(request.config.invocation_dir)  # noqa
-
-
-@pytest.fixture(scope="session", autouse=True)
-def type_info_fixture():
-    """Rebuild type cache once per test session if source files have changed."""
-
-    # Create __init__.py files first to avoid missing classes
-    InitFileUtil.check_or_fix_init_files(fix=True, verbose=False)
-
-    # Compute current file hashes
-    source_files = SourceUtil.get_source_files()
-    current_hashes = ModuleInfo.compute_hashes(source_files)
-
-    # Also hash settings.yaml since it controls which packages are scanned
-    settings_yaml_path = os.path.join(ProjectLayout.get_project_root(), "settings.yaml")
-    if os.path.exists(settings_yaml_path):
-        current_hashes["settings.yaml"] = ModuleInfo.compute_file_hash(settings_yaml_path)
-
-    # Check if TypeInfo.csv exists
-    type_info_file_path = TypeInfo._get_file_path()
-    type_info_exists = os.path.exists(type_info_file_path)
-
-    # Fast path: no changes detected and TypeInfo.csv exists
-    if not ModuleInfo.has_changes(current_hashes) and type_info_exists:
-        return
-
-    # Full rebuild
-    packages = PackageSettings.instance().get_packages()
-    TypeInfo.rebuild(packages=packages)
-
-    # Save updated hashes only after successful rebuild
-    ModuleInfo.save(current_hashes)
-
-
-@pytest.fixture(scope="session", autouse=True)
-def configure_logging_fixture(request: FixtureRequest):
-    """Configure logging with basic config."""
-    logging.config.dictConfig(logging_config)
 
 
 @pytest.fixture(scope="function")
@@ -236,3 +182,34 @@ def event_broker_fixture(request: FixtureRequest) -> Iterator[EventBroker]:
 
     # Remove test broker data after unit test
     broker.drop_test_broker()
+
+# --- Session fixtures ---
+
+@pytest.fixture(scope="session", autouse=True)
+def configure_logging_fixture(request: FixtureRequest):
+    """Configure logging with basic config."""
+    logging.config.dictConfig(logging_config)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def type_info_fixture():
+    """Rebuild type cache once per test session if source files have changed."""
+    TypeInfo.rebuild()
+
+
+@pytest.fixture(scope="session")  # TODO: Use a named celery queue for each test
+def celery_queue_fixture():
+    """Pytest session fixture to start Celery test queue for test execution."""
+    print("Starting celery workers, will delete the existing tasks.")
+    CeleryQueue.delete_existing_tasks()
+
+    # Here we configure Celery to run in "eager mode":
+    # tasks are executed right away in the current process,
+    # without starting a worker or using the broker.
+    celery_app.conf.update(task_always_eager=True, task_eager_propagates=True)
+
+    with activate(CeleryQueue(queue_id="Test Handler Queue").build()):
+        yield
+
+    CeleryQueue.delete_existing_tasks()
+    print("Stopping celery workers and cleaning up tasks.")

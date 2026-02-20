@@ -29,7 +29,7 @@ class SourceUtil:
         package: str | None = None,
         file_include_patterns: Sequence[str] | None = None,
         file_exclude_patterns: Sequence[str] | None = None,
-    ) -> list[str]:
+    ) -> tuple[str, ...]:
         """Get list of source file paths across all packages or a single package.
 
         Args:
@@ -82,4 +82,4 @@ class SourceUtil:
                         file_path = os.path.join(dir_path, filename)
                         result.append(str(file_path))
 
-        return result
+        return tuple(result)

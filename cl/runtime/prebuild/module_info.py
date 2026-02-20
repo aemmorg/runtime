@@ -15,7 +15,9 @@
 import hashlib
 import os
 import posixpath
+from typing import Sequence
 
+from cl.runtime.prebuild.source_util import SourceUtil
 from cl.runtime.project.project_layout import ProjectLayout
 from cl.runtime.project.resources_util import ResourcesUtil
 from cl.runtime.settings.dynaconf_loader import DynaconfLoader
@@ -37,27 +39,32 @@ class ModuleInfo:
         return sha256.hexdigest()
 
     @classmethod
-    def compute_hashes(cls, file_paths: list[str]) -> dict[str, str]:
+    def compute_hashes(cls) -> dict[str, str]:
         """Compute SHA-256 hashes for a list of absolute file paths.
 
         Returns:
             Dictionary mapping relative path (forward-slash, relative to project root) to hex hash.
         """
+
+        # Relative paths include source files and settings files
+        monitored_files = SourceUtil.get_source_files() + DynaconfLoader.instance().get_settings_files()
+
+        # Combine with project_root to get absolute path and compute hashes
         project_root = ProjectLayout.get_project_root()
         result = {}
-        for abs_path in file_paths:
+        for abs_path in monitored_files:
             rel_path = os.path.relpath(abs_path, project_root).replace(os.sep, "/")
             result[rel_path] = cls.compute_file_hash(abs_path)
         return result
 
     @classmethod
-    def load(cls) -> dict[str, str] | None:
+    def load_hashes(cls) -> dict[str, str] | None:
         """Load ModuleInfo.csv from the bootstrap resources directory.
 
         Returns:
             Dictionary mapping relative path to hex hash, or None if the file does not exist or is corrupt.
         """
-        file_path = cls._get_file_path()
+        file_path = cls._get_module_info_file_path()
         if not os.path.exists(file_path):
             return None
 
@@ -78,9 +85,14 @@ class ModuleInfo:
         return result
 
     @classmethod
-    def save(cls, hashes: dict[str, str]) -> None:
+    def save_hashes(cls) -> None:
         """Save ModuleInfo.csv to the bootstrap resources directory."""
-        file_path = cls._get_file_path()
+
+        # Compute file hashes
+        hashes = ModuleInfo.compute_hashes()
+
+        # Save to ModuleInfo.csv
+        file_path = cls._get_module_info_file_path()
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(",".join(_MODULE_INFO_HEADERS) + "\n")
@@ -88,18 +100,30 @@ class ModuleInfo:
                 f.write(f"{rel_path},{hashes[rel_path]}\n")
 
     @classmethod
-    def has_changes(cls, current_hashes: dict[str, str]) -> bool:
+    def has_changes(cls) -> bool:
         """Compare current hashes against saved ModuleInfo.csv.
 
         Returns:
             True if changes are detected (or if ModuleInfo.csv is missing), False if all hashes match.
         """
-        saved_hashes = cls.load()
+        # Compute current file hashes
+        current_hashes = ModuleInfo.compute_hashes()
+
+        # Compare to saved hashes
+        saved_hashes = cls.load_hashes()
         if saved_hashes is None:
             return True
         return current_hashes != saved_hashes
 
     @classmethod
-    def _get_file_path(cls) -> str:
+    def get_monitored_files(cls) -> tuple[str, ...]:
+        """Includes source files and settings files for the current Dynaconf environment."""
+
+        # Relative paths include source files and settings files
+        result = SourceUtil.get_source_files() + DynaconfLoader.instance().get_settings_files()
+        return result
+
+    @classmethod
+    def _get_module_info_file_path(cls) -> str:
         """Get file path for ModuleInfo.csv."""
         return posixpath.normpath(posixpath.join(ResourcesUtil.get_bootstrap_root(), "ModuleInfo.csv"))

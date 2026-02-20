@@ -87,7 +87,7 @@ class CopyrightUtil:
         return license_name
 
     @classmethod
-    def _get_source_files(
+    def _get_copyright_headers(
         cls,
         *,
         file_include_patterns: Sequence[str] | None = None,
@@ -174,7 +174,7 @@ class CopyrightUtil:
             file_exclude_patterns: Optional list of filename glob patterns to exclude
         """
 
-        source_files = cls._get_source_files(
+        source_files = cls._get_copyright_headers(
             file_include_patterns=file_include_patterns,
             file_exclude_patterns=file_exclude_patterns,
         )
@@ -265,7 +265,7 @@ class CopyrightUtil:
             file_exclude_patterns: Optional list of filename glob patterns to exclude
         """
 
-        source_files = cls._get_source_files(
+        source_files = cls._get_copyright_headers(
             file_include_patterns=file_include_patterns,
             file_exclude_patterns=file_exclude_patterns,
         )

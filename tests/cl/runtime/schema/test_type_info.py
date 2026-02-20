@@ -38,12 +38,16 @@ from stubs.cl.runtime.records.for_dataclasses.stub_dataclass_primitive_fields_ke
 from stubs.cl.runtime.records.for_dataclasses.stub_dataclass_underscore import _StubDataclassUnderscore  # noqa
 
 
-def test_rebuild_cache():
-    """Test TypeInfo.reload_cache method, this also generates and saves a new TypeInfo.csv file."""
-    packages = PackageSettings.instance().get_packages()
-    TypeInfo.rebuild(packages=packages)
+def test_rebuild():
+    """Test TypeInfo.rebuild method with force=True, this generates and saves a new TypeInfo.csv file."""
+    TypeInfo.rebuild(force=True)
 
 
+def test_reuse():
+    """Test TypeInfo.rebuild method with force=False, this reuses the existing TypeInfo.csv file."""
+    TypeInfo.rebuild(force=False)
+
+    
 def test_is_known_type():
     """Test is_known_type method."""
 
