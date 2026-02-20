@@ -18,6 +18,7 @@ from unittest.mock import patch
 import click
 import pytest
 from cl.runtime.cli._standalone import run_command
+from cl.runtime.settings.dynaconf_loader import ENV_SWITCHER_ENVVAR
 
 
 def _make_test_command():
@@ -48,7 +49,7 @@ class TestRunCommand:
                 with pytest.raises(SystemExit) as exc_info:
                     run_command(test_cmd)
                 assert exc_info.value.code == 0
-                assert os.environ.get("CL_SETTINGS_ENV") == "win_sqlite"
+                assert os.environ.get(ENV_SWITCHER_ENVVAR) == "win_sqlite"
         finally:
             if saved is not None:
                 os.environ["CL_SETTINGS_ENV"] = saved
@@ -67,7 +68,7 @@ class TestRunCommand:
                 with pytest.raises(SystemExit) as exc_info:
                     run_command(test_cmd)
                 assert exc_info.value.code == 0
-                assert os.environ.get("CL_SETTINGS_ENV") == "win_sqlite"
+                assert os.environ.get(ENV_SWITCHER_ENVVAR) == "win_sqlite"
         finally:
             if saved is not None:
                 os.environ["CL_SETTINGS_ENV"] = saved

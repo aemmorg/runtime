@@ -22,6 +22,7 @@ import cl.runtime.bootstrap
 
 import os
 import sys
+from cl.runtime.settings.dynaconf_loader import DynaconfLoader
 from cl.runtime.prebuild.init_file_util import InitFileUtil
 from cl.runtime.prebuild.module_info import ModuleInfo
 from cl.runtime.prebuild.source_util import SourceUtil
@@ -33,7 +34,7 @@ from cl.runtime.settings.package_settings import PackageSettings
 def init_type_info() -> None:
     """Create __init__.py files to avoid missing directories and rebuild type cache."""
 
-    settings_env = os.environ.get("CL_SETTINGS_ENV", "development")
+    settings_env = DynaconfLoader.instance().get_settings_env()
     print(f"Environment: {settings_env}")
 
     # Parse --force flag
@@ -74,7 +75,7 @@ def init_type_info() -> None:
     ModuleInfo.save(current_hashes)
     print("Type cache rebuild complete.")
 
-    print(f"TypeInfo.csv written to: {TypeInfo._get_preload_filename()}")
+    print(f"TypeInfo.csv written to: {TypeInfo._get_type_info_filename()}")
 
 
 if __name__ == '__main__':

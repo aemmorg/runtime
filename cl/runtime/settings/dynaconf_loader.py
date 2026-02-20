@@ -77,6 +77,9 @@ class DynaconfLoader(BootstrapMixin):
     _envvar_prefix: str = required()
     """Environment variable prefix includes underscore-delimited package namespace if package is specified."""
 
+    _settings_env: str = required()
+    """Dynaconf settings environment in lowercase (distinct from EnvSettings.env_id)."""
+
     _settings_dir: str = required()
     """Absolute path to the settings directory."""
 
@@ -171,6 +174,9 @@ class DynaconfLoader(BootstrapMixin):
             dotenv_override=True,
         )
 
+        # Extract the settings environment and conver to lowercase
+        self._settings_env = dynaconf.current_env.lower()
+
         # Extract user settings using as_dict(), then convert containers at all levels to dictionaries and lists
         # and convert root level keys to lowercase in case the settings are specified using envvars in uppercase format
         settings_dict = {k.lower(): v for k, v in dynaconf.as_dict().items()}
@@ -226,6 +232,10 @@ class DynaconfLoader(BootstrapMixin):
             result = DynaconfLoader(package=package).build()
             cls.__loader_dict[package] = result
         return result
+
+    def get_settings_env(self) -> str:
+        """Dynaconf settings environment in lowercase (distinct from EnvSettings.env_id)."""
+        return self._settings_env
 
     def get_settings_dir(self) -> str:
         """Absolute path to the settings directory."""

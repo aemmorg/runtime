@@ -40,6 +40,7 @@ from cl.runtime.records.protocols import is_record_type
 from cl.runtime.records.typename import qualname
 from cl.runtime.records.typename import typename
 from cl.runtime.schema.type_kind import TypeKind
+from cl.runtime.settings.dynaconf_loader import ENV_SWITCHER_ENVVAR, DynaconfLoader
 
 _TYPE_INFO_HEADERS = (
     "TypeName",
@@ -533,17 +534,17 @@ class TypeInfo(BootstrapMixin):
 
         # Read from the cache file
         # TODO: !!!!!!!! Move to CsvUtil
-        cache_filename = cls._get_preload_filename()
+        cache_filename = cls._get_type_info_filename()
         if os.path.exists(cache_filename):
             with open(cache_filename, "r", encoding="utf-8") as file:
                 rows = file.readlines()
         else:
             # Cache file does not exist, error message
-            settings_env = os.environ.get("CL_SETTINGS_ENV", "development")
+            settings_env = DynaconfLoader.instance().get_settings_env()
             raise RuntimeError(
                 f"TypeInfo file is not found at {cache_filename}\n"
                 f"Environment: {settings_env}\n"
-                f"Recommended action: run init_type_info with CL_SETTINGS_ENV={settings_env} to create."
+                f"Recommended action: run init_type_info with {ENV_SWITCHER_ENVVAR}={settings_env} to create."
             )
 
         # Iterate over the rows of TypeInfo preload
@@ -611,7 +612,7 @@ class TypeInfo(BootstrapMixin):
     def _save(cls) -> None:
         """Save qual name cache to disk (overwrites the existing file)."""
         # Tuples of (type_name, qual_name) sorted by type name
-        cache_filename = cls._get_preload_filename()
+        cache_filename = cls._get_type_info_filename()
         os.makedirs(os.path.dirname(cache_filename), exist_ok=True)
         with open(cache_filename, "w", encoding="utf-8") as file:
             # Write header row
@@ -647,10 +648,10 @@ class TypeInfo(BootstrapMixin):
         cls._module_dict = {}
 
     @classmethod
-    def _get_preload_filename(cls) -> str:
+    def _get_type_info_filename(cls) -> str:
         """Get the filename for the qual name cache."""
         resources_root = ProjectLayout.get_resources_root()
-        settings_env = os.environ.get("CL_SETTINGS_ENV", "development")
+        settings_env = DynaconfLoader.instance().get_settings_env()
         result = os.path.join(resources_root, settings_env, "bootstrap", "TypeInfo.csv")
         return result
 
