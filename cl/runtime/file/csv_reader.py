@@ -18,6 +18,7 @@ from typing import Callable
 from typing import Sequence
 from cl.runtime.file.file_util import FileUtil
 from cl.runtime.file.reader import Reader
+from cl.runtime.primitive.case_util import CaseUtil
 from cl.runtime.primitive.char_util import CharUtil
 from cl.runtime.records.record_mixin import RecordMixin
 from cl.runtime.records.typename import typename
@@ -215,6 +216,11 @@ class CsvReader(Reader):
 
         # Normalize chars and set None for empty strings
         row_dict = {CharUtil.normalize(k): CharUtil.normalize_or_none(v) for k, v in row_dict.items()}
+
+        # Convert PascalCase column headers to snake_case field names
+        row_dict = {
+            CaseUtil.pascal_to_snake_case(k) if not k.startswith("_") else k: v for k, v in row_dict.items()
+        }
 
         # Normalize Excel-modified formats (thousand separators in numbers, locale-specific dates)
         row_dict = {

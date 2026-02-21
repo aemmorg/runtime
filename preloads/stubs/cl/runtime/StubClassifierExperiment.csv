@@ -1,2 +1,2 @@
-experiment_id,class_labels,cases,num_trials
+ExperimentId,ClassLabels,Cases,NumTrials
 StubClassifierExperiment21,"[""A"", ""B"", ""C""]","[""StubParam1"",""StubParam2""]",5

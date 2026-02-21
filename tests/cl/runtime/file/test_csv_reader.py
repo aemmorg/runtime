@@ -93,7 +93,7 @@ def test_performance(default_db_fixture, tmp_path):
 
     for row_count in row_counts:
         # Generate CSV file
-        lines = ["id,derived_str_field"]
+        lines = ["Id,DerivedStrField"]
         for i in range(1, row_count + 1):
             lines.append(f"derived_id_{i},test_derived_str_field_value_{i}")
         csv_path = os.path.join(str(tmp_path), "StubDataclassDerived.csv")

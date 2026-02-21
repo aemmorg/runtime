@@ -1,2 +1,2 @@
-dag_id,title,root_node
+DagId,Title,RootNode
 Dag1,Title1,Dag1: Root

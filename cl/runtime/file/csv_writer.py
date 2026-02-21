@@ -19,6 +19,7 @@ import pandas as pd
 from cl.runtime.file.file_data import FileData
 from cl.runtime.file.file_kind import FileKind
 from cl.runtime.file.writer import Writer
+from cl.runtime.primitive.case_util import CaseUtil
 from cl.runtime.records.record_mixin import RecordMixin
 from cl.runtime.serializers.data_serializers import DataSerializers
 from cl.runtime.serializers.key_serializers import KeySerializers
@@ -90,6 +91,11 @@ class CsvWriter(Writer):
 
             serialized_record = _CSV_SERIALIZER.serialize(record)
             serialized_record.pop("_type", None)
+            # Convert snake_case field names to PascalCase column headers
+            serialized_record = {
+                CaseUtil.snake_to_pascal_case_keep_trailing_underscore(k): v
+                for k, v in serialized_record.items()
+            }
             record_dicts.append(serialized_record)
 
         # Use pandas df to transform list of dicts to table format

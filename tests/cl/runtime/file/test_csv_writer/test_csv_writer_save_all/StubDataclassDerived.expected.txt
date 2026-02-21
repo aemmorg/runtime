@@ -1,4 +1,4 @@
-id,derived_str_field
+Id,DerivedStrField
 derived_id_1,test_derived_str_field_value_1
 derived_id_2,test_derived_str_field_value_2
 

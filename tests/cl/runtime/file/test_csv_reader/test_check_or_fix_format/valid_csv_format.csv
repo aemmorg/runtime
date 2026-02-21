@@ -1,4 +1,4 @@
-name,value
+Name,Value
 text no comma,text
 text with comma,"text,text"
 number,1.2

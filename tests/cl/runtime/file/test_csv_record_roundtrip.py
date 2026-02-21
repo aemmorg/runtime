@@ -18,6 +18,7 @@ import shutil
 from typing import Iterable
 import pandas as pd
 from cl.runtime.file.csv_reader import CsvReader
+from cl.runtime.primitive.case_util import CaseUtil
 from cl.runtime.qa.qa_util import QaUtil
 from cl.runtime.records.builder_checks import BuilderChecks
 from cl.runtime.records.record_mixin import RecordMixin
@@ -65,6 +66,11 @@ def save_records_to_csv(records: Iterable, file_path: str) -> None:
     for rec in records:
         serialized_record = _CSV_SERIALIZER.serialize(rec)
         serialized_record.pop("_type", None)
+        # Convert snake_case field names to PascalCase column headers
+        serialized_record = {
+            CaseUtil.snake_to_pascal_case_keep_trailing_underscore(k): v
+            for k, v in serialized_record.items()
+        }
         record_dicts.append(serialized_record)
 
     # Use pandas df to transform list of dicts to table format and write to file
