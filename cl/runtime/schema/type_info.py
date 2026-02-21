@@ -45,7 +45,6 @@ from cl.runtime.records.protocols import is_record_type
 from cl.runtime.records.typename import qualname
 from cl.runtime.records.typename import typename
 from cl.runtime.schema.type_kind import TypeKind
-from cl.runtime.settings.dynaconf_loader import ENV_SWITCHER_ENVVAR, DynaconfLoader
 from cl.runtime.settings.package_settings import PackageSettings
 
 _TYPE_INFO_HEADERS = (
@@ -121,7 +120,7 @@ class TypeInfo(BootstrapMixin):
     @cached
     def is_known_type_name(cls, type_name: str) -> bool:
         """Return True if a known data, key, or record type name."""
-        cls._ensure_loaded()
+        cls.ensure_loaded()
 
         if isinstance(type_name, str):
             # Return True if present in dict
@@ -178,7 +177,7 @@ class TypeInfo(BootstrapMixin):
             raise_on_fail: If the check fails, return False or raise an error depending on raise_on_fail
         """
         # Ensure the type cache is loaded from TypeInfo.csv, will not reload if already loaded
-        cls._ensure_loaded()
+        cls.ensure_loaded()
 
         if type_kind is None:
             # If type_kind is None, only check if present in dict
@@ -222,7 +221,7 @@ class TypeInfo(BootstrapMixin):
     def get_type_name_info(cls, type_name: str) -> Self:
         """Return type info if the type name is found in cache, error if not found."""
         # Ensure the type cache is loaded from TypeInfo.csv, will not reload if already loaded
-        cls._ensure_loaded()
+        cls.ensure_loaded()
 
         result = cls._type_info_dict.get(type_name)
         if not result:
@@ -242,7 +241,7 @@ class TypeInfo(BootstrapMixin):
         """
 
         # Ensure the type cache is loaded from TypeInfo.csv, will not reload if already loaded
-        cls._ensure_loaded()
+        cls.ensure_loaded()
 
         # Next, try using cached qual name to avoid enumerating types in all packages
         if (type_info := cls._type_info_dict.get(type_name, None)) is not None:
@@ -262,7 +261,7 @@ class TypeInfo(BootstrapMixin):
         """
 
         # Ensure the type cache is loaded from TypeInfo.csv, will not reload if already loaded
-        cls._ensure_loaded()
+        cls.ensure_loaded()
 
         # Filter by type_kind if specified
         type_info_objects = cls._type_info_dict.values()
@@ -283,7 +282,7 @@ class TypeInfo(BootstrapMixin):
         """
 
         # Ensure the type cache is loaded from TypeInfo.csv, will not reload if already loaded
-        cls._ensure_loaded()
+        cls.ensure_loaded()
 
         # Convert type to type name
         type_name = typename(type_)
@@ -309,7 +308,7 @@ class TypeInfo(BootstrapMixin):
         """
 
         # Ensure the type cache is loaded from TypeInfo.csv, will not reload if already loaded
-        cls._ensure_loaded()
+        cls.ensure_loaded()
 
         parent_type_names = cls.get_parent_and_self_type_names(type_, type_kind=type_kind)
         result = tuple([cls.from_type_name(x) for x in parent_type_names])
@@ -329,7 +328,7 @@ class TypeInfo(BootstrapMixin):
         """
 
         # Ensure the type cache is loaded from TypeInfo.csv, will not reload if already loaded
-        cls._ensure_loaded()
+        cls.ensure_loaded()
 
         # Convert type to type name
         type_name = typename(type_)
@@ -380,7 +379,7 @@ class TypeInfo(BootstrapMixin):
         """
 
         # Ensure the type cache is loaded from TypeInfo.csv, will not reload if already loaded
-        cls._ensure_loaded()
+        cls.ensure_loaded()
 
         child_type_names = cls.get_child_and_self_type_names(type_, type_kind=type_kind)
         result = tuple([cls.from_type_name(x) for x in sorted(child_type_names)])
@@ -393,7 +392,7 @@ class TypeInfo(BootstrapMixin):
         """Return PascalCase record type name of the closest common base to the argument types."""
 
         # Ensure the type cache is loaded from TypeInfo.csv, will not reload if already loaded
-        cls._ensure_loaded()
+        cls.ensure_loaded()
 
         # Ensure the argument is not empty
         if not types:
@@ -452,7 +451,7 @@ class TypeInfo(BootstrapMixin):
             _LOGGER.info("TypeInfo rebuild invoked with --force flag, rebuilding ...")
 
         # Clear the existing data
-        cls._clear()
+        cls.clear()
 
         # Create __init__.py files first to avoid missing classes in directories without __init__.py
         InitFileUtil.check_or_fix_init_files(fix=True, verbose=False)
@@ -461,11 +460,12 @@ class TypeInfo(BootstrapMixin):
         if not (packages := PackageSettings.instance().get_packages()):
             raise RuntimeError("No packages are specified in settings.yaml")
 
-        # Add each class after performing checks for duplicates
+        # Clear the existing data, add each class after performing checks for duplicates
+        cls.clear()
         consume(cls._add_type(type_) for type_ in ImportUtil.get_types(packages=packages, predicate=is_schema_type))
 
         # Overwrite the cache file on disk with the new data
-        cls._save()
+        cls.save()
 
         # Save new file hashes
         ModuleInfo.save_hashes()
@@ -515,7 +515,6 @@ class TypeInfo(BootstrapMixin):
         """Add the specified class to the qual_name and type_name dicts without overwriting the existing values."""
 
         # TODO: Exclude types in TypeExclude.csv
-
         type_kind = cls._get_type_kind(type_)
         if type_kind is None:
             # Skip if not a framework class
@@ -572,7 +571,7 @@ class TypeInfo(BootstrapMixin):
             )
 
     @classmethod
-    def _ensure_loaded(cls):
+    def ensure_loaded(cls):
         """Load the data from TypeInfo.csv if not already loaded, do not reload."""
 
         if cls._type_info_dict is not None:
@@ -580,82 +579,84 @@ class TypeInfo(BootstrapMixin):
             return
 
         # Clear cache before loading
-        cls._clear()
+        cls.clear()
 
         # Read from the cache file
         # TODO: !!!!!!!! Move to CsvUtil
         cache_file_path = cls._get_type_info_file_path()
         if os.path.exists(cache_file_path):
+
+            # TypeInfo.csv exists, read
             with open(cache_file_path, "r", encoding="utf-8") as file:
                 rows = file.readlines()
+
+            # Iterate over the rows of TypeInfo preload
+            for row_index, row in enumerate(rows):
+
+                # Remove leading and trailing whitespace from each comma-separated token
+                row_tokens = tuple(x.strip() for x in row.split(","))
+
+                if row_index == 0:
+                    # Check that the header row has expected values
+                    if row_tokens != _TYPE_INFO_HEADERS:
+                        actual_headers_str = ", ".join(row_tokens)
+                        expected_headers_str = ", ".join(_TYPE_INFO_HEADERS)
+                        raise RuntimeError(
+                            f"TypeInfo preload file has invalid headers.\n"
+                            f"Preload file: {cache_file_path}\n"
+                            f"Actual headers: {actual_headers_str}\n"
+                            f"Expected headers: {expected_headers_str}\n"
+                        )
+                else:
+                    # Parse a type info row
+                    if len(row_tokens) == len(_TYPE_INFO_HEADERS):
+                        # Extract the type name and qual name from the tokens
+                        type_name, type_kind, qual_name, subtype, parent_record_type_names, child_record_type_names = (
+                            row_tokens
+                        )
+                    else:
+                        expected_num_tokens = len(_TYPE_INFO_HEADERS)
+                        actual_num_tokens = len(row_tokens)
+                        raise RuntimeError(
+                            f"Invalid number of comma-delimited tokens {actual_num_tokens} in TypeInfo, "
+                            f"should be {expected_num_tokens}.\n"
+                            f"Sample row: TypeName,TypeKind,module.ClassName,subtype,Superclass1;Superclass2,Subclass1;Subclass2\n"
+                            f"Invalid row: {row.strip()}\n"
+                        )
+
+                    # Create type info object without child class names
+                    # Invoking build imports the class and updates type_info.type_ in cache so it does not have to be imported again
+                    type_info = TypeInfo(
+                        type_name=type_name,
+                        type_kind=EnumUtil.from_str(TypeKind, type_kind),
+                        qual_name=qual_name,
+                        subtype=subtype,
+                        parent_record_type_names=(
+                            tuple(parent_record_type_names.split(";")) if parent_record_type_names else None
+                        ),
+                        child_record_type_names=(
+                            tuple(child_record_type_names.split(";")) if child_record_type_names else None
+                        ),
+                    )
+
+                    # Add to the type info dictionary
+                    existing_info = cls._type_info_dict.setdefault(type_info.type_name, type_info)
+
+                    # In case of a name collision, the value of type field in existing_info will not match
+                    if existing_info.qual_name != type_info.qual_name:
+                        raise RuntimeError(
+                            f"Two types in TypeInfo.csv share the same type name: {type_info.type_name}\n"
+                            f"  - {existing_info.qual_name}\n"
+                            f"  - {type_info.qual_name}\n"
+                            f"Use TypeAlias.csv to resolve the name collision.\n"
+                        )
         else:
-            # Cache file does not exist, rebuild
+            # TypeInfo.csv does not exist, rebuild
             cls.rebuild()
 
-        # Iterate over the rows of TypeInfo preload
-        for row_index, row in enumerate(rows):
-
-            # Remove leading and trailing whitespace from each comma-separated token
-            row_tokens = tuple(x.strip() for x in row.split(","))
-
-            if row_index == 0:
-                # Check that the header row has expected values
-                if row_tokens != _TYPE_INFO_HEADERS:
-                    actual_headers_str = ", ".join(row_tokens)
-                    expected_headers_str = ", ".join(_TYPE_INFO_HEADERS)
-                    raise RuntimeError(
-                        f"TypeInfo preload file has invalid headers.\n"
-                        f"Preload file: {cache_file_path}\n"
-                        f"Actual headers: {actual_headers_str}\n"
-                        f"Expected headers: {expected_headers_str}\n"
-                    )
-            else:
-                # Parse a type info row
-                if len(row_tokens) == len(_TYPE_INFO_HEADERS):
-                    # Extract the type name and qual name from the tokens
-                    type_name, type_kind, qual_name, subtype, parent_record_type_names, child_record_type_names = (
-                        row_tokens
-                    )
-                else:
-                    expected_num_tokens = len(_TYPE_INFO_HEADERS)
-                    actual_num_tokens = len(row_tokens)
-                    raise RuntimeError(
-                        f"Invalid number of comma-delimited tokens {actual_num_tokens} in TypeInfo, "
-                        f"should be {expected_num_tokens}.\n"
-                        f"Sample row: TypeName,TypeKind,module.ClassName,subtype,Superclass1;Superclass2,Subclass1;Subclass2\n"
-                        f"Invalid row: {row.strip()}\n"
-                    )
-
-                # Create type info object without child class names
-                # Invoking build imports the class and updates type_info.type_ in cache so it does not have to be imported again
-                type_info = TypeInfo(
-                    type_name=type_name,
-                    type_kind=EnumUtil.from_str(TypeKind, type_kind),
-                    qual_name=qual_name,
-                    subtype=subtype,
-                    parent_record_type_names=(
-                        tuple(parent_record_type_names.split(";")) if parent_record_type_names else None
-                    ),
-                    child_record_type_names=(
-                        tuple(child_record_type_names.split(";")) if child_record_type_names else None
-                    ),
-                )
-
-                # Add to the type info dictionary
-                existing_info = cls._type_info_dict.setdefault(type_info.type_name, type_info)
-
-                # In case of a name collision, the value of type field in existing_info will not match
-                if existing_info.qual_name != type_info.qual_name:
-                    raise RuntimeError(
-                        f"Two types in TypeInfo.csv share the same type name: {type_info.type_name}\n"
-                        f"  - {existing_info.qual_name}\n"
-                        f"  - {type_info.qual_name}\n"
-                        f"Use TypeAlias.csv to resolve the name collision.\n"
-                    )
-
     @classmethod
-    def _save(cls) -> None:
-        """Save qual name cache to disk (overwrites the existing file)."""
+    def save(cls) -> None:
+        """Save TypeInfo.csv to disk (overwrites the existing file)."""
         # Tuples of (type_name, qual_name) sorted by type name
         cache_file_path = cls._get_type_info_file_path()
         os.makedirs(os.path.dirname(cache_file_path), exist_ok=True)
@@ -687,7 +688,7 @@ class TypeInfo(BootstrapMixin):
                 )
 
     @classmethod
-    def _clear(cls) -> None:
+    def clear(cls) -> None:
         """Clear cache before loading or rebuilding."""
         cls._type_info_dict = {}
         cls._module_dict = {}
