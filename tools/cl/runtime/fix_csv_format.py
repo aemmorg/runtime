@@ -21,7 +21,7 @@ import cl.runtime.bootstrap
 # isort: on
 
 from cl.runtime.file.csv_reader import CsvReader
-from cl.runtime.project.project_layout import ProjectLayout
+from cl.runtime.project.project_util import ProjectUtil
 from cl.runtime.settings.package_settings import PackageSettings
 
 if __name__ == '__main__':
@@ -32,13 +32,13 @@ if __name__ == '__main__':
     dirs = set()
     for package in packages:
         # Add paths to source and stubs directories
-        if (x := ProjectLayout.get_package_source_root(package)) is not None and x not in dirs:
+        if (x := ProjectUtil.get_package_source_root(package)) is not None and x not in dirs:
             dirs.add(x)
-        if (x := ProjectLayout.get_package_stubs_root(package)) is not None and x not in dirs:
+        if (x := ProjectUtil.get_package_stubs_root(package)) is not None and x not in dirs:
             dirs.add(x)
-        if (x := ProjectLayout.get_package_tests_root(package)) is not None and x not in dirs:
+        if (x := ProjectUtil.get_package_tests_root(package)) is not None and x not in dirs:
             dirs.add(x)
-        if (x := ProjectLayout.get_package_preloads_root(package)) is not None and x not in dirs:
+        if (x := ProjectUtil.get_package_preloads_root(package)) is not None and x not in dirs:
             dirs.add(x)
 
     # Check and fix all CSV format issues (quotes, dates, numbers)

@@ -15,7 +15,7 @@
 import os
 from fnmatch import fnmatch
 from typing import Sequence
-from cl.runtime.project.project_layout import ProjectLayout
+from cl.runtime.project.project_util import ProjectUtil
 from cl.runtime.settings.package_settings import PackageSettings
 
 
@@ -61,13 +61,13 @@ class SourceUtil:
         for package in packages:
             # Add paths to source, stubs, and test directories
             package_root_paths = []
-            if (x := ProjectLayout.get_package_source_root(package)) is not None and x not in all_root_paths:
+            if (x := ProjectUtil.get_package_source_root(package)) is not None and x not in all_root_paths:
                 package_root_paths.append(x)
                 all_root_paths.add(x)
-            if (x := ProjectLayout.get_package_stubs_root(package)) is not None and x not in all_root_paths:
+            if (x := ProjectUtil.get_package_stubs_root(package)) is not None and x not in all_root_paths:
                 package_root_paths.append(x)
                 all_root_paths.add(x)
-            if (x := ProjectLayout.get_package_tests_root(package)) is not None and x not in all_root_paths:
+            if (x := ProjectUtil.get_package_tests_root(package)) is not None and x not in all_root_paths:
                 package_root_paths.append(x)
                 all_root_paths.add(x)
 

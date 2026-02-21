@@ -15,7 +15,7 @@
 import os
 from dataclasses import dataclass
 from typing_extensions import final
-from cl.runtime.project.project_layout import ProjectLayout
+from cl.runtime.project.project_util import ProjectUtil
 from cl.runtime.records.for_dataclasses.extensions import required
 from cl.runtime.records.typename import typename
 from cl.runtime.records.typename import typenameof
@@ -88,6 +88,6 @@ class DbSettings(Settings):
     def get_db_dir(cls) -> str:
         """Get database directory (optional, defaults to '{project_root}/databases')."""
         if (result := DbSettings.instance().db_dir) is None:
-            project_root = ProjectLayout.get_project_root()
+            project_root = ProjectUtil.get_project_root()
             result = os.path.join(project_root, "databases")
         return result

@@ -31,7 +31,7 @@ from cl.runtime.prebuild.init_file_util import InitFileUtil
 from cl.runtime.prebuild.module_info import ModuleInfo
 from cl.runtime.prebuild.source_util import SourceUtil
 from cl.runtime.primitive.enum_util import EnumUtil
-from cl.runtime.project.project_layout import ProjectLayout
+from cl.runtime.project.project_util import ProjectUtil
 from cl.runtime.project.resources_util import ResourcesUtil
 from cl.runtime.records.bootstrap_mixin import BootstrapMixin
 from cl.runtime.records.for_dataclasses.extensions import required

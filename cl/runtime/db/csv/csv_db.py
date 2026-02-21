@@ -49,13 +49,13 @@ class CsvDb(Db):
 
         # Default csv_dir to {project_root}/records
         if self.csv_dir is None:
-            from cl.runtime.project.project_layout import ProjectLayout
+            from cl.runtime.project.project_util import ProjectUtil
 
-            self.csv_dir = os.path.join(ProjectLayout.get_project_root(), "records")
+            self.csv_dir = os.path.join(ProjectUtil.get_project_root(), "records")
         elif not os.path.isabs(self.csv_dir):
-            from cl.runtime.project.project_layout import ProjectLayout
+            from cl.runtime.project.project_util import ProjectUtil
 
-            self.csv_dir = os.path.join(ProjectLayout.get_project_root(), self.csv_dir)
+            self.csv_dir = os.path.join(ProjectUtil.get_project_root(), self.csv_dir)
 
     def is_empty(self) -> bool:
         """Return true if no CSV files exist in csv_dir."""

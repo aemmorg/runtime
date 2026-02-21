@@ -22,7 +22,7 @@ from dotenv import load_dotenv
 from dynaconf import Dynaconf
 from frozendict import frozendict
 from typing_extensions import Self
-from cl.runtime.project.project_layout import ProjectLayout
+from cl.runtime.project.project_util import ProjectUtil
 from cl.runtime.qa.qa_util import QaUtil
 from cl.runtime.records.bootstrap_mixin import BootstrapMixin
 from cl.runtime.records.for_dataclasses.extensions import required
@@ -108,7 +108,7 @@ class DynaconfLoader(BootstrapMixin):
         """Use instead of __init__ in the builder pattern, invoked by the build method in base to derived order."""
 
         # Absolute path to settings directory
-        project_root = ProjectLayout.get_project_root()
+        project_root = ProjectUtil.get_project_root()
         if self.package is not None:
             # Get Dynaconf loader for the project root first
             project_loader = DynaconfLoader.instance()

@@ -23,8 +23,8 @@ import cl.runtime.bootstrap
 from pathlib import Path
 
 from cl.runtime.exceptions.error_util import ErrorUtil
-from cl.runtime.project.project_layout_kind import ProjectLayoutKind
-from cl.runtime.project.project_layout import ProjectLayout
+from cl.runtime.project.project_layout_kind import ProjectUtilKind
+from cl.runtime.project.project_util import ProjectUtil
 from cl.runtime.settings.package_settings import PackageSettings
 from cl.runtime.settings.project_settings import ProjectSettings
 from cl.runtime.templates.jinja_template_engine import JinjaTemplateEngine
@@ -56,7 +56,7 @@ def collect_all_dependencies(all_packages: tuple[str, ...]) -> dict:
 def init_project() -> None:
     """Initialize project files."""
 
-    if (project_layout := ProjectLayout.get_project_layout_kind()) != ProjectLayoutKind.MULTIREPO:
+    if (project_layout := ProjectUtil.get_project_layout_kind()) != ProjectUtilKind.MULTIREPO:
         raise RuntimeError(f"Cannot run init_multirepo script when project layout is {project_layout.name.lower()}.")
 
     # Extract unique package directory names (excluding stubs and ".")
@@ -68,15 +68,15 @@ def init_project() -> None:
     dependencies = collect_all_dependencies(all_packages)
 
     # Get project root
-    project_root = Path(ProjectLayout.get_project_root())
+    project_root = Path(ProjectUtil.get_project_root())
 
     # Get template directory path relative to where the current Python file is located
-    if (layout_kind := ProjectLayout.get_project_layout_kind()) == ProjectLayoutKind.MULTIREPO:
+    if (layout_kind := ProjectUtil.get_project_layout_kind()) == ProjectUtilKind.MULTIREPO:
         template_dir = str(Path(__file__).parent / "init_project/multirepo")
-    elif layout_kind == ProjectLayoutKind.MONOREPO:
+    elif layout_kind == ProjectUtilKind.MONOREPO:
         template_dir = str(Path(__file__).parent / "init_project/monorepo")
     else:
-        raise ErrorUtil.enum_value_error(layout_kind, ProjectLayoutKind)
+        raise ErrorUtil.enum_value_error(layout_kind, ProjectUtilKind)
 
     # Get include/exclude patterns from project settings
     project_settings = ProjectSettings.instance()

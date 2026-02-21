@@ -29,10 +29,10 @@ class TestFixCsvQuotesCmd:
 
         with (
             patch("cl.runtime.settings.package_settings.PackageSettings.instance", return_value=mock_pkg_settings),
-            patch("cl.runtime.project.project_layout.ProjectLayout.get_package_source_root", return_value="/src"),
-            patch("cl.runtime.project.project_layout.ProjectLayout.get_package_stubs_root", return_value=None),
-            patch("cl.runtime.project.project_layout.ProjectLayout.get_package_tests_root", return_value=None),
-            patch("cl.runtime.project.project_layout.ProjectLayout.get_package_preloads_root", return_value=None),
+            patch("cl.runtime.project.project_util.ProjectUtil.get_package_source_root", return_value="/src"),
+            patch("cl.runtime.project.project_util.ProjectUtil.get_package_stubs_root", return_value=None),
+            patch("cl.runtime.project.project_util.ProjectUtil.get_package_tests_root", return_value=None),
+            patch("cl.runtime.project.project_util.ProjectUtil.get_package_preloads_root", return_value=None),
             patch("cl.runtime.file.csv_reader.CsvReader.check_or_fix_quotes") as mock_fix,
         ):
             result = cli_runner.invoke(fix_csv_quotes, [])

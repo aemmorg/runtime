@@ -23,7 +23,7 @@ from dataclasses import dataclass
 from typing_extensions import final  # TODO: Replace by the import from typing
 from cl.runtime.contexts.os_util import OsUtil
 from cl.runtime.prebuild.version_util import VersionUtil
-from cl.runtime.project.project_layout import ProjectLayout
+from cl.runtime.project.project_util import ProjectUtil
 from cl.runtime.settings.settings import Settings
 
 _logger = logging.getLogger(__name__)
@@ -107,7 +107,7 @@ class FrontendSettings(Settings):
         or in the 'project_root/frontend' folder if the version is not specified.
         """
         # Get project root
-        project_root = ProjectLayout.get_project_root()
+        project_root = ProjectUtil.get_project_root()
 
         # Substitute version into the frontend_dir
         frontend_dir = self.frontend_dir.format(frontend_version=self.frontend_version)

@@ -24,7 +24,7 @@ import cl.runtime.bootstrap
 from pathlib import Path
 from cl.runtime.prebuild.copyright_util import CopyrightUtil
 from cl.runtime.prebuild.version_util import VersionUtil
-from cl.runtime.project.project_layout import ProjectLayout
+from cl.runtime.project.project_util import ProjectUtil
 from cl.runtime.settings.package_settings import PackageSettings
 from cl.runtime.templates.jinja_template_engine import JinjaTemplateEngine
 
@@ -57,7 +57,7 @@ def build_package_data(package_namespace: str, all_packages: tuple[str, ...]) ->
     """
     # Settings for the specified package
     package_settings = PackageSettings.instance(package=package_namespace)
-    package_root = ProjectLayout.get_package_root(package_namespace)
+    package_root = ProjectUtil.get_package_root(package_namespace)
 
     # Use yaml override for authors if specified, otherwise extract from COPYRIGHT file
     package_authors = package_settings.package_authors or CopyrightUtil.get_authors(package_root, package_namespace)
@@ -173,7 +173,7 @@ def init_packages() -> None:
         if package.startswith("stubs."):
             continue
 
-        package_root = ProjectLayout.get_package_root(package)
+        package_root = ProjectUtil.get_package_root(package)
 
         # Skip if already processed (shouldn't happen for main packages, but safety check)
         if package_root in processed_roots:

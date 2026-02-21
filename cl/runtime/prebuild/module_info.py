@@ -18,7 +18,7 @@ import posixpath
 from typing import Sequence
 
 from cl.runtime.prebuild.source_util import SourceUtil
-from cl.runtime.project.project_layout import ProjectLayout
+from cl.runtime.project.project_util import ProjectUtil
 from cl.runtime.project.resources_util import ResourcesUtil
 from cl.runtime.settings.dynaconf_loader import DynaconfLoader
 
@@ -50,7 +50,7 @@ class ModuleInfo:
         abs_monitored_files = SourceUtil.get_abs_source_files() + DynaconfLoader.instance().get_abs_settings_files()
 
         # Combine with project_root to get absolute path and compute hashes
-        project_root = ProjectLayout.get_project_root()
+        project_root = ProjectUtil.get_project_root()
         result = {}
         for abs_path in abs_monitored_files:
             rel_path = os.path.relpath(abs_path, project_root).replace(os.sep, "/")

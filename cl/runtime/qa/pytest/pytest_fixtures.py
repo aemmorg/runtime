@@ -30,7 +30,7 @@ from cl.runtime.log.log_config import logging_config
 from cl.runtime.prebuild.init_file_util import InitFileUtil
 from cl.runtime.prebuild.module_info import ModuleInfo
 from cl.runtime.prebuild.source_util import SourceUtil
-from cl.runtime.project.project_layout import ProjectLayout
+from cl.runtime.project.project_util import ProjectUtil
 from cl.runtime.qa.pytest.pytest_util import PytestUtil
 from cl.runtime.schema.type_info import TypeInfo
 from cl.runtime.server.env import Env

@@ -29,20 +29,20 @@ class FixCsvQuotesCmd(CliCommand):
         def fix_csv_quotes() -> None:
             """Fix CSV quoting in all package directories."""
             from cl.runtime.file.csv_reader import CsvReader
-            from cl.runtime.project.project_layout import ProjectLayout
+            from cl.runtime.project.project_util import ProjectUtil
             from cl.runtime.settings.package_settings import PackageSettings
 
             packages = PackageSettings.instance().get_packages()
 
             dirs = set()
             for package in packages:
-                if (x := ProjectLayout.get_package_source_root(package)) is not None and x not in dirs:
+                if (x := ProjectUtil.get_package_source_root(package)) is not None and x not in dirs:
                     dirs.add(x)
-                if (x := ProjectLayout.get_package_stubs_root(package)) is not None and x not in dirs:
+                if (x := ProjectUtil.get_package_stubs_root(package)) is not None and x not in dirs:
                     dirs.add(x)
-                if (x := ProjectLayout.get_package_tests_root(package)) is not None and x not in dirs:
+                if (x := ProjectUtil.get_package_tests_root(package)) is not None and x not in dirs:
                     dirs.add(x)
-                if (x := ProjectLayout.get_package_preloads_root(package)) is not None and x not in dirs:
+                if (x := ProjectUtil.get_package_preloads_root(package)) is not None and x not in dirs:
                     dirs.add(x)
 
             CsvReader.check_or_fix_quotes(

@@ -16,7 +16,7 @@ import subprocess
 import sys
 import pytest
 from cl.runtime.prebuild.source_util import SourceUtil
-from cl.runtime.project.project_layout import ProjectLayout
+from cl.runtime.project.project_util import ProjectUtil
 
 
 def _count_py_files_via_os(directory: str, exclude_names: tuple[str, ...]) -> int:
@@ -47,9 +47,9 @@ def test_source_util():
     source_util_count = len(source_files)
 
     # Get file count independently using OS commands on each package directory
-    source_root = ProjectLayout.get_package_source_root(package)
-    stubs_root = ProjectLayout.get_package_stubs_root(package)
-    tests_root = ProjectLayout.get_package_tests_root(package)
+    source_root = ProjectUtil.get_package_source_root(package)
+    stubs_root = ProjectUtil.get_package_stubs_root(package)
+    tests_root = ProjectUtil.get_package_tests_root(package)
 
     os_count = 0
     for root_dir in (source_root, stubs_root, tests_root):

@@ -15,7 +15,7 @@
 import os
 from pathlib import Path
 from typing import Iterable
-from cl.runtime.project.project_layout_kind import ProjectLayoutKind
+from cl.runtime.project.project_layout_kind import ProjectUtilKind
 from cl.runtime.records.typename import typename
 
 # Possible project root locations for each layout relative to this module
@@ -26,13 +26,13 @@ MONOREPO_ROOT_DIR = os.path.normpath(Path(__file__).parents[3])
 root_filenames = [".env", "settings.yaml", "settings.json", "settings.toml"]
 
 PROJECT_ROOT = None
-PROJECT_LAYOUT_KIND: ProjectLayoutKind | None = None
+PROJECT_LAYOUT_KIND: ProjectUtilKind | None = None
 try:
     if os.path.exists(MULTIREPO_ROOT_DIR):
         # Multirepo root takes priority but only if it contains one of the settings files
         if any(os.path.exists(os.path.join(MULTIREPO_ROOT_DIR, x)) for x in root_filenames):
             PROJECT_ROOT = MULTIREPO_ROOT_DIR
-            PROJECT_LAYOUT_KIND = ProjectLayoutKind.MULTIREPO
+            PROJECT_LAYOUT_KIND = ProjectUtilKind.MULTIREPO
 # Handle the possibility that directory access is prohibited
 except FileNotFoundError:
     pass
@@ -45,7 +45,7 @@ if PROJECT_ROOT is None:
             # Monorepo directory is searched next
             if any(os.path.exists(os.path.join(MONOREPO_ROOT_DIR, x)) for x in root_filenames):
                 PROJECT_ROOT = MONOREPO_ROOT_DIR
-                PROJECT_LAYOUT_KIND = ProjectLayoutKind.MONOREPO
+                PROJECT_LAYOUT_KIND = ProjectUtilKind.MONOREPO
     # Handle the possibility that directory access is prohibited
     except FileNotFoundError:
         pass
@@ -64,7 +64,7 @@ if PROJECT_ROOT is None:
     )
 
 
-class ProjectLayout:  # TODO: !!!! Derive from Settings or rename to ProjectUtil or ProjectLayout and make static
+class ProjectUtil:  # TODO: !!!! Derive from Settings or rename to ProjectUtil or ProjectUtil and make static
     """
     Information about the project location and layout used to search for settings and packages.
     This class finds the location of .env or settings.yaml and detects one of two supported layouts:
@@ -82,7 +82,7 @@ class ProjectLayout:  # TODO: !!!! Derive from Settings or rename to ProjectUtil
     """
 
     @classmethod
-    def get_project_layout_kind(cls) -> ProjectLayoutKind:
+    def get_project_layout_kind(cls) -> ProjectUtilKind:
         """Specifies monorepo vs multirepo project layout."""
         return PROJECT_LAYOUT_KIND
 
@@ -118,10 +118,10 @@ class ProjectLayout:  # TODO: !!!! Derive from Settings or rename to ProjectUtil
             package: Dot-delimited package root, e.g. 'cl.runtime'
         """
         relative_path = package.replace(".", os.sep)
-        if PROJECT_LAYOUT_KIND == ProjectLayoutKind.MONOREPO:
+        if PROJECT_LAYOUT_KIND == ProjectUtilKind.MONOREPO:
             # Monorepo layout, search directly under project root
             search_paths = [os.path.normpath(os.path.join(PROJECT_ROOT, relative_path, "__init__.py"))]
-        elif PROJECT_LAYOUT_KIND == ProjectLayoutKind.MULTIREPO:
+        elif PROJECT_LAYOUT_KIND == ProjectUtilKind.MULTIREPO:
             # Multirepo layout, check each dot-delimited package token in reverse order as potential package root
             package_tokens = package.split(".")
             package_tokens.reverse()

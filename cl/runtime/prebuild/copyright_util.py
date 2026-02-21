@@ -17,7 +17,7 @@ import re
 from typing import Sequence
 from cl.runtime.prebuild.source_util import SourceUtil
 from cl.runtime.primitive.string_util import StringUtil
-from cl.runtime.project.project_layout import ProjectLayout
+from cl.runtime.project.project_util import ProjectUtil
 from cl.runtime.settings.package_settings import PackageSettings
 
 _LICENSE_SHA256_TO_NAME = {
@@ -107,13 +107,13 @@ class CopyrightUtil:
         packages = PackageSettings.instance().get_packages()
         root_to_header: dict[str, str] = {}
         for package in packages:
-            package_root = ProjectLayout.get_package_root(package)
+            package_root = ProjectUtil.get_package_root(package)
             copyright_header = cls.read_copyright_header(package_root)
-            if (x := ProjectLayout.get_package_source_root(package)) is not None:
+            if (x := ProjectUtil.get_package_source_root(package)) is not None:
                 root_to_header[os.path.normpath(x)] = copyright_header
-            if (x := ProjectLayout.get_package_stubs_root(package)) is not None:
+            if (x := ProjectUtil.get_package_stubs_root(package)) is not None:
                 root_to_header[os.path.normpath(x)] = copyright_header
-            if (x := ProjectLayout.get_package_tests_root(package)) is not None:
+            if (x := ProjectUtil.get_package_tests_root(package)) is not None:
                 root_to_header[os.path.normpath(x)] = copyright_header
 
         # Get all source file paths using SourceUtil
