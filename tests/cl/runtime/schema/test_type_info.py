@@ -40,12 +40,12 @@ from stubs.cl.runtime.records.for_dataclasses.stub_dataclass_underscore import _
 
 def test_rebuild():
     """Test TypeInfo.rebuild method with force=True, this generates and saves a new TypeInfo.csv file."""
-    TypeInfo.rebuild(force=True)
+    TypeInfo.update(force=True)
 
 
 def test_reuse():
     """Test TypeInfo.rebuild method with force=False, this reuses the existing TypeInfo.csv file."""
-    TypeInfo.rebuild(force=False)
+    TypeInfo.update(force=False)
 
 
 def test_is_known_type():

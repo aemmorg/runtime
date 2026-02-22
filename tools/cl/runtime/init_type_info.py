@@ -35,7 +35,7 @@ def init_type_info() -> None:
     print(f"Rebuilding TypeInfo.csv for Dynaconf environment: {settings_env}")
 
     # Always update if invoked directly rather than from another script or a test
-    TypeInfo.rebuild(force=True)
+    TypeInfo.update(force=True)
 
 if __name__ == '__main__':
 

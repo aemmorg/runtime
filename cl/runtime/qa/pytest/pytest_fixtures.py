@@ -194,7 +194,7 @@ def configure_logging_fixture(request: FixtureRequest):
 @pytest.fixture(scope="session", autouse=True)
 def type_info_fixture():
     """Rebuild type cache once per test session if source files have changed."""
-    TypeInfo.rebuild()
+    TypeInfo.update()
 
 
 @pytest.fixture(scope="session")  # TODO: Use a named celery queue for each test

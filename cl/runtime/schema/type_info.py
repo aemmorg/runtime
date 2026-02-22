@@ -423,8 +423,8 @@ class TypeInfo(BootstrapMixin):
             raise RuntimeError(f"No common base is found for the following records:\n{record_type_names_str}")
 
     @classmethod
-    def rebuild(cls, *, force: bool | None = None) -> None:
-        """Reload types from packages and save a new TypeInfo.csv file to the bootstrap resources directory."""
+    def update(cls, *, force: bool | None = None) -> None:
+        """Inspect all modules and write new TypeInfo.csv file if changes are detected or force=True."""
 
         if not force:
             # Determine if TypeInfo.csv exists
@@ -648,7 +648,7 @@ class TypeInfo(BootstrapMixin):
                         )
         else:
             # TypeInfo.csv does not exist, rebuild
-            cls.rebuild()
+            cls.update()
 
     @classmethod
     def save(cls) -> None:
