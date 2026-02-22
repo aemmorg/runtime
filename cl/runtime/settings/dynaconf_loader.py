@@ -242,9 +242,13 @@ class DynaconfLoader(BootstrapMixin):
         """Absolute path to the settings directory."""
         return self._abs_settings_dir
 
-    def get_abs_settings_files(self) -> tuple[str, ...]:
+    def get_abs_settings_files(self, *, exclude_secrets: bool | None = None) -> tuple[str, ...]:
         """Abs path to Dynaconf settings files for the specified package or project root if package is not specified."""
-        return self._abs_settings_files
+        if exclude_secrets:
+            # Exclude secrets files from the list by name pattern
+            return tuple(x for x in self._abs_settings_files if ".secrets." not in x)
+        else:
+            return self._abs_settings_files
 
     def get_field_dict(self) -> frozendict[str, Any]:
         """Dictionary of settings key-value pairs obtained from the Dynaconf object."""

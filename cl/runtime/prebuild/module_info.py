@@ -45,14 +45,10 @@ class ModuleInfo:
         Returns:
             Dictionary mapping relative path (forward-slash, relative to project root) to hex hash.
         """
-
-        # Relative paths include source files and settings files
-        abs_monitored_files = SourceUtil.get_abs_source_files() + DynaconfLoader.instance().get_abs_settings_files()
-
-        # Combine with project_root to get absolute path and compute hashes
+        # Compute hashes and store in ModuleInfo.csv under path relative to project root
         project_root = ProjectUtil.get_project_root()
         result = {}
-        for abs_path in abs_monitored_files:
+        for abs_path in cls.get_abs_monitored_files():
             rel_path = os.path.relpath(abs_path, project_root).replace(os.sep, "/")
             result[rel_path] = cls.compute_file_hash(abs_path)
         return result
@@ -116,11 +112,11 @@ class ModuleInfo:
         return current_hashes != saved_hashes
 
     @classmethod
-    def get_monitored_files(cls) -> tuple[str, ...]:
-        """Includes source files and settings files for the current Dynaconf environment."""
-
-        # Relative paths include source files and settings files
-        result = SourceUtil.get_abs_source_files() + DynaconfLoader.instance().get_abs_settings_files()
+    def get_abs_monitored_files(cls) -> tuple[str, ...]:
+        """The list of absolute paths to source files and settings files for the current Dynaconf environment."""
+        result = (
+            SourceUtil.get_abs_source_files() + DynaconfLoader.instance().get_abs_settings_files(exclude_secrets=True)
+        )
         return result
 
     @classmethod
