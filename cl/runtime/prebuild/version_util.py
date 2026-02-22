@@ -20,6 +20,7 @@ from memoization import cached
 from cl.runtime.exceptions.error_util import ErrorUtil
 from cl.runtime.prebuild.import_util import ImportUtil
 from cl.runtime.prebuild.version_format import VersionFormat
+from cl.runtime.project.package_util import PackageUtil
 from cl.runtime.project.project_util import ProjectUtil
 from cl.runtime.settings.package_settings import PackageSettings
 from cl.runtime.settings.version_settings import VersionSettings
@@ -78,13 +79,30 @@ class VersionUtil:
         return f"{now.year}.{now.month * 100 + now.day}.{now.hour * 100 + now.minute}"
 
     @classmethod
-    def bump_package_version(cls, *, package: str, version: str | None = None) -> str:
-        """Update the version string in the package's root __init__.py.
+    def get_bumped_sem_ver(cls, *, module: str, prev_sem_ver: str) -> str:
+        """Validate previous SemVer version and return the version with the patch token incremented.
 
         Args:
-            package: Dot-delimited package namespace, e.g., 'cl.runtime'
+            module: Dot-delimited package or module namespace for validation and error messages.
+            prev_sem_ver: Previous version string in SemVer MAJOR.MINOR.PATCH format.
+
+        Returns:
+            The new version string with the patch token incremented by one.
+        """
+
+        cls.guard_module_version(version=prev_sem_ver, module=module)
+        tokens = prev_sem_ver.split(".")
+        tokens[-1] = str(int(tokens[-1]) + 1)
+        return ".".join(tokens)
+
+    @classmethod
+    def bump_module_version(cls, *, module: str, version: str | None = None) -> str:
+        """Update the version string in the module's __init__.py.
+
+        Args:
+            module: Dot-delimited module namespace, e.g., 'cl.runtime' or 'cl.runtime.prebuild'
             version: Version string to set. If not provided, generates CalVer from current UTC time
-                when the version format is CalVer, otherwise raises an error.
+                when the version format is CalVer, or bumps the patch token when the format is SemVer.
 
         Returns:
             The version string that was written.
@@ -92,18 +110,23 @@ class VersionUtil:
 
         if version is None:
             # Get version format from settings
-            version_format = cls.get_module_version_format_or_none(module=package)
-            if version_format != VersionFormat.CAL_VER:
+            version_format = cls.get_module_version_format_or_none(module=module)
+            if version_format == VersionFormat.CAL_VER:
+                version = cls.get_cal_ver()
+            elif version_format == VersionFormat.SEM_VER:
+                prev_version = cls.get_module_version(module=module)
+                version = cls.get_bumped_sem_ver(module=module, prev_sem_ver=prev_version)
+            else:
                 raise RuntimeError(
-                    f"Cannot auto-generate version for package {package} because its version format "
-                    f"is {version_format.name if version_format else 'not specified'}, not CalVer."
+                    f"Cannot auto-generate version for module {module} because its version format "
+                    f"is {version_format.name if version_format else 'not specified'}, not CalVer or SemVer."
                 )
-            version = cls.get_cal_ver()
 
-        # Get package root and construct path to __init__.py
-        package_root = ProjectUtil.get_package_root(package)
-        package_path = package.replace(".", "/")
-        init_file = Path(package_root) / package_path / "__init__.py"
+        # Find containing package to get the package root
+        containing_package = PackageUtil.get_containing_package(module)
+        package_root = ProjectUtil.get_package_root(containing_package)
+        module_path = module.replace(".", "/")
+        init_file = Path(package_root) / module_path / "__init__.py"
 
         # Write version to __init__.py
         init_file.parent.mkdir(parents=True, exist_ok=True)
@@ -112,7 +135,7 @@ class VersionUtil:
         return version
 
     @classmethod
-    def bump_project_versions(cls, *, version: str | None = None) -> str:
+    def bump_package_versions(cls, *, version: str | None = None) -> str:
         """Update the version string in all main packages of the project.
 
         Args:
@@ -130,7 +153,7 @@ class VersionUtil:
             # Skip stubs packages
             if package.startswith("stubs."):
                 continue
-            cls.bump_package_version(package=package, version=version)
+            cls.bump_module_version(module=package, version=version)
 
         return version
 

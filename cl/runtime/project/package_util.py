@@ -22,7 +22,30 @@ class PackageUtil:
     """Utility class for determining the current package from a file path."""
 
     @classmethod
-    def get_current_package(cls, caller_file: str) -> str:
+    def get_containing_package(cls, module: str) -> str:
+        """Get the package namespace that contains the specified module.
+
+        Args:
+            module: Dot-delimited module namespace, e.g., 'cl.runtime.prebuild'
+
+        Returns:
+            Dot-delimited package namespace, e.g., 'cl.runtime'
+        """
+
+        package_dirs = PackageSettings.instance().package_dirs
+
+        # Sort by namespace length descending to find the most specific match
+        for namespace in sorted(package_dirs, key=len, reverse=True):
+            if module == namespace or module.startswith(namespace + "."):
+                return namespace
+
+        raise RuntimeError(
+            f"Module '{module}' is not under any known package namespace.\n"
+            f"Known package namespaces: {list(package_dirs)}"
+        )
+
+    @classmethod
+    def get_file_package(cls, caller_file: str) -> str:
         """Get the main package namespace whose root contains the specified file.
 
         Args:

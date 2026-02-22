@@ -22,14 +22,6 @@ import cl.runtime.bootstrap
 
 from cl.runtime.prebuild.version_util import VersionUtil
 
-
-def bump_project_versions() -> None:
-    """Bump the version of all main packages in the project."""
-    version = VersionUtil.bump_project_versions()
-    print(version)
-
-
 if __name__ == "__main__":
-
     # Bump versions for all packages
-    bump_project_versions()
+    VersionUtil.bump_package_versions()

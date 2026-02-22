@@ -20,18 +20,18 @@ locate.append_sys_path("../../..")
 import cl.runtime.bootstrap
 # isort: on
 
+import argparse
+
 from cl.runtime.prebuild.version_util import VersionUtil
 from cl.runtime.project.package_util import PackageUtil
 
-
-def bump_package_version() -> None:
-    """Update the version of the current package determined from the working directory."""
-    package = PackageUtil.get_current_package(__file__)
-    version = VersionUtil.bump_package_version(package=package)
-    print(version)
-
-
 if __name__ == "__main__":
 
-    # Update version
-    bump_package_version()
+    # Update version for the specified package
+    parser = argparse.ArgumentParser(description="Bump the version of a package or module.")
+    parser.add_argument("--module", type=str, required=True, help="Dot-delimited module namespace to bump.")
+    args = parser.parse_args()
+
+    module = args.module if args.module else PackageUtil.get_file_package(__file__)
+    version = VersionUtil.bump_module_version(module=module)
+    print(version)
