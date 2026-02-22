@@ -179,7 +179,7 @@ class FileUtil:
 
     @classmethod
     def get_type_from_filename(cls, file_path: str, *, raise_on_fail: bool = True) -> type | None:
-        """Validate that filename without extension is a valid type in TypeInfo.
+        """Validate that first token of filename without extension is a valid type in TypeInfo.
         Args:
             file_path: Absolute or relative file path
             raise_on_fail: If True, raise RuntimeError on invalid type, otherwise return None
@@ -188,6 +188,8 @@ class FileUtil:
         Raises:
             RuntimeError: If filename is not in PascalCase or not a valid type in TypeInfo
         """
+
+        # Remove file extension
         filename = os.path.basename(file_path)
         filename_without_extension, _ = os.path.splitext(filename)
 
