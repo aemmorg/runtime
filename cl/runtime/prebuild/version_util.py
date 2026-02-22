@@ -72,6 +72,12 @@ class VersionUtil:
             raise RuntimeError(f"Root namespace of package {package} does not import or define a __version__ variable.")
 
     @classmethod
+    def get_cal_ver(cls) -> str:
+        """Generate a CalVer version string in YYYY.MMDD.HHMM format from the current UTC time."""
+        now = datetime.datetime.now(datetime.timezone.utc)
+        return f"{now.year}.{now.month * 100 + now.day}.{now.hour * 100 + now.minute}"
+
+    @classmethod
     def bump_package_version(cls, *, package: str, version: str | None = None) -> str:
         """Update the version string in the package's root __init__.py.
 
@@ -92,9 +98,7 @@ class VersionUtil:
                     f"Cannot auto-generate version for package {package} because its version format "
                     f"is {version_format.name if version_format else 'not specified'}, not CalVer."
                 )
-            # Generate CalVer from current UTC time
-            now = datetime.datetime.now(datetime.timezone.utc)
-            version = f"{now.year}.{now.month * 100 + now.day}.{now.hour * 100 + now.minute}"
+            version = cls.get_cal_ver()
 
         # Get package root and construct path to __init__.py
         package_root = ProjectUtil.get_package_root(package)
@@ -104,6 +108,29 @@ class VersionUtil:
         # Write version to __init__.py
         init_file.parent.mkdir(parents=True, exist_ok=True)
         init_file.write_text(f'__version__ = "{version}"\n', encoding="utf-8")
+
+        return version
+
+    @classmethod
+    def bump_project_versions(cls, *, version: str | None = None) -> str:
+        """Update the version string in all main packages of the project.
+
+        Args:
+            version: Version string to set. If not provided, generates CalVer from current UTC time.
+
+        Returns:
+            The version string that was written to all packages.
+        """
+
+        if version is None:
+            version = cls.get_cal_ver()
+
+        all_packages = PackageSettings.instance().get_packages()
+        for package in all_packages:
+            # Skip stubs packages
+            if package.startswith("stubs."):
+                continue
+            cls.bump_package_version(package=package, version=version)
 
         return version
 

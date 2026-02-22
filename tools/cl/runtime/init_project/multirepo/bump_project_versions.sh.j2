@@ -1,0 +1,9 @@
+#!/bin/bash
+
+source activate
+
+export PYTHONPATH="{% for package in packages %}./{{ package }}:{% endfor %}$PYTHONPATH"
+
+echo ""
+echo "Bump versions for all packages"
+python -m tools.cl.runtime.bump_project_versions
