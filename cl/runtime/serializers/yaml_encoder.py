@@ -15,6 +15,7 @@
 import datetime as dt
 from dataclasses import dataclass
 from io import StringIO
+from types import GeneratorType
 from typing import Any
 from uuid import UUID
 from frozendict import frozendict
@@ -162,6 +163,7 @@ class YamlEncoder(Encoder):
         """Decode from a string, pass through None."""
 
         # Use a YAML reader with PrimitiveToStringConstructor to read all values as strings
-        result = yaml_reader.load(StringIO(data))
-        result = self.normalize(result)
+        mapping_or_generator = yaml_reader.load_all(StringIO(data))
+        # Normalize and return
+        result = self.normalize(mapping_or_generator)
         return result

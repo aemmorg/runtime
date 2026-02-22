@@ -18,7 +18,7 @@ from cl.runtime.settings.preload_settings import PreloadSettings
 from stubs.cl.runtime.records.for_dataclasses.stub_dataclass import StubDataclass
 
 
-def test_yaml_preload_one(default_db_fixture):
+def test_yaml_preload(default_db_fixture):
     """Test that a single-document YAML preload file is loaded correctly."""
 
     preload_settings = PreloadSettings.instance()
@@ -27,21 +27,11 @@ def test_yaml_preload_one(default_db_fixture):
     yaml_reader = YamlReader().build()
     records = yaml_reader.load_all(dirs=dirs, ext="yaml")
 
-    # Check that StubDataclass.One.yaml was loaded
+    # Check that StubDataclass;One.yaml was loaded
     matching = [r for r in records if isinstance(r, StubDataclass) and r.id == "yaml_one"]
     assert len(matching) == 1, f"Expected to find yaml_one in loaded records, got {len(matching)}"
 
-
-def test_yaml_preload_many(default_db_fixture):
-    """Test that a multi-document YAML preload file (with --- separator) is loaded correctly."""
-
-    preload_settings = PreloadSettings.instance()
-    dirs = preload_settings.preload_dirs
-
-    yaml_reader = YamlReader().build()
-    records = yaml_reader.load_all(dirs=dirs, ext="yaml")
-
-    # Check that both records from StubDataclass.Many.yaml were loaded
+    # Check that both records from StubDataclass;Many.yaml were loaded
     matching = [r for r in records if isinstance(r, StubDataclass) and r.id in ("yaml_many_1", "yaml_many_2")]
     assert len(matching) == 2, (
         f"Expected 2 records from multi-document YAML (yaml_many_1, yaml_many_2), got {len(matching)}. "

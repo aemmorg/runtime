@@ -15,9 +15,15 @@
 from abc import ABC
 from abc import abstractmethod
 from dataclasses import dataclass
+from types import GeneratorType, MappingProxyType
 from typing import Any
+
+from frozendict import frozendict
+
 from cl.runtime.primitive.char_util import CharUtil
 from cl.runtime.records.for_dataclasses.dataclass_mixin import DataclassMixin
+from cl.runtime.records.protocols import is_mapping_type, is_sequence_type
+from cl.runtime.records.typename import typeof
 
 
 @dataclass(slots=True, kw_only=True)
@@ -34,11 +40,11 @@ class Encoder(DataclassMixin, ABC):
 
     def normalize(self, data: Any) -> Any:
         """Recursively normalize serialized data (dicts, lists, strings) for character encoding."""
-        if isinstance(data, dict):
-            # Recursively normalize dictionary keys and values
+        if is_mapping_type(data_type := typeof(data)) or issubclass(data_type, MappingProxyType):
+            # Recursively normalize mapping or mapping proxy keys and values
             return {CharUtil.normalize(k): self.normalize(v) for k, v in data.items()}
-        elif isinstance(data, list):
-            # Recursively normalize list items
+        elif is_sequence_type(data_type) or issubclass(data_type, GeneratorType):
+            # Recursively normalize sequence or generator items
             return [self.normalize(item) for item in data]
         elif isinstance(data, str):
             # Normalize string values, converting empty strings to None
