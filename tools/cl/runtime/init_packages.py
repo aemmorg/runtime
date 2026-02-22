@@ -21,12 +21,17 @@ locate.append_sys_path("../../../../runtime")
 import cl.runtime.bootstrap
 # isort: on
 
+import fnmatch
+import os
+import platform
 from pathlib import Path
 from cl.runtime.prebuild.copyright_util import CopyrightUtil
 from cl.runtime.prebuild.version_util import VersionUtil
 from cl.runtime.project.project_util import ProjectUtil
 from cl.runtime.settings.package_settings import PackageSettings
 from cl.runtime.templates.jinja_template_engine import JinjaTemplateEngine
+from cl.runtime.templates.template_engine import transform_part
+from cl.runtime.project.package_template_params import PackageTemplateParams
 
 
 def get_package_name(package_namespace: str) -> str:
@@ -44,16 +49,15 @@ def get_isort_known_key(package_namespace: str) -> str:
     return f"known_{package_namespace.replace('.', '_')}"
 
 
-def build_package_data(package_namespace: str, all_packages: tuple[str, ...]) -> dict:
-    """
-    Build template data for a package including isort configuration and package settings.
+def build_package_data(
+    package_namespace: str,
+    all_packages: tuple[str, ...],
+) -> PackageTemplateParams:
+    """Build template parameters for a package including isort configuration and package settings.
 
     Args:
         package_namespace: The package namespace (e.g., 'cl.convince')
         all_packages: All package namespaces from PackageSettings
-
-    Returns:
-        Dict with template data including isort config and package settings
     """
     # Settings for the specified package
     package_settings = PackageSettings.instance(package=package_namespace)
@@ -64,6 +68,11 @@ def build_package_data(package_namespace: str, all_packages: tuple[str, ...]) ->
 
     # Use yaml override for license if specified, otherwise extract from LICENSE file
     package_license = package_settings.package_license or CopyrightUtil.get_license_name(package_root, package_namespace)
+
+    # Load raw copyright text from the COPYRIGHT file at package root
+    copyright_file_path = os.path.join(package_root, "COPYRIGHT")
+    with open(copyright_file_path, "r", encoding="utf-8") as f:
+        copyright_text = f.read().rstrip("\n")
 
     # Separate main packages from stubs
     main_packages = [p for p in all_packages if not p.startswith("stubs.")]
@@ -126,37 +135,40 @@ def build_package_data(package_namespace: str, all_packages: tuple[str, ...]) ->
         if pkg_settings.package_test_dependencies:
             combined_test_dependencies.extend(pkg_settings.package_test_dependencies)
 
-    data = {
-        "package_name": package_settings.package_name,  # Readable name, e.g., "Runtime"
-        "package_namespace": package_namespace,  # Dot-delimited package namespace, e.g., 'cl.runtime'
-        "package_path": "/".join(package_namespace.split(".")),  # Slash-delimited package namespace, e.g., 'cl/runtime'
-        "package_version": VersionUtil.get_package_version(package=package_namespace),
-        "package_description": package_settings.package_description or "",
-        "package_requires_python": package_settings.package_requires_python,
-        "package_license": package_license,
-        "package_authors": package_authors,
-        "package_classifiers": list(package_settings.package_classifiers) if package_settings.package_classifiers else [],
-        "package_urls": package_settings.package_urls,
-        "package_dependencies": list(package_settings.package_dependencies) if package_settings.package_dependencies else [],
-        "combined_package_dependencies": combined_package_dependencies,
-        "combined_test_dependencies": combined_test_dependencies,
-        "package_has_shared_data": package_settings.package_has_shared_data,
-        "package_has_mypy": package_settings.package_has_mypy,
-        "main_packages": included_main_packages,
-        "stub_packages": included_stubs,
-        "isort_known_packages": isort_known_packages,
-        "isort_known_stubs": isort_known_stubs,
-        "isort_sections": sections,
-    }
+    params = PackageTemplateParams(
+        package_name=package_settings.package_name,
+        package_namespace=package_namespace,
+        package_path="/".join(package_namespace.split(".")),
+        package_version=VersionUtil.get_package_version(package=package_namespace),
+        package_description=package_settings.package_description or "",
+        package_requires_python=package_settings.package_requires_python,
+        package_license=package_license,
+        package_authors=package_authors,
+        package_classifiers=package_settings.package_classifiers,
+        package_urls=package_settings.package_urls,
+        package_dependencies=package_settings.package_dependencies,
+        combined_package_dependencies=combined_package_dependencies,
+        combined_test_dependencies=combined_test_dependencies,
+        package_has_shared_data=package_settings.package_has_shared_data,
+        package_has_mypy=package_settings.package_has_mypy,
+        main_packages=included_main_packages,
+        stub_packages=included_stubs,
+        isort_known_packages=isort_known_packages,
+        isort_known_stubs=isort_known_stubs,
+        isort_sections=sections,
+        package_init_include=package_settings.package_init_include,
+        package_init_exclude=package_settings.package_init_exclude,
+        package_copyright=copyright_text,
+    )
 
-    return data, package_settings.package_init_include, package_settings.package_init_exclude
+    return params
 
 
 def init_packages() -> None:
     """Initialize package files for each package."""
 
     # Get template directory path relative to where the current Python file is located
-    template_dir = str(Path(__file__).parent / "init_packages")
+    template_dir = Path(__file__).parent / "init_packages"
 
     # Create Jinja2 template engine
     engine = JinjaTemplateEngine().build()
@@ -173,23 +185,54 @@ def init_packages() -> None:
         if package.startswith("stubs."):
             continue
 
-        package_root = ProjectUtil.get_package_root(package)
+        package_root = Path(ProjectUtil.get_package_root(package))
 
         # Skip if already processed (shouldn't happen for main packages, but safety check)
         if package_root in processed_roots:
             continue
         processed_roots.add(package_root)
 
-        # Build template data with isort configuration and include/exclude patterns
-        data, init_include, init_exclude = build_package_data(package, all_packages)
+        # Build template params with isort configuration and include/exclude patterns
+        params = build_package_data(package, all_packages)
 
-        engine.render_dir(
-            input_dir=template_dir,
-            output_dir=package_root,
-            data=data,
-            include=init_include,
-            exclude=init_exclude,
-        )
+        # Set up include/exclude patterns
+        include_patterns = params.package_init_include if params.package_init_include is not None else ["*"]
+        exclude_patterns = params.package_init_exclude if params.package_init_exclude is not None else []
+
+        # Use CRLF on Windows, LF on Linux
+        newline_char = "\r\n" if platform.system() == "Windows" else "\n"
+
+        # Iterate over each template file, setting file_ext per template
+        for template_file in template_dir.rglob("*.j2"):
+            # Compute output path by removing .j2 suffix and transforming dot_ prefix
+            relative_path = template_file.relative_to(template_dir)
+            path_parts = list(relative_path.parts)
+            output_relative_path = Path(
+                *[
+                    transform_part(p.removesuffix(".j2") if i == len(path_parts) - 1 else p)
+                    for i, p in enumerate(path_parts)
+                ]
+            )
+
+            # Apply include/exclude filters on the output relative path
+            output_name = str(output_relative_path)
+            if not any(fnmatch.fnmatch(output_name, p) for p in include_patterns):
+                continue
+            if any(fnmatch.fnmatch(output_name, p) for p in exclude_patterns):
+                continue
+
+            # Render template with params converted to dict
+            template_text = template_file.read_text(encoding="utf-8")
+            content = engine.render(body=template_text, data=params.to_dict())
+
+            # Normalize line endings
+            content = content.replace("\r\n", "\n").replace("\r", "\n")
+
+            # Write rendered content with OS-appropriate line endings
+            output_file = package_root / output_relative_path
+            output_file.parent.mkdir(parents=True, exist_ok=True)
+            with open(output_file, "w", encoding="utf-8", newline=newline_char) as f:
+                f.write(content)
 
 
 if __name__ == "__main__":
