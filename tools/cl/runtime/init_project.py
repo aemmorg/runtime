@@ -23,6 +23,7 @@ import cl.runtime.bootstrap
 from pathlib import Path
 
 from cl.runtime.exceptions.error_util import ErrorUtil
+from cl.runtime.project.project_template_params import ProjectTemplateParams
 from cl.runtime.project.project_layout_kind import ProjectUtilKind
 from cl.runtime.project.project_util import ProjectUtil
 from cl.runtime.settings.package_settings import PackageSettings
@@ -30,16 +31,18 @@ from cl.runtime.settings.project_settings import ProjectSettings
 from cl.runtime.templates.jinja_template_engine import JinjaTemplateEngine
 
 
-def collect_all_dependencies(all_packages: tuple[str, ...]) -> dict:
-    """Collect and combine dependencies from all main packages in package_dirs order."""
+def build_project_data() -> ProjectTemplateParams:
+    """Build template parameters for the project including package directories and combined dependencies."""
 
-    # Only process main packages (not stubs)
+    # Extract unique package directory names (excluding stubs and ".")
+    package_dirs = PackageSettings.instance().get_dirs()
+
+    # Collect combined dependencies from all main packages in order
+    all_packages = PackageSettings.instance().get_packages()
     main_packages = [p for p in all_packages if not p.startswith("stubs.")]
 
-    # Combine dependencies from all packages in order, do not remove duplicates across packages
     combined_package_dependencies = []
     combined_test_dependencies = []
-
     for package in main_packages:
         pkg_settings = PackageSettings.instance(package=package)
         if pkg_settings.package_dependencies:
@@ -47,10 +50,18 @@ def collect_all_dependencies(all_packages: tuple[str, ...]) -> dict:
         if pkg_settings.package_test_dependencies:
             combined_test_dependencies.extend(pkg_settings.package_test_dependencies)
 
-    return {
-        "combined_package_dependencies": combined_package_dependencies,
-        "combined_test_dependencies": combined_test_dependencies,
-    }
+    # Get include/exclude patterns from project settings
+    project_settings = ProjectSettings.instance()
+
+    params = ProjectTemplateParams(
+        packages=package_dirs,
+        combined_package_dependencies=combined_package_dependencies,
+        combined_test_dependencies=combined_test_dependencies,
+        project_init_include=project_settings.project_init_include,
+        project_init_exclude=project_settings.project_init_exclude,
+    )
+
+    return params
 
 
 def init_project() -> None:
@@ -59,13 +70,8 @@ def init_project() -> None:
     if (project_layout := ProjectUtil.get_project_layout_kind()) != ProjectUtilKind.MULTIREPO:
         raise RuntimeError(f"Cannot run init_multirepo script when project layout is {project_layout.name.lower()}.")
 
-    # Extract unique package directory names (excluding stubs and ".")
-    # Filter to only get main packages (cl.*) and their directory values
-    package_dirs = PackageSettings.instance().get_dirs()
-
-    # Collect combined dependencies from all packages in package_dirs order
-    all_packages = PackageSettings.instance().get_packages()
-    dependencies = collect_all_dependencies(all_packages)
+    # Build template params
+    params = build_project_data()
 
     # Get project root
     project_root = Path(ProjectUtil.get_project_root())
@@ -78,18 +84,16 @@ def init_project() -> None:
     else:
         raise ErrorUtil.enum_value_error(layout_kind, ProjectUtilKind)
 
-    # Get include/exclude patterns from project settings
-    project_settings = ProjectSettings.instance()
-    init_include = project_settings.project_init_include
-    init_exclude = project_settings.project_init_exclude
+    # Set up include/exclude patterns
+    init_include = params.project_init_include
+    init_exclude = params.project_init_exclude
 
     # Create Jinja2 template engine and render all templates
     engine = JinjaTemplateEngine().build()
-    data = {"packages": package_dirs, **dependencies}
     engine.render_dir(
         input_dir=template_dir,
         output_dir=project_root,
-        data=data,
+        data=params.to_dict(),
         include=init_include,
         exclude=init_exclude,
     )
