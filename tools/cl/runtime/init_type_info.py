@@ -32,11 +32,10 @@ def init_type_info() -> None:
     """Create __init__.py files to avoid missing directories and rebuild type cache."""
 
     settings_env = DynaconfLoader.instance().get_settings_env()
-    print(f"Validating or rebuilding TypeInfo.csv for Dynaconf environment: {settings_env}")
+    print(f"Rebuilding TypeInfo.csv for Dynaconf environment: {settings_env}")
 
-    # Parse --force flag and rebuild
-    force = "--force" in sys.argv[1:]
-    TypeInfo.rebuild(force=force)
+    # Always update if invoked directly rather than from another script or a test
+    TypeInfo.rebuild(force=True)
 
 if __name__ == '__main__':
 
