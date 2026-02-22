@@ -12,12 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import datetime
+from pathlib import Path
 from typing import Sequence
 from frozendict import frozendict
 from memoization import cached
 from cl.runtime.exceptions.error_util import ErrorUtil
 from cl.runtime.prebuild.import_util import ImportUtil
 from cl.runtime.prebuild.version_format import VersionFormat
+from cl.runtime.project.project_util import ProjectUtil
 from cl.runtime.settings.package_settings import PackageSettings
 from cl.runtime.settings.version_settings import VersionSettings
 
@@ -67,6 +70,42 @@ class VersionUtil:
             return module_obj.__version__
         except AttributeError:
             raise RuntimeError(f"Root namespace of package {package} does not import or define a __version__ variable.")
+
+    @classmethod
+    def bump_package_version(cls, *, package: str, version: str | None = None) -> str:
+        """Update the version string in the package's root __init__.py.
+
+        Args:
+            package: Dot-delimited package namespace, e.g., 'cl.runtime'
+            version: Version string to set. If not provided, generates CalVer from current UTC time
+                when the version format is CalVer, otherwise raises an error.
+
+        Returns:
+            The version string that was written.
+        """
+
+        if version is None:
+            # Get version format from settings
+            version_format = cls.get_module_version_format_or_none(module=package)
+            if version_format != VersionFormat.CAL_VER:
+                raise RuntimeError(
+                    f"Cannot auto-generate version for package {package} because its version format "
+                    f"is {version_format.name if version_format else 'not specified'}, not CalVer."
+                )
+            # Generate CalVer from current UTC time
+            now = datetime.datetime.now(datetime.timezone.utc)
+            version = f"{now.year}.{now.month * 100 + now.day}.{now.hour * 100 + now.minute}"
+
+        # Get package root and construct path to __init__.py
+        package_root = ProjectUtil.get_package_root(package)
+        package_path = package.replace(".", "/")
+        init_file = Path(package_root) / package_path / "__init__.py"
+
+        # Write version to __init__.py
+        init_file.parent.mkdir(parents=True, exist_ok=True)
+        init_file.write_text(f'__version__ = "{version}"\n', encoding="utf-8")
+
+        return version
 
     @classmethod
     @cached
