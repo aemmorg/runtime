@@ -207,12 +207,19 @@ def init_packages() -> None:
             # Compute output path by removing .j2 suffix and transforming dot_ prefix
             relative_path = template_file.relative_to(template_dir)
             path_parts = list(relative_path.parts)
-            output_relative_path = Path(
-                *[
-                    transform_part(p.removesuffix(".j2") if i == len(path_parts) - 1 else p)
-                    for i, p in enumerate(path_parts)
-                ]
-            )
+            # Substitute {package_path} and {package_namespace} in directory and file names
+            path_subs = {
+                "{package_path}": params.package_path.split("/"),
+                "{package_namespace}": params.package_namespace.split("."),
+            }
+            output_parts = []
+            for i, p in enumerate(path_parts):
+                part = transform_part(p.removesuffix(".j2") if i == len(path_parts) - 1 else p)
+                if part in path_subs:
+                    output_parts.extend(path_subs[part])
+                else:
+                    output_parts.append(part)
+            output_relative_path = Path(*output_parts)
 
             # Apply include/exclude filters on the output relative path
             output_name = str(output_relative_path)
