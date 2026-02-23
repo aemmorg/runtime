@@ -163,7 +163,16 @@ class YamlEncoder(Encoder):
         """Decode from a string, pass through None."""
 
         # Use a YAML reader with PrimitiveToStringConstructor to read all values as strings
-        mapping_or_generator = yaml_reader.load_all(StringIO(data))
-        # Normalize and return
-        result = self.normalize(mapping_or_generator)
+        # load_all handles both single-document and multi-document (---) YAML streams
+        documents = yaml_reader.load_all(StringIO(data))
+        # Normalize each document and flatten: a document may be a dict (single record)
+        # or a list (multiple records under a root-level list), both should produce
+        # a flat list of dicts
+        result = []
+        for doc in documents:
+            doc = self.normalize(doc)
+            if isinstance(doc, list):
+                result.extend(doc)
+            else:
+                result.append(doc)
         return result
