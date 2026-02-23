@@ -43,7 +43,7 @@ class InlineImportsUtil:
         if file_exclude_patterns is None:
             file_exclude_patterns = ["stub_inline_imports*"]
 
-        source_files = SourceUtil.get_source_files(
+        source_files = SourceUtil.get_abs_source_files(
             file_include_patterns=file_include_patterns,
             file_exclude_patterns=file_exclude_patterns,
         )
