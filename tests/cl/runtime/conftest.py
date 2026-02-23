@@ -12,14 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# isort: off
-# Ensure bootstrap module can be found and import to configure PYTHONPATH and other settings
-# This code block must remain at the top before any other imports
-import locate
-
-locate.append_sys_path("../..")
-locate.append_sys_path("../../../../runtime")
-# isort: on
+import locate # isort: skip - must remain at the top
+locate.append_sys_path("../..") # isort: skip - must remain at the top
+locate.append_sys_path("../../../../runtime") # isort: skip - must remain at the top
 
 # Use noqa to prevent linters from removing the imports
 from cl.runtime.qa.pytest.pytest_fixtures import basic_mongo_db_fixture  # noqa
