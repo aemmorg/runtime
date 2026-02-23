@@ -116,7 +116,7 @@ class DataSerializer(Serializer):
                     f"with type hint {type_hint.to_str()}."
                 )
 
-            if is_primitive_type(schema_type):
+            if schema_type is None or is_primitive_type(schema_type):
                 # Deserialize using primitive serializer if a primitive type
                 return self.primitive_serializer.serialize(data, type_hint)
             else:
