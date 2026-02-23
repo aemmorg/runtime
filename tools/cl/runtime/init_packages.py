@@ -103,9 +103,9 @@ def build_template_params(
     for p in included_main_packages:
         isort_known_packages.append(
             {
-                "key": get_isort_known_key(p),
-                "value": p,
-                "section": get_isort_section_name(p),
+                "known_name": get_isort_known_key(p),
+                "known_namespace": p,
+                "known_section": get_isort_section_name(p),
             }
         )
 
@@ -114,9 +114,9 @@ def build_template_params(
     for s in included_stubs:
         isort_known_stubs.append(
             {
-                "key": get_isort_known_key(s),
-                "value": s,
-                "section": get_isort_section_name(s),
+                "known_name": get_isort_known_key(s),
+                "known_namespace": s,
+                "known_section": get_isort_section_name(s),
             }
         )
 
