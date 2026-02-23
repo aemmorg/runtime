@@ -5,7 +5,7 @@ default:
   project_name: Runtime
 
   # Documented in PackageSettings class
-  package_dirs:
+  project_dirs:
     cl.runtime: .
     stubs.cl.runtime: .
 

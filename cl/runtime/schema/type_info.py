@@ -45,7 +45,7 @@ from cl.runtime.records.protocols import is_record_type
 from cl.runtime.records.typename import qualname
 from cl.runtime.records.typename import typename
 from cl.runtime.schema.type_kind import TypeKind
-from cl.runtime.settings.package_settings import PackageSettings
+from cl.runtime.settings.project_settings import ProjectSettings
 
 _TYPE_INFO_HEADERS = (
     "TypeName",
@@ -453,7 +453,7 @@ class TypeInfo(BootstrapMixin):
         InitFileUtil.check_or_fix_init_files(fix=True, verbose=False)
 
         # Set the packages variable
-        if not (packages := PackageSettings.instance().get_packages()):
+        if not (packages := ProjectSettings.instance().get_packages()):
             raise RuntimeError("No packages are specified in settings.yaml")
 
         # Clear the existing data, add each class after performing checks for duplicates

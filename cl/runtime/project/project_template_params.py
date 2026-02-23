@@ -24,7 +24,7 @@ from cl.runtime.records.for_dataclasses.extensions import required
 class ProjectTemplateParams(DataclassMixin):
     """Parameters passed as kwargs to Jinja2 templates in init_project."""
 
-    packages: Sequence[str] = required()
+    package_dirs: Sequence[str] = required()
     """Ordered package directory names from PackageSettings."""
 
     combined_package_dependencies: Sequence[str] | None = None

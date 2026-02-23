@@ -15,6 +15,9 @@
 from dataclasses import dataclass
 import click
 from cl.runtime.cli.cli_command import CliCommand
+from cl.runtime.settings.project_settings import ProjectSettings
+from cl.runtime.file.csv_reader import CsvReader
+from cl.runtime.project.project_util import ProjectUtil
 
 
 @dataclass(slots=True, kw_only=True)
@@ -28,11 +31,8 @@ class FixCsvQuotesCmd(CliCommand):
         @click.command("fix-csv-quotes")
         def fix_csv_quotes() -> None:
             """Fix CSV quoting in all package directories."""
-            from cl.runtime.file.csv_reader import CsvReader
-            from cl.runtime.project.project_util import ProjectUtil
-            from cl.runtime.settings.package_settings import PackageSettings
 
-            packages = PackageSettings.instance().get_packages()
+            packages = ProjectSettings.instance().get_packages()
 
             dirs = set()
             for package in packages:

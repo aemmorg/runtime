@@ -36,7 +36,7 @@ from cl.runtime.schema.type_info import TypeInfo
 from cl.runtime.server.env import Env
 from cl.runtime.settings.db_settings import DbSettings
 from cl.runtime.settings.env_kind import EnvKind
-from cl.runtime.settings.package_settings import PackageSettings
+from cl.runtime.settings.project_settings import ProjectSettings
 from cl.runtime.settings.qa_settings import QaSettings
 from cl.runtime.settings.sse_settings import SseSettings
 from cl.runtime.tasks.celery.celery_queue import CeleryQueue

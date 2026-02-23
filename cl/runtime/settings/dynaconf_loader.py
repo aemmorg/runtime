@@ -95,7 +95,7 @@ class DynaconfLoader(BootstrapMixin):
     _field_dict: frozendict[str, Any] = required()
     """Dictionary of settings key-value pairs obtained from the Dynaconf object."""
 
-    _package_dirs: frozendict[str, str] = required()
+    _project_dirs: frozendict[str, str] = required()
     """
     Ordered mapping of package source namespace to package directory relative to project root
     where dependent packages follow the packages they depend on.
@@ -185,38 +185,38 @@ class DynaconfLoader(BootstrapMixin):
         # Populate selected fields in the package loader
         if self.package is not None:
             settings_dict["package_namespace"] = self.package
-            settings_dict["package_dirs"] = project_loader.get_package_dirs()
+            settings_dict["project_dirs"] = project_loader.get_project_dirs()
 
         # Make immutable
         self._field_dict = frozendict(settings_dict)
 
-        if (package_dirs := self._field_dict.get("package_dirs", None)) is not None:
-            if not is_mapping_type(type(package_dirs)):
+        if (project_dirs := self._field_dict.get("project_dirs", None)) is not None:
+            if not is_mapping_type(type(project_dirs)):
                 raise RuntimeError(
-                    "Field 'package_dirs' is specified but is not a mapping of package namespaces\n"
+                    "Field 'project_dirs' is specified but is not a mapping of package namespaces\n"
                     "to package root directories relative to project root."
                 )
 
-            for package_name, path in package_dirs.items():
+            for package_name, path in project_dirs.items():
                 # Validate keys: valid dot-delimited package names
                 # We check if each part of the dot-split string is a valid Python identifier
                 if not all(part.isidentifier() for part in package_name.split(".")):
                     raise ValueError(
-                        f"Invalid package name '{package_name}' in 'package_dirs' mapping in settings.\n"
+                        f"Invalid package name '{package_name}' in 'project_dirs' mapping in settings.\n"
                         "Keys must be valid dot-delimited package names."
                     )
 
                 # Validate values: must be relative paths
                 if os.path.isabs(path):
                     raise ValueError(
-                        f"Invalid path '{path}' in 'package_dirs' mapping in settings.\n"
+                        f"Invalid path '{path}' in 'project_dirs' mapping in settings.\n"
                         "Directories must be specified as relative paths to project root."
                     )
 
-            self._package_dirs = frozendict(package_dirs)
+            self._project_dirs = frozendict(project_dirs)
         else:
             raise RuntimeError(
-                "Field 'package_dirs' with the mapping of package namespaces to package root directories \n"
+                "Field 'project_dirs' with the mapping of package namespaces to package root directories \n"
                 "relative to project root to is required for multirepo layout."
             )
 
@@ -254,16 +254,16 @@ class DynaconfLoader(BootstrapMixin):
         """Dictionary of settings key-value pairs obtained from the Dynaconf object."""
         return self._field_dict
 
-    def get_package_dirs(self) -> frozendict[str, str]:
+    def get_project_dirs(self) -> frozendict[str, str]:
         """Get the mapping of package namespaces to package root directories relative to project root."""
-        return self._package_dirs
+        return self._project_dirs
 
     def get_package_dir(self, *, package: str) -> str:
         """Get package root directory relative to project root."""
-        if (result := self._package_dirs.get(package, None)) is not None:
+        if (result := self._project_dirs.get(package, None)) is not None:
             return result
         else:
-            raise RuntimeError(f"Field 'package_dirs' does not include the directory for package={package}")
+            raise RuntimeError(f"Field 'project_dirs' does not include the directory for package={package}")
 
     def get_sources_str(self, *, prefix: str) -> str:
         """Return the list of sources in the order of priority"""

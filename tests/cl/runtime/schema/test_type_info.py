@@ -22,7 +22,7 @@ from cl.runtime.records.typename import qualname
 from cl.runtime.schema.type_decl import TypeDecl
 from cl.runtime.schema.type_info import TypeInfo
 from cl.runtime.schema.type_kind import TypeKind
-from cl.runtime.settings.package_settings import PackageSettings
+from cl.runtime.settings.project_settings import ProjectSettings
 from stubs.cl.runtime.records.enum.stub_int_enum import StubIntEnum
 from stubs.cl.runtime.records.for_dataclasses.stub_dataclass import StubDataclass
 from stubs.cl.runtime.records.for_dataclasses.stub_dataclass_data import StubDataclassData

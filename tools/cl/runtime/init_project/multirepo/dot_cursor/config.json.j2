@@ -1,13 +1,13 @@
 {
   "projectType": "python",
   "srcRoots": [
-{%- for package in packages %}
-    "{{ package }}"{% if not loop.last %},{% endif %}
+{%- for package_dir in package_dirs %}
+    "{{ package_dir }}"{% if not loop.last %},{% endif %}
 {%- endfor %}
   ],
   "testFolders": [
-{%- for package in packages %}
-    "{{ package }}/tests"{% if not loop.last %},{% endif %}
+{%- for package_dir in package_dirs %}
+    "{{ package_dir }}/tests"{% if not loop.last %},{% endif %}
 {%- endfor %}
   ],
   "exclude": [
@@ -23,7 +23,7 @@
   "pythonVersion": "3.11",
   "python.defaultInterpreterPath": ".venv/Scripts/python.exe",
   "env": {
-    "PYTHONPATH": "{{ packages|join(';') }}"
+    "PYTHONPATH": "{{ package_dirs|join(';') }}"
   }
 }
 

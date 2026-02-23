@@ -16,7 +16,7 @@ import os
 from fnmatch import fnmatch
 from typing import Sequence
 from cl.runtime.project.project_util import ProjectUtil
-from cl.runtime.settings.package_settings import PackageSettings
+from cl.runtime.settings.project_settings import ProjectSettings
 
 
 class SourceUtil:
@@ -46,7 +46,7 @@ class SourceUtil:
         if file_exclude_patterns is None:
             file_exclude_patterns = ["__init__.py"]
 
-        all_packages = PackageSettings.instance().get_packages()
+        all_packages = ProjectSettings.instance().get_packages()
         if package is not None:
             if package in all_packages:
                 packages = (package,)

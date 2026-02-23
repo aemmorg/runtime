@@ -24,7 +24,7 @@ from cl.runtime.routers.settings.env_info import EnvInfo
 from cl.runtime.server.env import Env
 from cl.runtime.settings.dynaconf_loader import ENVVAR_PREFIX
 from cl.runtime.settings.dynaconf_loader import DynaconfLoader
-from cl.runtime.settings.package_settings import PackageSettings
+from cl.runtime.settings.project_settings import ProjectSettings
 
 SESSION_ID = Timestamp.create()
 
@@ -69,7 +69,7 @@ class SettingsResponse(BaseModel):
     """
 
     versions: dict[str, str] | None = field(
-        default_factory=lambda: VersionUtil.get_version_dict(packages=PackageSettings.instance().get_packages())
+        default_factory=lambda: VersionUtil.get_version_dict(packages=ProjectSettings.instance().get_packages())
     )
     """Dictionary of component/package names and their versions."""
 

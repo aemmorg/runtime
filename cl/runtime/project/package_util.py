@@ -15,7 +15,7 @@
 import os
 
 from cl.runtime.project.project_util import ProjectUtil
-from cl.runtime.settings.package_settings import PackageSettings
+from cl.runtime.settings.project_settings import ProjectSettings
 
 
 class PackageUtil:
@@ -32,16 +32,15 @@ class PackageUtil:
             Dot-delimited package namespace, e.g., 'cl.runtime'
         """
 
-        package_dirs = PackageSettings.instance().package_dirs
-
         # Sort by namespace length descending to find the most specific match
-        for namespace in sorted(package_dirs, key=len, reverse=True):
+        project_dirs = ProjectSettings.instance().project_dirs
+        for namespace in sorted(project_dirs, key=len, reverse=True):
             if module == namespace or module.startswith(namespace + "."):
                 return namespace
 
         raise RuntimeError(
             f"Module '{module}' is not under any known package namespace.\n"
-            f"Known package namespaces: {list(package_dirs)}"
+            f"Known package namespaces: {list(project_dirs)}"
         )
 
     @classmethod
@@ -57,9 +56,9 @@ class PackageUtil:
 
         caller_dir = os.path.normpath(os.path.abspath(os.path.dirname(caller_file)))
         project_root = os.path.normpath(ProjectUtil.get_project_root())
-        package_dirs = PackageSettings.instance().package_dirs
+        project_dirs = ProjectSettings.instance().project_dirs
 
-        for namespace, directory in package_dirs.items():
+        for namespace, directory in project_dirs.items():
             # Skip stubs packages
             if namespace.startswith("stubs."):
                 continue
@@ -70,5 +69,5 @@ class PackageUtil:
 
         raise RuntimeError(
             f"File '{caller_file}' is not under any main package root.\n"
-            f"Known package directories: {dict(package_dirs)}"
+            f"Known package directories: {dict(project_dirs)}"
         )

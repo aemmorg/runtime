@@ -21,7 +21,7 @@ import cl.runtime.bootstrap
 # isort: on
 
 from pathlib import Path
-
+from cl.runtime.settings.project_settings import ProjectSettings
 from cl.runtime.exceptions.error_util import ErrorUtil
 from cl.runtime.project.project_template_params import ProjectTemplateParams
 from cl.runtime.project.project_layout_kind import ProjectUtilKind
@@ -34,10 +34,10 @@ def build_template_params() -> ProjectTemplateParams:
     """Build template parameters for the project including package directories and combined dependencies."""
 
     # Extract unique package directory names (excluding stubs and ".")
-    package_dirs = PackageSettings.instance().get_dirs()
+    package_dirs = ProjectSettings.instance().get_package_dirs()
 
     # Collect combined dependencies from all main packages in order
-    all_packages = PackageSettings.instance().get_packages()
+    all_packages = ProjectSettings.instance().get_packages()
     main_packages = [p for p in all_packages if not p.startswith("stubs.")]
 
     combined_package_dependencies = []
@@ -50,7 +50,7 @@ def build_template_params() -> ProjectTemplateParams:
             combined_test_dependencies.extend(pkg_settings.package_test_dependencies)
 
     result = ProjectTemplateParams(
-        packages=package_dirs,
+        package_dirs=package_dirs,
         combined_package_dependencies=combined_package_dependencies,
         combined_test_dependencies=combined_test_dependencies,
     )

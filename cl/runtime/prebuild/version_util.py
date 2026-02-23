@@ -22,7 +22,7 @@ from cl.runtime.prebuild.import_util import ImportUtil
 from cl.runtime.prebuild.version_format import VersionFormat
 from cl.runtime.project.package_util import PackageUtil
 from cl.runtime.project.project_util import ProjectUtil
-from cl.runtime.settings.package_settings import PackageSettings
+from cl.runtime.settings.project_settings import ProjectSettings
 from cl.runtime.settings.version_settings import VersionSettings
 
 
@@ -63,7 +63,7 @@ class VersionUtil:
         """Get the version string for the specified package."""
 
         # Check it is a package
-        if package not in PackageSettings.instance().get_packages():
+        if package not in ProjectSettings.instance().get_packages():
             raise RuntimeError(f"Package {package} is not listed in settings.yaml 'packages' field.")
 
         module_obj = ImportUtil.get_module(module=package)
@@ -156,7 +156,7 @@ class VersionUtil:
             # Print only if verbose flag is set
             print("Updated version(s):")
 
-        all_packages = PackageSettings.instance().get_packages()
+        all_packages = ProjectSettings.instance().get_packages()
         for package in all_packages:
             cls.bump_module_version(module=package, version=version, verbose=verbose)
 

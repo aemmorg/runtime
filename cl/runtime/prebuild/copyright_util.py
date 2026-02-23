@@ -18,7 +18,7 @@ from typing import Sequence
 from cl.runtime.prebuild.source_util import SourceUtil
 from cl.runtime.primitive.string_util import StringUtil
 from cl.runtime.project.project_util import ProjectUtil
-from cl.runtime.settings.package_settings import PackageSettings
+from cl.runtime.settings.project_settings import ProjectSettings
 
 _LICENSE_SHA256_TO_NAME = {
     "a693f674809b366bc3da40795cf14af35837964b5d7ac7c2909321f76110959e": "Apache Software License",
@@ -104,7 +104,7 @@ class CopyrightUtil:
         """
 
         # Build a mapping from each package root directory to its copyright header
-        packages = PackageSettings.instance().get_packages()
+        packages = ProjectSettings.instance().get_packages()
         root_to_header: dict[str, str] = {}
         for package in packages:
             package_root = ProjectUtil.get_package_root(package)

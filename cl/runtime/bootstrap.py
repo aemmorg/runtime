@@ -21,6 +21,6 @@ locate.append_sys_path("../../..")
 # isort: on
 
 # Extend sys.path and PYTHONPATH with source and stubs dirs for all packages in settings.yaml
-from cl.runtime.settings.package_settings import PackageSettings  # isort: skip Prevent isort from moving this line
+from cl.runtime.settings.project_settings import ProjectSettings  # isort: skip Prevent isort from moving this line
 
-PackageSettings.instance().configure_paths()
+ProjectSettings.instance().configure_paths()

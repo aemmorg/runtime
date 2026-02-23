@@ -2,7 +2,7 @@
 
 source activate
 
-export PYTHONPATH="{% for package in packages %}./{{ package }}:{% endfor %}$PYTHONPATH"
+export PYTHONPATH="{% for package_dir in package_dirs %}./{{ package_dir }}:{% endfor %}$PYTHONPATH"
 
 echo ""
 echo "Bump versions for all packages"

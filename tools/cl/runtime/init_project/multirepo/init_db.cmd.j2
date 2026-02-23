@@ -2,7 +2,7 @@
 
 call activate
 
-set PYTHONPATH={% for package in packages %}.\{{ package }};{% endfor %}%PYTHONPATH%
+set PYTHONPATH={% for package_dir in package_dirs %}.\{{ package_dir }};{% endfor %}%PYTHONPATH%
 
 echo.
 echo Initialize DB (error if not a DEV or TEST DB)

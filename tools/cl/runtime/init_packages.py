@@ -17,6 +17,9 @@ from typing import Sequence
 # Ensure bootstrap module can be found and import to configure PYTHONPATH and other settings
 # This code block must remain at the top before any other imports
 import locate
+
+from cl.runtime.settings.project_settings import ProjectSettings
+
 locate.append_sys_path("../..")
 locate.append_sys_path("../../../../runtime")
 import cl.runtime.bootstrap
@@ -171,7 +174,7 @@ def init_packages() -> None:
     engine = JinjaTemplateEngine().build()
 
     # Get all packages from settings
-    packages = PackageSettings.instance().get_packages()
+    packages = ProjectSettings.instance().get_packages()
 
     # Track processed package roots to avoid duplicates (stubs share same root as main package)
     processed_roots = set()

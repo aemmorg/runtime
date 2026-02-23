@@ -30,12 +30,6 @@ from cl.runtime.settings.settings import Settings
 class PackageSettings(Settings):
     """Package-specific settings, usual Dynaconf overrides from env vars or .env do not apply."""
 
-    package_dirs: Mapping[str, str] = required()  # TODO: !!! Move to ProjectSettings
-    """
-    Ordered mapping of package source namespace to package directory relative to project root
-    where dependent packages follow the packages they depend on.
-    """
-
     package_name: str | None = None
     """Field 'name' under [project] in pyproject.toml of the package."""
 
@@ -102,50 +96,6 @@ class PackageSettings(Settings):
             self.package_test_dependencies = tuple(self.package_test_dependencies)
             self._check_duplicates(self.package_test_dependencies, "package_test_dependencies")
 
-    def get_packages(self) -> tuple[str, ...]:
-        """Ordered tuple of package namespaces (keys) from package_dirs mapping."""
-        return tuple(self.package_dirs.keys())
-
-    def get_dirs(self) -> tuple[str, ...]:
-        """Ordered tuple of package directories (values) from package_dirs mapping with duplicates removed."""
-        return tuple(dict.fromkeys(self.package_dirs.values()))
-
-    def configure_paths(self) -> None:
-        """
-        Ensure all source and stub directories are in sys.path and PYTHONPATH
-
-        Directories are only added if they are not already present,
-        irrespective of relative vs. absolute path format or OS separators.
-        """
-
-        # Absolute paths to source and stub directories for all packages
-        project_root = ProjectUtil.get_project_root()
-        package_paths = tuple(os.path.join(project_root, x) for x in self.package_dirs.values())
-        package_paths = self._normalize_paths(package_paths)
-
-        # Add to sys.path without duplicates
-        sys_path_set = set(self._normalize_paths(sys.path))
-        for path in self._normalize_paths(list(self.package_dirs.values())):
-            if path not in sys_path_set:
-                # Add path from package_paths
-                sys.path.append(path)
-
-        # Add to PYTHONPATH without duplicates
-        python_path_str = DynaconfLoader.get_envvar_value("PYTHONPATH", "")
-        python_path_set = set(self._normalize_paths(python_path_str.split(os.pathsep)))
-        python_path_added = False
-        for path in package_paths:
-            if path not in python_path_set:
-                python_path_added = True
-                if python_path_str:
-                    # Add separator unless empty
-                    python_path_str += os.pathsep
-                # Add path from package_paths
-                python_path_str += path
-        if python_path_added:
-            # Only if paths have been added
-            os.environ["PYTHONPATH"] = python_path_str
-
     @classmethod
     def _check_duplicates(cls, deps: Sequence[str], field_name: str) -> None:
         """Raise an error if the dependency list contains duplicates within a single package."""
@@ -156,8 +106,3 @@ class PackageSettings(Settings):
             if dep_lower in seen:
                 raise RuntimeError(f"Duplicate entry '{dep}' in {field_name}.")
             seen.add(dep_lower)
-
-    @classmethod
-    def _normalize_paths(cls, paths: Sequence[str]) -> tuple[str, ...]:
-        """Convert paths to canonical format."""
-        return tuple(os.path.abspath(os.path.normpath(p)) for p in paths)

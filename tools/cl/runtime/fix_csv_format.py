@@ -16,18 +16,21 @@
 # Ensure bootstrap module can be found and import to configure PYTHONPATH and other settings
 # This code block must remain at the top before any other imports
 import locate
+
+from cl.runtime.settings.project_settings import ProjectSettings
+
 locate.append_sys_path("../../..")
 import cl.runtime.bootstrap
 # isort: on
 
 from cl.runtime.file.csv_reader import CsvReader
 from cl.runtime.project.project_util import ProjectUtil
-from cl.runtime.settings.package_settings import PackageSettings
+from cl.runtime.settings.project_settings import ProjectSettings
 
 if __name__ == '__main__':
 
     # The list of packages from context settings
-    packages = PackageSettings.instance().get_packages()
+    packages = ProjectSettings.instance().get_packages()
 
     dirs = set()
     for package in packages:
