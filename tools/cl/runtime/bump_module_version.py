@@ -27,11 +27,19 @@ from cl.runtime.project.package_util import PackageUtil
 
 if __name__ == "__main__":
 
-    # Update version for the specified package
+    # Update version for the specified module or modules
     parser = argparse.ArgumentParser(description="Bump the version of a package or module.")
-    parser.add_argument("--module", type=str, required=True, help="Dot-delimited module namespace to bump.")
+    parser.add_argument(
+        "--module",
+        type=str,
+        required=True,
+        action="append",
+        help="Dot-delimited module namespace to bump.",
+    )
     args = parser.parse_args()
 
-    module = args.module if args.module else PackageUtil.get_file_package(__file__)
-    version = VersionUtil.bump_module_version(module=module)
-    print(version)
+    print("Updated version(s):")
+    for module in args.module:
+        version = VersionUtil.bump_module_version(module=module)
+        print(f"{module}: {version}")
+
