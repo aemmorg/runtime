@@ -99,38 +99,36 @@ def build_template_params(
             included_stubs.append(matching_stub)
 
     # Build isort known_* entries for main packages
-    isort_known_packages = []
-    for p in included_main_packages:
-        isort_known_packages.append(
-            {
-                "known_name": get_isort_known_key(p),
-                "known_namespace": p,
-                "known_section": get_isort_section_name(p),
-            }
-        )
+    isort_known_packages = [
+        {
+            "known_name": get_isort_known_key(package),
+            "known_namespace": package,
+            "known_section": get_isort_section_name(package),
+        }
+        for package in included_main_packages
+    ]
 
-    # Build isort known_* entries for stubs
-    isort_known_stubs = []
-    for s in included_stubs:
-        isort_known_stubs.append(
-            {
-                "known_name": get_isort_known_key(s),
-                "known_namespace": s,
-                "known_section": get_isort_section_name(s),
-            }
-        )
+    # Build isort known_* entries for stubs, obtaining stubs namespace from package namespace
+    isort_known_stubs = [
+        {
+            "known_name": get_isort_known_key(stub_package := f"stubs.{package}"),
+            "known_namespace": stub_package,
+            "known_section": get_isort_section_name(stub_package),
+        }
+        for package in included_main_packages
+    ]
 
     # Build sections list: FUTURE, PYTEST, STDLIB, THIRDPARTY, [main packages], [stubs], FIRSTPARTY, LOCALFOLDER
     sections = ["FUTURE", "PYTEST", "STDLIB", "THIRDPARTY"]
     sections.extend(get_isort_section_name(p) for p in included_main_packages)
-    sections.extend(entry["section"] for entry in isort_known_stubs)
+    sections.extend(entry["known_section"] for entry in isort_known_stubs)
     sections.extend(["FIRSTPARTY", "LOCALFOLDER"])
 
     # Combine dependencies from all included packages in order, do not remove duplicates across packages
     combined_package_dependencies = []
     combined_test_dependencies = []
-    for p in included_main_packages:
-        pkg_settings = PackageSettings.instance(package=p)
+    for package in included_main_packages:
+        pkg_settings = PackageSettings.instance(package=package)
         if pkg_settings.package_dependencies:
             combined_package_dependencies.extend(pkg_settings.package_dependencies)
         if pkg_settings.package_test_dependencies:
@@ -181,6 +179,10 @@ def init_packages() -> None:
     # Iterate over each main package, adding to pythonpath_packages
     pythonpath_packages = []
     for package in packages:
+
+        # Skip stubs packages
+        if package.startswith("stubs."):
+            continue
 
         # Build template params object
         pythonpath_packages.append(package)
