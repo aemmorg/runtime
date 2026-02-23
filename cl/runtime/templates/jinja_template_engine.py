@@ -13,10 +13,11 @@
 # limitations under the License.
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Mapping
 from jinja2 import Environment
 from cl.runtime.records.data_mixin import DataMixin
-from cl.runtime.records.typename import typenameof
+from cl.runtime.records.protocols import is_mapping_type
+from cl.runtime.records.typename import typenameof, typeof
 from cl.runtime.serializers.data_serializers import DataSerializers
 from cl.runtime.templates.template_engine import TemplateEngine
 
@@ -25,19 +26,16 @@ from cl.runtime.templates.template_engine import TemplateEngine
 class JinjaTemplateEngine(TemplateEngine):
     """Uses Jinja2 engine to render the template."""
 
-    def render(self, *, body: str, data: DataMixin | dict[str, Any]) -> str:
+    def render(self, *, body: str, data: DataMixin | Mapping[str, Any]) -> str:
         """Render the template body by taking parameters from the data object or dict."""
 
-        if isinstance(data, DataMixin):
-            # Serialize data to dict if DataMixin
-            data_dict = DataSerializers.DEFAULT.serialize(data)
-        elif isinstance(data, dict):
-            # Use as-is if a dict
-            data_dict = data
-        else:
+        # Use default serializer to convert to a mapping with string leaf values
+        data_dict = DataSerializers.DEFAULT.serialize(data)
+        if not is_mapping_type(typeof(data_dict)):
+            # Error if not a mapping after serialization
             raise RuntimeError(
                 f"Param 'data' in {typenameof(self)}.render(template, data) must be\n"
-                f"a data object derived from DataMixin or a dict."
+                f"a data object derived from DataMixin or a mapping."
             )
 
         # Create Jinja2 environment with default {{ }} delimiters

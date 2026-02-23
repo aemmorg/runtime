@@ -94,7 +94,7 @@ def test_flat_dict():
     data = {"name": "Alice", "age": 30, "active": True}
     body = "Name: {{ name }}, Age: {{ age }}, Active: {{ active }}"
 
-    expected_result = "Name: Alice, Age: 30, Active: True"
+    expected_result = "Name: Alice, Age: 30, Active: true"
 
     result = engine.render(body=body, data=data)
     assert result == expected_result
@@ -113,7 +113,7 @@ def test_dict_with_nested_dict():
         "Theme: {{ settings.theme }}, Notifications: {{ settings.notifications }}"
     )
 
-    expected_result = "User: Bob (bob@example.com)\nTheme: dark, Notifications: True"
+    expected_result = "User: Bob (bob@example.com)\nTheme: dark, Notifications: true"
 
     result = engine.render(body=body, data=data)
     assert result == expected_result
