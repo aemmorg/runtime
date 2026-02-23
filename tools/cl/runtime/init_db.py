@@ -20,6 +20,7 @@ locate.append_sys_path("../../..")
 import cl.runtime.bootstrap
 # isort: on
 
+import argparse
 import sys
 
 from cl.runtime.configurations.preload_configuration import PreloadConfiguration
@@ -41,6 +42,7 @@ def init_db(*, interactive: bool = False) -> None:
         # Handle the case when DB is not empty
         ds = active(DataSource)
         if not ds.is_empty(consider_parents=False):
+            print(f"DB {ds.get_db_id()} is not empty. Dropping...")
             # Drop previous version if not empty after interactive user approval if needed.
             ds.drop_db(interactive=interactive)
 
@@ -51,5 +53,14 @@ def init_db(*, interactive: bool = False) -> None:
 
 if __name__ == "__main__":
 
-    # Initialize DB in interactive mode
-    init_db(interactive=True)
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description="Initialize database with preload data")
+    parser.add_argument(
+        "-f", "--force",
+        action="store_true",
+        help="Force drop the database without checking if it's empty and without interactive confirmation"
+    )
+    args = parser.parse_args()
+
+    # Initialize DB in interactive mode if not forced, otherwise force drop without interactive confirmation
+    init_db(interactive=not args.force)
