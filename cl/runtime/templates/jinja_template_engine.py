@@ -31,21 +31,21 @@ class JinjaTemplateEngine(TemplateEngine):
 
         # Use default serializer to convert to a mapping with string leaf values
         data_dict = DataSerializers.DEFAULT.serialize(data)
-        if not is_mapping_type(typeof(data_dict)):
+        if is_mapping_type(typeof(data_dict)):
+            # Create Jinja2 environment with default {{ }} delimiters
+            env = Environment(
+                trim_blocks=False,
+                lstrip_blocks=False,
+                keep_trailing_newline=True,
+            )
+
+            # Create template from string and render with data
+            body = env.from_string(body)
+            result = body.render(data_dict)
+            return result
+        else:
             # Error if not a mapping after serialization
             raise RuntimeError(
                 f"Param 'data' in {typenameof(self)}.render(template, data) must be\n"
                 f"a data object derived from DataMixin or a mapping."
             )
-
-        # Create Jinja2 environment with default {{ }} delimiters
-        env = Environment(
-            trim_blocks=False,
-            lstrip_blocks=False,
-            keep_trailing_newline=True,
-        )
-
-        # Create template from string and render with data
-        body = env.from_string(body)
-        result = body.render(data_dict)
-        return result

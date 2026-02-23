@@ -30,7 +30,7 @@ from cl.runtime.settings.settings import Settings
 class PackageSettings(Settings):
     """Package-specific settings, usual Dynaconf overrides from env vars or .env do not apply."""
 
-    package_dirs: Mapping[str, str] = required()
+    package_dirs: Mapping[str, str] = required()  # TODO: !!! Move to ProjectSettings
     """
     Ordered mapping of package source namespace to package directory relative to project root
     where dependent packages follow the packages they depend on.
@@ -83,12 +83,6 @@ class PackageSettings(Settings):
 
     package_test_dependencies: Sequence[str] | None = None
     """Included when testing, combined across packages."""
-
-    package_init_include: Sequence[str] | None = None
-    """Glob patterns for files to include in init_packages output, defaults to ['*'] if not specified."""
-
-    package_init_exclude: Sequence[str] | None = None
-    """Glob patterns for files to exclude from init_packages output, applied after include. Defaults to [] if not specified."""
 
     def __init(self) -> None:
         """Use instead of __init__ in the builder pattern, invoked by the build method in base to derived order."""

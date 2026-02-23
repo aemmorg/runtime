@@ -14,17 +14,30 @@
 
 import fnmatch
 import platform
+import posixpath
 from abc import ABC
 from abc import abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 from typing import Sequence
+
+from jinja2 import Environment
+
 from cl.runtime.primitive.timestamp import Timestamp
 from cl.runtime.records.data_mixin import DataMixin
+from cl.runtime.records.protocols import is_mapping_type
 from cl.runtime.records.record_mixin import RecordMixin
+from cl.runtime.records.typename import typeof, typenameof
+from cl.runtime.serializers.data_serializers import DataSerializers
 from cl.runtime.templates.template_engine_key import TemplateEngineKey
 
+_JINJA_ENV_FOR_PATH = Environment(
+    trim_blocks=True,
+    lstrip_blocks=True,
+    keep_trailing_newline=True,
+)
+"""Jinja environment for variable substitution in directories and paths, strips whitespace."""
 
 def transform_part(part: str) -> str:
     """Replace dot_ prefix by . in file or directory name token."""
@@ -45,66 +58,70 @@ class TemplateEngine(TemplateEngineKey, RecordMixin, ABC):
             self.engine_id = Timestamp.create()
 
     @abstractmethod
-    def render(self, *, body: str, data: DataMixin | dict[str, Any]) -> str:
-        """Render the template body by taking parameters from the data object."""
+    def render(self, *, body: str, data: DataMixin | Mapping[str, Any]) -> str:
+        """Render the template body by taking parameters from a data object or a mapping."""
 
     def render_dir(
         self,
         *,
-        input_dir: str,
-        output_dir,
-        data: DataMixin | dict[str, Any],
-        include: Sequence[str] | None = None,
-        exclude: Sequence[str] | None = None,
+        template_dir: str,
+        output_dir: str,
+        data: DataMixin | Mapping[str, Any],
     ) -> None:
         """
         Render all templates with filename.ext.j2 name in input_dir and its subdirectories by taking parameters
-        from data object or dict, write output to filename.ext in the matching subdirectory of output_dir.
+        from data object or dict, write output to filename.ext in the matching subdirectory of output_dir,
+        performing f-string variable substitution in filename or directory.
 
         Args:
-            include: Glob patterns for files to include, defaults to ['*'] if not specified.
-            exclude: Glob patterns for files to exclude, applied after include. Defaults to [] if not specified.
+            template_dir: Directory containing templates (may include subdirectories)
+            output_dir: Output directory (subdirectories will be created)
+            data: Data for Jinja2 parameter substitution
         """
 
         # Find all .j2 files recursively in input_dir
-        template_files = list(Path(input_dir).rglob("*.j2"))
+        template_files = list(Path(template_dir).rglob("*.j2"))
 
         # Process each template file
         for template_file in template_files:
 
-            # Get relative path from input_dir
-            relative_path = template_file.relative_to(input_dir)
+            # Render and apply filters to the relative path relative to template_dir
+            rel_path = str(template_file.relative_to(template_dir))
 
-            # Convert to string and split into parts
-            path_parts = list(relative_path.parts)
+            # Use Jinja2 engine to render variables in relative path
+            if "{" in rel_path:
+                # Render using Jinja2 if double braces are in path
+                if "{{" in rel_path:
+                    # Use default serializer to convert to a mapping with string leaf values
+                    data_dict = DataSerializers.DEFAULT.serialize(data)
+                    if is_mapping_type(typeof(data_dict)):
+                        rel_path = _JINJA_ENV_FOR_PATH.from_string(rel_path).render(data_dict)
+                    else:
+                        # Error if not a mapping after serialization
+                        raise RuntimeError(
+                            f"Param 'data' in {typenameof(self)}.render(template, data) must be\n"
+                            f"a data object derived from DataMixin or a mapping."
+                        )
+                else:
+                    # Error if only a single brace
+                    raise RuntimeError(
+                        "Filename or directory path contains a single brace '{ var }',\n"
+                        "replace by two braces '{{ var }}' for Jinja2 substitution:\n" + str(rel_path)
+                    )
 
-            # Output path relative to output_dir
-            output_relative_path = Path(
-                *[
-                    # Remove suffix .j2 only from the last part of the path (the filename)
-                    transform_part(p.removesuffix(".j2") if i == len(path_parts) - 1 else p)
-                    for i, p in enumerate(path_parts)
-                ]
-            )
+            # Render dot_ as . in the beginning of file and directory names but not in other locations
+            rel_path = posixpath.normpath(rel_path).replace("/dot_", "/.").replace("dot_", ".")
 
-            # Apply include/exclude filters on the output relative path
-            output_name = str(output_relative_path)
-            include_patterns = include if include is not None else ["*"]
-            exclude_patterns = exclude if exclude is not None else []
-            if not any(fnmatch.fnmatch(output_name, p) for p in include_patterns):
-                continue
-            if any(fnmatch.fnmatch(output_name, p) for p in exclude_patterns):
-                continue
+            # Remove trailing .j2 suffix if present
+            rel_path = rel_path.removesuffix(".j2")
+
+            # Create output directory if it doesn't exist
+            output_file = Path(output_dir) / rel_path
+            output_file.parent.mkdir(parents=True, exist_ok=True)
 
             # Read template file content and render
             template_text = template_file.read_text(encoding="utf-8")
             content = self.render(body=template_text, data=data)
-
-            # Create output file path
-            output_file = output_dir / output_relative_path
-
-            # Create output directory if it doesn't exist
-            output_file.parent.mkdir(parents=True, exist_ok=True)
 
             # Normalize content to use LF, then let Python convert based on newline parameter
             # Replace any existing CRLF or CR with LF

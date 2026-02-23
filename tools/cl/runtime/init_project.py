@@ -27,11 +27,10 @@ from cl.runtime.project.project_template_params import ProjectTemplateParams
 from cl.runtime.project.project_layout_kind import ProjectUtilKind
 from cl.runtime.project.project_util import ProjectUtil
 from cl.runtime.settings.package_settings import PackageSettings
-from cl.runtime.settings.project_settings import ProjectSettings
 from cl.runtime.templates.jinja_template_engine import JinjaTemplateEngine
 
 
-def build_project_data() -> ProjectTemplateParams:
+def build_template_params() -> ProjectTemplateParams:
     """Build template parameters for the project including package directories and combined dependencies."""
 
     # Extract unique package directory names (excluding stubs and ".")
@@ -50,18 +49,12 @@ def build_project_data() -> ProjectTemplateParams:
         if pkg_settings.package_test_dependencies:
             combined_test_dependencies.extend(pkg_settings.package_test_dependencies)
 
-    # Get include/exclude patterns from project settings
-    project_settings = ProjectSettings.instance()
-
-    params = ProjectTemplateParams(
+    result = ProjectTemplateParams(
         packages=package_dirs,
         combined_package_dependencies=combined_package_dependencies,
         combined_test_dependencies=combined_test_dependencies,
-        project_init_include=project_settings.project_init_include,
-        project_init_exclude=project_settings.project_init_exclude,
     )
-
-    return params
+    return result
 
 
 def init_project() -> None:
@@ -71,10 +64,7 @@ def init_project() -> None:
         raise RuntimeError(f"Cannot run init_multirepo script when project layout is {project_layout.name.lower()}.")
 
     # Build template params
-    params = build_project_data()
-
-    # Get project root
-    project_root = Path(ProjectUtil.get_project_root())
+    params = build_template_params()
 
     # Get template directory path relative to where the current Python file is located
     if (layout_kind := ProjectUtil.get_project_layout_kind()) == ProjectUtilKind.MULTIREPO:
@@ -84,18 +74,12 @@ def init_project() -> None:
     else:
         raise ErrorUtil.enum_value_error(layout_kind, ProjectUtilKind)
 
-    # Set up include/exclude patterns
-    init_include = params.project_init_include
-    init_exclude = params.project_init_exclude
-
-    # Create Jinja2 template engine and render all templates
+    # Create Jinja2 template engine and render all templates in the template directory
     engine = JinjaTemplateEngine().build()
     engine.render_dir(
-        input_dir=template_dir,
-        output_dir=project_root,
-        data=params.to_dict(),
-        include=init_include,
-        exclude=init_exclude,
+        template_dir=template_dir,
+        output_dir=ProjectUtil.get_project_root(),
+        data=params,
     )
 
 

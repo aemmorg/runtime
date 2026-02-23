@@ -33,12 +33,6 @@ class ProjectTemplateParams(DataclassMixin):
     combined_test_dependencies: Sequence[str] | None = None
     """Combined test dependencies from all packages."""
 
-    project_init_include: Sequence[str] | None = None
-    """Glob patterns for template files to include, defaults to ['*'] if not specified."""
-
-    project_init_exclude: Sequence[str] | None = None
-    """Glob patterns for template files to exclude, applied after include."""
-
     def to_dict(self) -> Mapping[str, Any]:
         """Convert all fields to a dict suitable for Jinja2 template rendering."""
         return {f.name: getattr(self, f.name) for f in dataclasses.fields(self)}  # TODO(Claude): Use DataSerializer?
