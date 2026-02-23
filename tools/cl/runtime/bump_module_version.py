@@ -40,6 +40,5 @@ if __name__ == "__main__":
 
     print("Updated version(s):")
     for module in args.module:
-        version = VersionUtil.bump_module_version(module=module)
-        print(f"{module}: {version}")
+        VersionUtil.bump_module_version(module=module, verbose=True)
 

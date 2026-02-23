@@ -96,13 +96,14 @@ class VersionUtil:
         return ".".join(tokens)
 
     @classmethod
-    def bump_module_version(cls, *, module: str, version: str | None = None) -> str:
+    def bump_module_version(cls, *, module: str, version: str | None = None, verbose: bool | None = None) -> str:
         """Update the version string in the module's __init__.py.
 
         Args:
             module: Dot-delimited module namespace, e.g., 'cl.runtime' or 'cl.runtime.prebuild'
-            version: Version string to set. If not provided, generates CalVer from current UTC time
-                when the version format is CalVer, or bumps the patch token when the format is SemVer.
+            version: Version string to set. If not provided, generates CalVer from current UTC time when
+                     the version format is CalVer, or bumps the patch token when the format is SemVer.
+            verbose: Print updated version if True
 
         Returns:
             The version string that was written.
@@ -132,14 +133,17 @@ class VersionUtil:
         init_file.parent.mkdir(parents=True, exist_ok=True)
         init_file.write_text(f'__version__ = "{version}"\n', encoding="utf-8")
 
-        return version
+        if verbose:
+            # Print only if verbose flag is set
+            print(f"{module}: {version}")
 
     @classmethod
-    def bump_package_versions(cls, *, version: str | None = None) -> str:
+    def bump_package_versions(cls, *, version: str | None = None, verbose: bool | None = None) -> str:
         """Update the version string in all main packages of the project.
 
         Args:
-            version: Version string to set. If not provided, generates CalVer from current UTC time.
+            version: Version string to set. If not provided, generates CalVer from current UTC time
+            verbose: Print updated version if True
 
         Returns:
             The version string that was written to all packages.
@@ -148,12 +152,13 @@ class VersionUtil:
         if version is None:
             version = cls.get_cal_ver()
 
+        if verbose:
+            # Print only if verbose flag is set
+            print("Updated version(s):")
+
         all_packages = PackageSettings.instance().get_packages()
         for package in all_packages:
-            # Skip stubs packages
-            if package.startswith("stubs."):
-                continue
-            cls.bump_module_version(module=package, version=version)
+            cls.bump_module_version(module=package, version=version, verbose=verbose)
 
         return version
 

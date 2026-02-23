@@ -6,4 +6,4 @@ set PYTHONPATH={% for package in packages %}.\{{ package }};{% endfor %}%PYTHONP
 
 echo.
 echo Bump versions for all packages
-python -m tools.cl.runtime.bump_package_versions
+@python -m tools.cl.runtime.bump_package_versions

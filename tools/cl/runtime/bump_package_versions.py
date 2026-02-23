@@ -24,4 +24,4 @@ from cl.runtime.prebuild.version_util import VersionUtil
 
 if __name__ == "__main__":
     # Bump versions for all packages
-    VersionUtil.bump_package_versions()
+    VersionUtil.bump_package_versions(verbose=True)
