@@ -66,6 +66,7 @@ class TemplateEngine(TemplateEngineKey, RecordMixin, ABC):
         template_dir: str,
         output_dir: str,
         data: DataMixin | Mapping[str, Any],
+        force: bool = False,
     ) -> None:
         """
         Render all templates with filename.ext.j2 name in input_dir and its subdirectories by taking parameters
@@ -76,6 +77,7 @@ class TemplateEngine(TemplateEngineKey, RecordMixin, ABC):
             template_dir: Directory containing templates (may include subdirectories)
             output_dir: Output directory (subdirectories will be created)
             data: Data for Jinja2 parameter substitution
+            force: If True, overwrite files even if they already exist
         """
 
         # Find all .j2 files recursively in input_dir
@@ -128,7 +130,7 @@ class TemplateEngine(TemplateEngineKey, RecordMixin, ABC):
 
             # Use CRLF on Windows, LF on Linux
             newline_char = "\r\n" if platform.system() == "Windows" else "\n"
-
-            # Write rendered content with OS-appropriate line endings
-            with open(output_file, "w", encoding="utf-8", newline=newline_char) as f:
-                f.write(content)
+            if force or not output_file.exists():
+                # Write rendered content with OS-appropriate line endings
+                with open(output_file, "w", encoding="utf-8", newline=newline_char) as f:
+                    f.write(content)

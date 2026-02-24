@@ -25,17 +25,18 @@ locate.append_sys_path("../../../../runtime")
 import cl.runtime.bootstrap
 # isort: on
 
+import argparse
 import fnmatch
 import os
 import platform
 from pathlib import Path
 from cl.runtime.prebuild.copyright_util import CopyrightUtil
 from cl.runtime.prebuild.version_util import VersionUtil
+from cl.runtime.project.package_template_params import PackageTemplateParams
 from cl.runtime.project.project_layout import ProjectLayout
 from cl.runtime.settings.package_settings import PackageSettings
 from cl.runtime.templates.jinja_template_engine import JinjaTemplateEngine
 from cl.runtime.templates.template_engine import transform_part
-from cl.runtime.project.package_template_params import PackageTemplateParams
 
 
 def get_package_name(package_namespace: str) -> str:
@@ -164,8 +165,12 @@ def build_template_params(
     return params
 
 
-def init_packages() -> None:
-    """Initialize package files for each package."""
+def init_packages(force: bool = False) -> None:
+    """
+    Initialize package files for each package.
+    Args:
+        force: If True, overwrite package files even if they already exist
+    """
 
     # Get template directory path relative to where the current Python file is located
     template_dir = str(Path(__file__).parent / "init_packages")
@@ -196,9 +201,19 @@ def init_packages() -> None:
             template_dir=template_dir,
             output_dir=ProjectLayout.get_package_root(package),
             data=params,
+            force=force
         )
 
 
 if __name__ == "__main__":
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description="Initialize packages with setup files and scripts")
+    parser.add_argument(
+        "-f", "--force",
+        action="store_true",
+        help="Force create package files without checking if they already exist."
+    )
+    args = parser.parse_args()
+
     # Initialize package files
-    init_packages()
+    init_packages(force=args.force)

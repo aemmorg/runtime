@@ -20,13 +20,14 @@ locate.append_sys_path("../../..")
 import cl.runtime.bootstrap
 # isort: on
 
+import argparse
 from pathlib import Path
-from cl.runtime.settings.project_settings import ProjectSettings
 from cl.runtime.exceptions.error_util import ErrorUtil
 from cl.runtime.project.project_template_params import ProjectTemplateParams
 from cl.runtime.project.project_layout_kind import ProjectLayoutKind
 from cl.runtime.project.project_layout import ProjectLayout
 from cl.runtime.settings.package_settings import PackageSettings
+from cl.runtime.settings.project_settings import ProjectSettings
 from cl.runtime.templates.jinja_template_engine import JinjaTemplateEngine
 
 
@@ -57,8 +58,12 @@ def build_template_params() -> ProjectTemplateParams:
     return result
 
 
-def init_project() -> None:
-    """Initialize project files."""
+def init_project(force: bool = False) -> None:
+    """
+    Initialize project files.
+    Args:
+        force: If True, overwrite project files even if they already exist
+    """
 
     if (project_layout := ProjectLayout.get_project_layout_kind()) != ProjectLayoutKind.MULTIREPO:
         raise RuntimeError(f"Cannot run init_multirepo script when project layout is {project_layout.name.lower()}.")
@@ -80,10 +85,19 @@ def init_project() -> None:
         template_dir=template_dir,
         output_dir=ProjectLayout.get_project_root(),
         data=params,
+        force=force,
     )
 
 
 if __name__ == '__main__':
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description="Initialize packages with setup files and scripts")
+    parser.add_argument(
+        "-f", "--force",
+        action="store_true",
+        help="Force create package files without checking if they already exist."
+    )
+    args = parser.parse_args()
 
     # Initialize project files
-    init_project()
+    init_project(force=args.force)
