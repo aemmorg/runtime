@@ -24,6 +24,15 @@ class CsvUtil:
     # ISO-8601 date pattern (yyyy-mm-dd)
     _ISO_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
+    # Compact date pattern (yyyymmdd)
+    _COMPACT_DATE_RE = re.compile(r"^\d{8}$")
+
+    # ISO-8601 datetime pattern (yyyy-mm-ddThh:mm:ss.fffZ)
+    _ISO_DATETIME_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$")
+
+    # Compact datetime pattern (yyyymmdd-hhmmssfff)
+    _COMPACT_DATETIME_RE = re.compile(r"^\d{8}-\d{9}$")
+
     # Pattern for values that look like dates (contain / or month names)
     _DATE_LIKE_RE = re.compile(
         r"(?:\d{1,2}/\d{1,2}/|\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec))",
@@ -68,17 +77,22 @@ class CsvUtil:
 
     @classmethod
     def normalize_date_str(cls, value: str) -> str:
-        """Normalize an Excel-modified date string to ISO-8601 format (yyyy-mm-dd).
+        """Normalize a date string to compact format (yyyymmdd).
 
         Handles common Excel en-US date formats such as M/D/YYYY, MM/DD/YYYY, and 'Month D, YYYY'.
+        Also converts old ISO-8601 format (yyyy-mm-dd) to compact format.
         Returns the original string if it cannot be recognized as a date.
         """
 
         value = cls.strip_quotes(value)
 
-        # Already in ISO format
-        if cls._ISO_DATE_RE.match(value):
+        # Already in compact format
+        if cls._COMPACT_DATE_RE.match(value):
             return value
+
+        # Old ISO format - convert to compact
+        if cls._ISO_DATE_RE.match(value):
+            return value.replace("-", "")
 
         # Only attempt parsing if the value looks like a date (contains / separator or month name)
         # This prevents dateutil from interpreting bare numbers like "42" as dates
@@ -90,9 +104,29 @@ class CsvUtil:
             from dateutil.parser import parse
 
             parsed = parse(value, dayfirst=False)
-            return f"{parsed.year:04}-{parsed.month:02}-{parsed.day:02}"
+            return f"{parsed.year:04}{parsed.month:02}{parsed.day:02}"
         except (ValueError, OverflowError):
             return value
+
+    @classmethod
+    def normalize_datetime_str(cls, value: str) -> str:
+        """Normalize a datetime string to compact format (yyyymmdd-hhmmssfff).
+
+        Converts old ISO-8601 format (yyyy-mm-ddThh:mm:ss.fffZ) to compact format.
+        Returns the original string if it cannot be recognized as a datetime.
+        """
+
+        value = cls.strip_quotes(value)
+
+        # Already in compact format
+        if cls._COMPACT_DATETIME_RE.match(value):
+            return value
+
+        # Old ISO format - convert to compact
+        if cls._ISO_DATETIME_RE.match(value):
+            return value[0:4] + value[5:7] + value[8:10] + "-" + value[11:13] + value[14:16] + value[17:19] + value[20:23]
+
+        return value
 
     @classmethod
     def normalize_numeric_str(cls, value: str) -> str:
@@ -115,8 +149,9 @@ class CsvUtil:
 
     @classmethod
     def normalize_value(cls, value: str) -> str:
-        """Apply all normalizations to a CSV cell value: strip inner quotes, dates, and numbers."""
+        """Apply all normalizations to a CSV cell value: strip inner quotes, dates, datetimes, and numbers."""
         value = cls.strip_quotes(value)
         value = cls.normalize_date_str(value)
+        value = cls.normalize_datetime_str(value)
         value = cls.normalize_numeric_str(value)
         return value

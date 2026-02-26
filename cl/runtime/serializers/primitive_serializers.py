@@ -123,9 +123,9 @@ class PrimitiveSerializers:
         bool_format=BoolFormat.DEFAULT,  # TODO: Review, should be passthrough
         int_format=IntFormat.PASSTHROUGH,
         long_format=LongFormat.PASSTHROUGH,
-        date_format=DateFormat.DEFAULT,
+        date_format=DateFormat.COMPACT,
         time_format=TimeFormat.DEFAULT,
-        datetime_format=DatetimeFormat.DEFAULT,  # TODO: Support float for Excel?
+        datetime_format=DatetimeFormat.COMPACT,
         uuid_format=UuidFormat.DEFAULT,
         timestamp_format=TimestampFormat.UUID,  # TODO: Review, should accept DEFAULT
         bytes_format=BytesFormat.COMPACT,

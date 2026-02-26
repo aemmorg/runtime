@@ -18,6 +18,9 @@ import re
 # Compile the regex pattern for date in ISO-8601 format yyyy-mm-dd
 date_pattern = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
+# Compile the regex pattern for date in compact format yyyymmdd
+compact_date_pattern = re.compile(r"^\d{8}$")
+
 
 class DateUtil:
     """Utility class for dt.date."""
@@ -38,6 +41,18 @@ class DateUtil:
         # Convert to date using strict parsing
         result = dt.date.fromisoformat(value)
         return result
+
+    @classmethod
+    def to_compact(cls, value: dt.date) -> str:
+        """Convert to string in compact format without separators: 'yyyymmdd'"""
+        result = f"{value.year:04}{value.month:02}{value.day:02}"
+        return result
+
+    @classmethod
+    def from_compact(cls, value: str) -> dt.date:
+        """Convert from string in compact format without separators: 'yyyymmdd'"""
+        cls.validate_compact(value)
+        return cls.from_iso_int(int(value))
 
     @classmethod
     def to_fields(cls, value: dt.date) -> tuple[int, int, int]:
@@ -88,3 +103,9 @@ class DateUtil:
         """Validate that date string is in ISO-8601 format: 'yyyy-mm-dd'"""
         if not date_pattern.match(value):
             raise RuntimeError(f"Date string {value} must be in ISO-8601 format: 'yyyy-mm-dd'.")
+
+    @classmethod
+    def validate_compact(cls, value: str) -> None:
+        """Validate that date string is in compact format: 'yyyymmdd'"""
+        if not compact_date_pattern.match(value):
+            raise RuntimeError(f"Date string {value} must be in compact format: 'yyyymmdd'.")

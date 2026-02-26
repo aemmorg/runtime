@@ -209,6 +209,8 @@ class PrimitiveSerializer(Serializer):
                 return data
             elif value_format == DateFormat.DEFAULT:
                 return DateUtil.to_str(data)
+            elif value_format == DateFormat.COMPACT:
+                return DateUtil.to_compact(data)
             elif value_format == DateFormat.ISO_INT:
                 return DateUtil.to_iso_int(data)
             else:
@@ -227,6 +229,8 @@ class PrimitiveSerializer(Serializer):
                 return data
             elif value_format == DatetimeFormat.DEFAULT:
                 return DatetimeUtil.to_str(data)
+            elif value_format == DatetimeFormat.COMPACT:
+                return DatetimeUtil.to_compact(data)
             else:
                 raise ErrorUtil.enum_value_error(value_format, DatetimeFormat)
         elif schema_type_name == "UUID":
@@ -434,6 +438,14 @@ class PrimitiveSerializer(Serializer):
                     return DateUtil.from_iso_int(data)
                 else:
                     raise self._deserialization_error(data, schema_type_name, value_format)
+            elif value_format == DateFormat.COMPACT:
+                if isinstance(data, str):
+                    data = CsvUtil.strip_quotes(data)
+                    return DateUtil.from_compact(data)
+                elif isinstance(data, dt.date):
+                    return data
+                else:
+                    raise self._deserialization_error(data, schema_type_name, value_format)
             else:
                 raise ErrorUtil.enum_value_error(value_format, DateFormat)
         elif schema_type_name == "time":
@@ -470,6 +482,14 @@ class PrimitiveSerializer(Serializer):
                     return DatetimeUtil.from_str(data)
                 elif isinstance(data, dt.datetime):
                     # Pass through dt.datetime
+                    return data
+                else:
+                    raise self._deserialization_error(data, schema_type_name, value_format)
+            elif value_format == DatetimeFormat.COMPACT:
+                if isinstance(data, str):
+                    data = CsvUtil.strip_quotes(data)
+                    return DatetimeUtil.from_compact(data)
+                elif isinstance(data, dt.datetime):
                     return data
                 else:
                     raise self._deserialization_error(data, schema_type_name, value_format)

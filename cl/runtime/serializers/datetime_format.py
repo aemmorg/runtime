@@ -24,3 +24,6 @@ class DatetimeFormat(IntEnum):
 
     DEFAULT = auto()
     """ISO 8601 datetime string to millisecond precision with UTC timezone indicator Z: yyyy-mm-ddThh:mm:ss.fffZ"""
+
+    COMPACT = auto()
+    """Compact datetime string to millisecond precision: yyyymmdd-hhmmssfff"""

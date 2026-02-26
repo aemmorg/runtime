@@ -22,6 +22,9 @@ from cl.runtime.primitive.timestamp import Timestamp
 # Compile the regex pattern for datetime in ISO-8601 format yyyy-mm-ddThh:mm:ss.fffZ
 datetime_pattern = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$")
 
+# Compile the regex pattern for datetime in compact format yyyymmdd-hhmmssfff
+compact_datetime_pattern = re.compile(r"^\d{8}-\d{9}$")
+
 
 class DatetimeUtil:
     """Helper class for datetime rounded to whole milliseconds to ensure lossless serialization roundtrip."""
@@ -84,6 +87,39 @@ class DatetimeUtil:
             # Round for floating point error during division, milliseconds should already be an int
             millisecond=round(datetime_from_str.microsecond / 1000.0),
         )
+        return result
+
+    @classmethod
+    def to_compact(cls, value: dt.datetime) -> str:
+        """Convert to string in compact format with dash separator: 'yyyymmdd-hhmmssfff'"""
+
+        # Validate timezone and rounding to milliseconds
+        DatetimeUtil.validate_datetime(value)
+
+        millisecond = value.microsecond // 1000
+
+        result = (
+            f"{value.year:04}{value.month:02}{value.day:02}"
+            f"-{value.hour:02}{value.minute:02}{value.second:02}{millisecond:03}"
+        )
+        return result
+
+    @classmethod
+    def from_compact(cls, value: str) -> dt.datetime:
+        """Convert from string in compact format with dash separator: 'yyyymmdd-hhmmssfff'"""
+
+        DatetimeUtil.validate_compact(value)
+
+        year = int(value[0:4])
+        month = int(value[4:6])
+        day = int(value[6:8])
+        # value[8] is the '-' separator
+        hour = int(value[9:11])
+        minute = int(value[11:13])
+        second = int(value[13:15])
+        millisecond = int(value[15:18])
+
+        result = DatetimeUtil.from_fields(year, month, day, hour, minute, second, millisecond=millisecond)
         return result
 
     @classmethod
@@ -203,6 +239,14 @@ class DatetimeUtil:
             raise RuntimeError(
                 f"Datetime string {value} must be in ISO-8601 format rounded to milliseconds "
                 f"with trailing Z to indicate UTC timezone: 'yyyy-mm-ddThh:mm:ss.fffZ'."
+            )
+
+    @classmethod
+    def validate_compact(cls, value: str) -> None:
+        """Validate that datetime string is in compact format: 'yyyymmdd-hhmmssfff'"""
+        if not compact_datetime_pattern.match(value):
+            raise RuntimeError(
+                f"Datetime string {value} must be in compact format: 'yyyymmdd-hhmmssfff'."
             )
 
     @classmethod

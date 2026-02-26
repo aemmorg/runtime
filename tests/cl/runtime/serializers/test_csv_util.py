@@ -265,50 +265,60 @@ def test_should_wrap_old_triple_quoted():
 # --- normalize_date_str ---
 
 
-def test_normalize_date_iso_passthrough():
-    """Already in ISO-8601 format - passes through unchanged."""
-    assert CsvUtil.normalize_date_str("2023-05-21") == "2023-05-21"
-    assert CsvUtil.normalize_date_str("2000-01-01") == "2000-01-01"
-    assert CsvUtil.normalize_date_str("1999-12-31") == "1999-12-31"
+def test_normalize_date_compact_passthrough():
+    """Already in compact format - passes through unchanged."""
+    assert CsvUtil.normalize_date_str("20230521") == "20230521"
+    assert CsvUtil.normalize_date_str("20000101") == "20000101"
+    assert CsvUtil.normalize_date_str("19991231") == "19991231"
+
+
+def test_normalize_date_iso_to_compact():
+    """Canonical ISO-8601 format yyyy-mm-dd gets converted to compact yyyymmdd."""
+    assert CsvUtil.normalize_date_str("2023-05-21") == "20230521"
+    assert CsvUtil.normalize_date_str("2000-01-01") == "20000101"
+    assert CsvUtil.normalize_date_str("1999-12-31") == "19991231"
+    assert CsvUtil.normalize_date_str("1900-01-01") == "19000101"
+    assert CsvUtil.normalize_date_str("2026-02-25") == "20260225"
+    assert CsvUtil.normalize_date_str("2003-05-01") == "20030501"
 
 
 def test_normalize_date_us_short():
     """Excel en-US short date: M/D/YYYY."""
-    assert CsvUtil.normalize_date_str("5/21/2023") == "2023-05-21"
-    assert CsvUtil.normalize_date_str("1/1/2000") == "2000-01-01"
-    assert CsvUtil.normalize_date_str("12/31/1999") == "1999-12-31"
+    assert CsvUtil.normalize_date_str("5/21/2023") == "20230521"
+    assert CsvUtil.normalize_date_str("1/1/2000") == "20000101"
+    assert CsvUtil.normalize_date_str("12/31/1999") == "19991231"
 
 
 def test_normalize_date_us_padded():
     """Excel en-US padded date: MM/DD/YYYY."""
-    assert CsvUtil.normalize_date_str("05/21/2023") == "2023-05-21"
-    assert CsvUtil.normalize_date_str("01/01/2000") == "2000-01-01"
+    assert CsvUtil.normalize_date_str("05/21/2023") == "20230521"
+    assert CsvUtil.normalize_date_str("01/01/2000") == "20000101"
 
 
 def test_normalize_date_month_name():
     """Excel long date: Month D, YYYY."""
-    assert CsvUtil.normalize_date_str("May 21, 2023") == "2023-05-21"
-    assert CsvUtil.normalize_date_str("January 1, 2000") == "2000-01-01"
-    assert CsvUtil.normalize_date_str("December 31, 1999") == "1999-12-31"
+    assert CsvUtil.normalize_date_str("May 21, 2023") == "20230521"
+    assert CsvUtil.normalize_date_str("January 1, 2000") == "20000101"
+    assert CsvUtil.normalize_date_str("December 31, 1999") == "19991231"
 
 
 def test_normalize_date_abbreviated_month():
     """Excel abbreviated month: Mon D, YYYY or D-Mon-YYYY."""
-    assert CsvUtil.normalize_date_str("May 21, 2023") == "2023-05-21"
-    assert CsvUtil.normalize_date_str("Jan 1, 2000") == "2000-01-01"
-    assert CsvUtil.normalize_date_str("21-May-2023") == "2023-05-21"
+    assert CsvUtil.normalize_date_str("May 21, 2023") == "20230521"
+    assert CsvUtil.normalize_date_str("Jan 1, 2000") == "20000101"
+    assert CsvUtil.normalize_date_str("21-May-2023") == "20230521"
 
 
 def test_normalize_date_two_digit_year():
     """Excel en-US with two-digit year: M/D/YY."""
-    assert CsvUtil.normalize_date_str("5/21/23") == "2023-05-21"
-    assert CsvUtil.normalize_date_str("1/1/00") == "2000-01-01"
+    assert CsvUtil.normalize_date_str("5/21/23") == "20230521"
+    assert CsvUtil.normalize_date_str("1/1/00") == "20000101"
 
 
 def test_normalize_date_backward_compat_quoted():
-    """Old triple-quoted dates have surrounding quotes that should be stripped."""
-    assert CsvUtil.normalize_date_str('"2023-05-21"') == "2023-05-21"
-    assert CsvUtil.normalize_date_str('"5/21/2023"') == "2023-05-21"
+    """Old triple-quoted dates have surrounding quotes that should be stripped and converted."""
+    assert CsvUtil.normalize_date_str('"2023-05-21"') == "20230521"
+    assert CsvUtil.normalize_date_str('"5/21/2023"') == "20230521"
 
 
 def test_normalize_date_not_a_date():
@@ -381,6 +391,35 @@ def test_normalize_numeric_empty_and_whitespace():
 def test_normalize_numeric_percentage():
     """Percentage strings are not valid floats, pass through unchanged."""
     assert CsvUtil.normalize_numeric_str("50%") == "50%"
+
+
+# --- normalize_datetime_str ---
+
+
+def test_normalize_datetime_compact_passthrough():
+    """Already in compact format - passes through unchanged."""
+    assert CsvUtil.normalize_datetime_str("20030501-101530000") == "20030501-101530000"
+    assert CsvUtil.normalize_datetime_str("20230101-000000000") == "20230101-000000000"
+
+
+def test_normalize_datetime_iso_to_compact():
+    """Old ISO-8601 format gets converted to compact."""
+    assert CsvUtil.normalize_datetime_str("2003-05-01T10:15:30.000Z") == "20030501-101530000"
+    assert CsvUtil.normalize_datetime_str("2023-01-01T00:00:00.000Z") == "20230101-000000000"
+    assert CsvUtil.normalize_datetime_str("2023-12-31T23:59:59.999Z") == "20231231-235959999"
+    assert CsvUtil.normalize_datetime_str("1900-01-01T00:00:00.000Z") == "19000101-000000000"
+    assert CsvUtil.normalize_datetime_str("2026-02-25T14:30:00.000Z") == "20260225-143000000"
+    assert CsvUtil.normalize_datetime_str("2000-06-15T08:45:12.345Z") == "20000615-084512345"
+    assert CsvUtil.normalize_datetime_str("2024-02-29T12:00:00.001Z") == "20240229-120000001"
+    assert CsvUtil.normalize_datetime_str("2023-07-04T00:00:00.500Z") == "20230704-000000500"
+
+
+def test_normalize_datetime_not_a_datetime():
+    """Non-datetime strings return as-is."""
+    assert CsvUtil.normalize_datetime_str("not a datetime") == "not a datetime"
+    assert CsvUtil.normalize_datetime_str("") == ""
+    assert CsvUtil.normalize_datetime_str("42") == "42"
+    assert CsvUtil.normalize_datetime_str("20230521") == "20230521"
 
 
 if __name__ == "__main__":

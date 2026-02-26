@@ -222,9 +222,11 @@ class CsvReader(Reader):
             CaseUtil.pascal_to_snake_case(k) if not k.startswith("_") else k: v for k, v in row_dict.items()
         }
 
-        # Normalize Excel-modified formats (thousand separators in numbers, locale-specific dates)
+        # Normalize Excel-modified formats (thousand separators in numbers, locale-specific dates and datetimes)
         row_dict = {
-            k: CsvUtil.normalize_numeric_str(CsvUtil.normalize_date_str(v)) if v is not None else v
+            k: CsvUtil.normalize_numeric_str(CsvUtil.normalize_datetime_str(CsvUtil.normalize_date_str(v)))
+            if v is not None
+            else v
             for k, v in row_dict.items()
         }
 

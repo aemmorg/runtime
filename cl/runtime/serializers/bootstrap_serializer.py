@@ -199,6 +199,8 @@ class BootstrapSerializer(Serializer):
                 return data
             elif value_format == DateFormat.DEFAULT:
                 return DateUtil.to_str(data)
+            elif value_format == DateFormat.COMPACT:
+                return DateUtil.to_compact(data)
             elif value_format == DateFormat.ISO_INT:
                 return DateUtil.to_iso_int(data)
             else:
@@ -217,6 +219,8 @@ class BootstrapSerializer(Serializer):
                 return data
             elif value_format == DatetimeFormat.DEFAULT:
                 return DatetimeUtil.to_str(data)
+            elif value_format == DatetimeFormat.COMPACT:
+                return DatetimeUtil.to_compact(data)
             else:
                 raise ErrorUtil.enum_value_error(value_format, DatetimeFormat)
         elif data_type_name == "UUID":
