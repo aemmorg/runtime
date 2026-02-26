@@ -26,17 +26,21 @@ class InlineImportsUtil:
     """Helper class for detecting and fixing inline imports (import statements inside function or method bodies)."""
 
     @classmethod
-    def validate_inline_imports(
+    def guard_no_inline_imports(
         cls,
         *,
+        raise_on_fail: bool = True,
+        verbose: bool = True,
         file_include_patterns: Sequence[str] | None = None,
         file_exclude_patterns: Sequence[str] | None = None,
-    ) -> None:
+    ) -> bool:
         """Test that no import statements exist inside function or method bodies.
 
         Raises RuntimeError with a detailed list of files and lines with inline imports.
 
         Args:
+            raise_on_fail: If True, raise RuntimeError on invalid type, otherwise return None
+            verbose: Print messages about errors or fixes to stdout if specified
             file_include_patterns: Optional list of filename glob patterns to include
             file_exclude_patterns: Optional list of filename glob patterns to exclude
         """
@@ -62,13 +66,28 @@ class InlineImportsUtil:
                 error_files[file_path] = file_errors
 
         if error_files:
-            total = sum(len(v) for v in error_files.values())
-            parts = [f"Found {total} inline import(s) in {len(error_files)} file(s):\n"]
-            for file_path, imports in error_files.items():
-                parts.append(f"  {file_path}")
-                for line_no, text in imports:
-                    parts.append(f"    line {line_no}: {text}")
-            raise RuntimeError("\n".join(parts))
+            if raise_on_fail or verbose:
+                # Create file list
+                total = sum(len(v) for v in error_files.values())
+                parts = [f"Found {total} inline import(s) in {len(error_files)} file(s):\n"]
+                for file_path, imports in error_files.items():
+                    parts.append(f"  {file_path}")
+                    for line_no, text in imports:
+                        parts.append(f"    line {line_no}: {text}")
+                error_msg = "\n".join(parts)
+
+                # Raise an error or print
+                if raise_on_fail:
+                    raise RuntimeError(error_msg)
+                elif verbose:
+                    print(error_msg)
+
+            # Errors found
+            return False
+        else:
+            # No errors found
+            return True
+
 
     @classmethod
     def fix_inline_imports(
