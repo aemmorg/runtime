@@ -15,7 +15,7 @@
 import base64
 import logging
 from dataclasses import dataclass
-from typing import cast
+from typing import cast, Self, Any
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
@@ -75,3 +75,19 @@ class UserSecrets(DataclassMixin):
         )
 
         return decrypted_value_bytes.decode("utf-8")
+
+    @classmethod
+    def from_scope(cls, scope: dict[str, Any]) -> Self:
+        """Populate user secrets from scope."""
+        user_keys: dict[str, str] = {}
+
+        raw_headers = scope.get("headers") or []
+        prefix = b"cl-user-key-"
+
+        for name, value in raw_headers:
+            name_lower = name.lower()
+            if name_lower.startswith(prefix):
+                key = name_lower[len(prefix):].decode()
+                user_keys[key] = value.decode()
+
+        return UserSecrets(encrypted_secrets=user_keys).build()

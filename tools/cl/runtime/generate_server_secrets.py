@@ -38,28 +38,6 @@ def _generate_rsa_private_cert() -> str:
 
 
 SECRETS = {
-    "AUTH-TOKEN-KEY": {
-        "secret_type": "dynamic",
-        "func": lambda: secrets.token_urlsafe(64),
-    },
-    "OKTA-CLIENT-SECRET": {
-        "secret_type": "static",
-        "func": lambda: os.getenv("OKTA_CLIENT_SECRET"),
-    },
-    "KINDE-CLIENT-SECRET": {
-        "secret_type": "static",
-        "func": lambda: os.getenv("KINDE_CLIENT_SECRET"),
-    },
-    "COGNITO-CLIENT-SECRET": {
-        "secret_type": "static",
-        "content_type": "password",
-        "func": lambda: os.getenv("COGNITO_CLIENT_SECRET"),
-    },
-    "ENTRA-CLIENT-SECRET": {
-        "secret_type": "static",
-        "content_type": "password",
-        "func": lambda: os.getenv("ENTRA_CLIENT_SECRET"),
-    },
     "USER-SECRETS-PRIVATE-CERT": {
         "secret_type": "dynamic",
         "func": _generate_rsa_private_cert,

@@ -13,6 +13,8 @@
 # limitations under the License.
 
 from starlette.types import ASGIApp
+
+from cl.runtime.auth.user_secrets import UserSecrets
 from cl.runtime.contexts.context_manager import activate
 from cl.runtime.contexts.context_snapshot import ContextSnapshot
 from cl.runtime.db.data_source import DataSource
@@ -42,6 +44,7 @@ class ContextMiddleware:
                 activate(DataSource().build()),
                 activate(EventBroker.create()),
                 activate(CeleryQueue(queue_id="Handler Queue").build()),
+                activate(UserSecrets.from_scope(scope=scope)),
             ):
                 # TODO: Create a test setting to enable this other than by uncommenting
                 # await asyncio.sleep(duration)
