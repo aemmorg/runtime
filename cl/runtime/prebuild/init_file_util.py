@@ -50,18 +50,21 @@ class InitFileUtil:
 
         # Apply to each element of root_paths
         for root_path in all_root_paths:
-            # Walk the directory tree
-            for dir_path, dir_names, filenames in os.walk(root_path):
-                # Check for .py files in the directory
-                # This will not check if there are .py files in subdirectories
-                # to avoid adding __init__.py files to namespace package root
-                if any(filename.endswith(".py") for filename in filenames):
+            # Track directories that are or should be Python packages
+            package_dirs = set()
+
+            # Walk bottom-up so child packages are detected before their parents
+            for dir_path, dir_names, filenames in os.walk(root_path, topdown=False):
+                has_py_files = any(filename.endswith(".py") for filename in filenames)
+                has_child_packages = any(os.path.join(dir_path, d) in package_dirs for d in dir_names)
+
+                if has_py_files or has_child_packages:
+                    package_dirs.add(dir_path)
                     # Check if __init__.py is missing
                     init_file_path = os.path.join(dir_path, "__init__.py")
                     if not os.path.exists(init_file_path):
                         missing_files.append(str(init_file_path))
                         if fix:
-                            # Create an empty __init__.py file if it is missing but other .py files are present
                             with open(init_file_path, "w", encoding="utf-8") as f:
                                 pass
 
