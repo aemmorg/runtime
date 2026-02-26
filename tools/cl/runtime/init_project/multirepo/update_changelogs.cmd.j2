@@ -1,0 +1,9 @@
+@echo off
+
+call activate
+
+set PYTHONPATH={% for package in packages %}.\{{ package }};{% endfor %}%PYTHONPATH%
+
+echo.
+echo Update changelogs for all packages
+python -m tools.cl.runtime.update_project_changelogs
