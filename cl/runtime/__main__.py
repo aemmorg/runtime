@@ -15,6 +15,7 @@
 # isort: off
 # Ensure bootstrap module can be found and import to configure PYTHONPATH and other settings
 # This code block must remain at the top before any other imports
+
 import locate
 
 locate.append_sys_path("../../..")
@@ -51,6 +52,7 @@ from cl.runtime.settings.env_kind import EnvKind
 from cl.runtime.settings.env_settings import EnvSettings
 from cl.runtime.settings.frontend_settings import FrontendSettings
 from cl.runtime.tasks.celery.celery_queue import CeleryQueue
+from cl.runtime.schema.type_info import TypeInfo
 
 # Server
 server_app = FastAPI()
@@ -227,6 +229,10 @@ def run_backend(*, interactive: bool = False) -> None:
 
 
 if __name__ == "__main__":
+
+    """Rebuild type cache once per test session if source files have changed."""
+    TypeInfo.update()
+
     # TODO: !!! Refactor to standardize the handling of CL_INTERACTIVE parameter
     # Determine interactive mode from environment variable, default to True for backward compatibility
     # Set CL_INTERACTIVE=false for Docker/non-interactive runs
