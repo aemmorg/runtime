@@ -98,8 +98,15 @@ class DataService(PydanticMixin):
         # Get schema dict for type
         schema_dict = cls._get_schema_dict(common_base_record_type)
 
-        # Serialize records in UI format and add '_key' attribute
-        data = [{**_UI_SERIALIZER.serialize(x), "_key": _KEY_SERIALIZER.serialize(x.get_key())} for x in records]
+        # Serialize records in UI format and add '_key' and 'Datatype' attributes (Datatype first)
+        data = [
+            {
+                "Datatype": typename(type(x)),
+                **_UI_SERIALIZER.serialize(x),
+                "_key": _KEY_SERIALIZER.serialize(x.get_key()),
+            }
+            for x in records
+        ]
 
         result = SelectDataResponse(
             data=data,
@@ -123,8 +130,15 @@ class DataService(PydanticMixin):
         # Get schema dict for type
         schema_dict = cls._get_schema_dict(type_)
 
-        # Serialize records in UI format and add '_key' attribute
-        data = [{**_UI_SERIALIZER.serialize(x), "_key": _KEY_SERIALIZER.serialize(x.get_key())} for x in records]
+        # Serialize records in UI format and add '_key' and 'Datatype' attributes (Datatype first)
+        data = [
+            {
+                "Datatype": typename(type(x)),
+                **_UI_SERIALIZER.serialize(x),
+                "_key": _KEY_SERIALIZER.serialize(x.get_key()),
+            }
+            for x in records
+        ]
 
         result = SelectDataResponse(
             data=data,

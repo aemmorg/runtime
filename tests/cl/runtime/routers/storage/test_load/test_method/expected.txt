@@ -14,6 +14,11 @@ Schema:
     Elements:
     - Value:
         Type: String
+      Name: Datatype
+      Comment: Record class name.
+      ReadOnly: true
+    - Value:
+        Type: String
       Name: Id
       Comment: Unique identifier.
     Keys:
@@ -32,6 +37,7 @@ Schema:
       Name: Id
       Comment: Unique identifier.
 Data:
-- _t: StubDataclass
+- Datatype: StubDataclass
+  _t: StubDataclass
   Id: test_load
 

@@ -46,6 +46,18 @@ class TypeResponseUtil:
         record_type_key_in_result = f"{ModuleDeclKey().build().module_name}.{typename(record_type)}"
         record_type_result = result.get(record_type_key_in_result)
 
+        # Add a synthetic Datatype element to the schema (guard against cached results)
+        if record_type_result is not None:
+            elements = record_type_result.get("Elements", None)
+            if elements is not None and not any(e.get("Name") == "Datatype" for e in elements):
+                datatype_element = {
+                    "Value": {"Type": "String"},
+                    "Name": "Datatype",
+                    "Comment": "Record class name.",
+                    "ReadOnly": True,
+                }
+                elements.insert(0, datatype_element)
+
         # Add synthetic table item to schema
         table_type_key_in_result = f"{ModuleDeclKey().build().module_name}.{request.type_name}"
         table_type_result = {k: v for k, v in record_type_result.items()}

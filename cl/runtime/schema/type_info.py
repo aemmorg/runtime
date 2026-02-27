@@ -15,6 +15,7 @@
 import logging
 import os
 import sys
+import dataclasses
 from dataclasses import dataclass
 from importlib import import_module
 from inspect import isclass
@@ -526,6 +527,16 @@ class TypeInfo(BootstrapMixin):
                     f"Subtype {subtype} is specified for non-primitive class {type_.__name__}.\n"
                     f"Only primitive types can have subtypes."
                 )
+
+        # Check for reserved field names in data, key, or record types
+        if is_data_key_or_record_type(type_) and dataclasses.is_dataclass(type_):
+            reserved_field_names = ("datatype",)
+            for field in dataclasses.fields(type_):
+                if field.name in reserved_field_names:
+                    raise RuntimeError(
+                        f"Field '{field.name}' in {qualname(type_)} is reserved for use by the REST API "
+                        f"and cannot be used as a record field name."
+                    )
 
         # Get parent and child class names for data, keys or records
         if is_data_key_or_record_type(type_):

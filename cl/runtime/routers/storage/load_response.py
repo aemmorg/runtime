@@ -62,7 +62,14 @@ class LoadResponse(RecordsWithSchemaResponse):
         # TODO: Decide if this is the right logic to return empty response if records not found
         if loaded_record_types:
             # At least one of the records is not None
-            serialized_records = [_UI_SERIALIZER.serialize(record) for record in loaded_records]
+            serialized_records = []
+            for record in loaded_records:
+                serialized = _UI_SERIALIZER.serialize(record)
+                if isinstance(serialized, dict):
+                    result_dict = {"Datatype": serialized.get("_t", "")}
+                    result_dict.update(serialized)
+                    serialized = result_dict
+                serialized_records.append(serialized)
 
             # Find a common base
             common_base = TypeInfo.get_common_base_type(types=loaded_record_types)

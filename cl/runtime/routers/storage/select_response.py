@@ -107,11 +107,13 @@ class SelectResponse(RecordsWithSchemaResponse):
             )
         }
 
-        # Serialize record to ui format and filter table fields
-        table_dict = {k: v for k, v in DataSerializers.FOR_UI.serialize(record).items() if k in table_fields}
-
-        # Add "_t" and "_key" attributes
-        table_dict["_t"] = typename(type(record))
+        # Serialize record to ui format, filter table fields, and add Datatype (first), _t, and _key
+        record_type_name = typename(type(record))
+        table_dict = {"Datatype": record_type_name}
+        table_dict.update(
+            {k: v for k, v in DataSerializers.FOR_UI.serialize(record).items() if k in table_fields}
+        )
+        table_dict["_t"] = record_type_name
         table_dict["_key"] = KeySerializers.DELIMITED.serialize(record.get_key())
 
         return table_dict

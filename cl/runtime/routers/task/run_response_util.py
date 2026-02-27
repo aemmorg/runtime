@@ -90,7 +90,21 @@ class RunResponseUtil:
             # Do not serialize Primitive, as its serialization does not work without type hinting
             return result
         else:
-            return _ui_serializer.serialize(result)
+            serialized = _ui_serializer.serialize(result)
+            if isinstance(serialized, dict):
+                result_dict = {"Datatype": serialized.get("_t", "")}
+                result_dict.update(serialized)
+                serialized = result_dict
+            elif isinstance(serialized, (list, tuple)):
+                reordered = []
+                for item in serialized:
+                    if isinstance(item, dict) and "_t" in item:
+                        result_dict = {"Datatype": item["_t"]}
+                        result_dict.update(item)
+                        item = result_dict
+                    reordered.append(item)
+                serialized = reordered
+            return serialized
 
     @classmethod
     def _is_dict_or_list_of_dicts(cls, value: Any) -> bool:
