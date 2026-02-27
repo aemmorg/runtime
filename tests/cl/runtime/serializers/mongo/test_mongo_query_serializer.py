@@ -12,9 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import datetime as dt
+
 import pytest
 import orjson
 from cl.runtime.primitive.case_util import CaseUtil
+from cl.runtime.primitive.date_util import DateUtil
+from cl.runtime.primitive.time_util import TimeUtil
 from cl.runtime.qa.regression_guard import RegressionGuard
 from cl.runtime.records.predicates import Exists
 from cl.runtime.records.predicates import In
@@ -71,6 +75,28 @@ def test_unidirectional():
         guard.write(result_str)
 
     RegressionGuard.verify_all()
+
+
+def test_date_and_time_fields_are_serialized_to_iso_int():
+    """Test that date and time fields are serialized to ISO int format compatible with BSON/MongoDB."""
+
+    serializer = BootstrapSerializers.FOR_MONGO_QUERY
+
+    # Create a query with date and time fields
+    query = StubDataclassPrimitiveFieldsQuery(
+        key_date_field=DateUtil.from_fields(2026, 2, 25),
+        key_time_field=TimeUtil.from_fields(10, 15, 30),
+    ).build()
+
+    serialized = serializer.serialize(query)
+
+    # Verify date is serialized to ISO int (yyyymmdd), not left as raw datetime.date
+    assert serialized["key_date_field"] == 20260225
+    assert not isinstance(serialized["key_date_field"], dt.date)
+
+    # Verify time is serialized to ISO int (hhmmss000), not left as raw datetime.time
+    assert serialized["key_time_field"] == 101530000
+    assert not isinstance(serialized["key_time_field"], dt.time)
 
 
 if __name__ == "__main__":
