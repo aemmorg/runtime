@@ -14,7 +14,6 @@
 
 from dataclasses import dataclass
 from cl.runtime.contexts.context_manager import active_or_none
-
 from cl.runtime.events.event import Event
 from cl.runtime.events.event_kind import EventKind
 from cl.runtime.log.task_log import TaskLog

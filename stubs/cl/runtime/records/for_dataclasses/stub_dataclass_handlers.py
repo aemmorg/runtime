@@ -341,7 +341,6 @@ class StubHandlers(StubHandlersKey, RecordMixin):
         active(DataSource).replace_one(record, commit=True)
         _logger.info(f"Record {record} has been saved to db from handler.")
 
-
     def run_method_with_refresh_event(self):
         """Stub method."""
 

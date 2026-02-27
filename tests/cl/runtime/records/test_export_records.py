@@ -23,10 +23,10 @@ from cl.runtime.records.save_format import SaveFormat
 from cl.runtime.records.ui_record_util import UiRecordUtil
 from cl.runtime.serializers.key_serializers import KeySerializers
 from stubs.cl.runtime.records.for_dataclasses.stub_dataclass import StubDataclass
-from stubs.cl.runtime.records.for_dataclasses.stub_dataclass_key import StubDataclassKey
-from stubs.cl.runtime.records.for_dataclasses.stub_dataclass_nested_fields import StubDataclassNestedFields
 from stubs.cl.runtime.records.for_dataclasses.stub_dataclass_dict_list_fields import StubDataclassDictListFields
+from stubs.cl.runtime.records.for_dataclasses.stub_dataclass_key import StubDataclassKey
 from stubs.cl.runtime.records.for_dataclasses.stub_dataclass_list_dict_fields import StubDataclassListDictFields
+from stubs.cl.runtime.records.for_dataclasses.stub_dataclass_nested_fields import StubDataclassNestedFields
 from stubs.cl.runtime.records.for_pydantic.stub_pydantic import StubPydantic
 from stubs.cl.runtime.records.for_pydantic.stub_pydantic_key import StubPydanticKey
 from stubs.cl.runtime.records.for_pydantic.stub_pydantic_nested_fields import StubPydanticNestedFields

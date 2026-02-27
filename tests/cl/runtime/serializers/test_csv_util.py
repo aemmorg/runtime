@@ -15,7 +15,6 @@
 import pytest
 from cl.runtime.serializers.csv_util import CsvUtil
 
-
 # --- has_quotes ---
 
 

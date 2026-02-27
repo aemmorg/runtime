@@ -16,11 +16,10 @@ import logging
 from dataclasses import dataclass
 from unittest.mock import patch
 import click
-import pytest
 from click.testing import CliRunner
 from cl.runtime.cli.cli_command import CliCommand
-from cl.runtime.cli.plugin_discovery import discover_cli_plugins
 from cl.runtime.cli.plugin_discovery import PluginGroup
+from cl.runtime.cli.plugin_discovery import discover_cli_plugins
 
 _TYPE_INFO_PATH = "cl.runtime.schema.type_info.TypeInfo"
 

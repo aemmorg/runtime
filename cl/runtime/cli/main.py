@@ -15,8 +15,8 @@
 import logging.config
 import sys
 import click
-from cl.runtime.cli.plugin_discovery import discover_cli_plugins
 from cl.runtime.cli.plugin_discovery import PluginGroup
+from cl.runtime.cli.plugin_discovery import discover_cli_plugins
 
 
 @click.group(invoke_without_command=True, cls=PluginGroup)

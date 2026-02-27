@@ -124,7 +124,9 @@ class CsvUtil:
 
         # Old ISO format - convert to compact
         if cls._ISO_DATETIME_RE.match(value):
-            return value[0:4] + value[5:7] + value[8:10] + "-" + value[11:13] + value[14:16] + value[17:19] + value[20:23]
+            return (
+                value[0:4] + value[5:7] + value[8:10] + "-" + value[11:13] + value[14:16] + value[17:19] + value[20:23]
+            )
 
         return value
 

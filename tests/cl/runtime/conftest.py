@@ -12,9 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import locate # isort: skip - must remain at the top
-locate.append_sys_path("../..") # isort: skip - must remain at the top
-locate.append_sys_path("../../../../runtime") # isort: skip - must remain at the top
+import locate  # isort: skip - must remain at the top
+
+locate.append_sys_path("../..")  # isort: skip - must remain at the top
+locate.append_sys_path("../../../../runtime")  # isort: skip - must remain at the top
 
 # Use noqa to prevent linters from removing the imports
 from cl.runtime.qa.pytest.pytest_fixtures import basic_mongo_db_fixture  # noqa

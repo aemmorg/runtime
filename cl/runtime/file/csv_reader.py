@@ -14,7 +14,6 @@
 
 import csv
 from typing import Any
-from typing import Callable
 from typing import Sequence
 from cl.runtime.file.file_util import FileUtil
 from cl.runtime.file.reader import Reader
@@ -218,15 +217,15 @@ class CsvReader(Reader):
         row_dict = {CharUtil.normalize(k): CharUtil.normalize_or_none(v) for k, v in row_dict.items()}
 
         # Convert PascalCase column headers to snake_case field names
-        row_dict = {
-            CaseUtil.pascal_to_snake_case(k) if not k.startswith("_") else k: v for k, v in row_dict.items()
-        }
+        row_dict = {CaseUtil.pascal_to_snake_case(k) if not k.startswith("_") else k: v for k, v in row_dict.items()}
 
         # Normalize Excel-modified formats (thousand separators in numbers, locale-specific dates and datetimes)
         row_dict = {
-            k: CsvUtil.normalize_numeric_str(CsvUtil.normalize_datetime_str(CsvUtil.normalize_date_str(v)))
-            if v is not None
-            else v
+            k: (
+                CsvUtil.normalize_numeric_str(CsvUtil.normalize_datetime_str(CsvUtil.normalize_date_str(v)))
+                if v is not None
+                else v
+            )
             for k, v in row_dict.items()
         }
 

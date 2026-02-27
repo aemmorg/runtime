@@ -13,7 +13,6 @@
 # limitations under the License.
 
 from unittest.mock import patch
-import pytest
 from click.testing import CliRunner
 from cl.runtime.cli.fix_copyright_headers_cmd import fix_copyright_headers
 

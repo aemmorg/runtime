@@ -20,8 +20,8 @@ from cl.runtime.ui.control.button_control import ButtonControl
 from cl.runtime.ui.control.panel_control import PanelControl
 from cl.runtime.ui.control.text_control import TextControl
 from cl.runtime.ui.event.control_event import ControlEvent
-from cl.runtime.ui.storage.control_manager import ControlManager
 from cl.runtime.ui.storage.control_loader import ControlLoader
+from cl.runtime.ui.storage.control_manager import ControlManager
 from cl.runtime.ui.storage.control_saver import ControlSaver
 
 
@@ -93,9 +93,7 @@ def test_load_by_path_without_parents(default_db_fixture):
     TypeInfo._add_type(TestLoadControlPanel)
 
     ControlSaver(root_node=p.build()).save()
-    loaded = ControlLoader(root_node=p.get_key().clone()).load_by_path(
-        control_path="Root.ButtonChange", parents=False
-    )
+    loaded = ControlLoader(root_node=p.get_key().clone()).load_by_path(control_path="Root.ButtonChange", parents=False)
 
     assert len(loaded) == 1
     assert isinstance(loaded[0], ButtonControl)

@@ -15,9 +15,9 @@
 from dataclasses import dataclass
 import click
 from cl.runtime.cli.cli_command import CliCommand
-from cl.runtime.settings.project_settings import ProjectSettings
 from cl.runtime.file.csv_reader import CsvReader
 from cl.runtime.project.project_util import ProjectUtil
+from cl.runtime.settings.project_settings import ProjectSettings
 
 
 @dataclass(slots=True, kw_only=True)

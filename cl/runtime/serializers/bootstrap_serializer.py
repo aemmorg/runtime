@@ -63,7 +63,6 @@ from cl.runtime.serializers.type_format import TypeFormat
 from cl.runtime.serializers.type_inclusion import TypeInclusion
 from cl.runtime.serializers.type_placement import TypePlacement
 from cl.runtime.serializers.uuid_format import UuidFormat
-from cl.runtime.ui.control import Control
 
 
 @dataclass(slots=True, kw_only=True)
@@ -349,8 +348,9 @@ class BootstrapSerializer(Serializer):
             # Allow keys that begin from _ in mapping classes, but not slotted classes
             result.update(
                 {
-                    k if not self.pascalize_keys else CaseUtil.snake_to_pascal_case(k):
+                    k if not self.pascalize_keys else CaseUtil.snake_to_pascal_case(k): (
                         self._serialize(v) if not self.control_shallow_mode else v
+                    )
                     for k in slots
                     if not is_empty(v := getattr(data, k)) and not k.startswith("_")
                 }

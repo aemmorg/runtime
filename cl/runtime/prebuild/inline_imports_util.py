@@ -88,7 +88,6 @@ class InlineImportsUtil:
             # No errors found
             return True
 
-
     @classmethod
     def fix_inline_imports(
         cls,
@@ -221,7 +220,9 @@ class InlineImportsUtil:
 
     @classmethod
     def _find_inline_imports(
-        cls, source: str, file_path: str,
+        cls,
+        source: str,
+        file_path: str,
     ) -> list[tuple[ast.Import | ast.ImportFrom, int, int]]:
         """Find import statements inside function or method bodies.
 

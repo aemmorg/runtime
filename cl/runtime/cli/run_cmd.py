@@ -88,7 +88,6 @@ def _run_async(
     from cl.runtime.routers.task.status_request import StatusRequest
     from cl.runtime.routers.task.status_response_item import StatusResponseItem
     from cl.runtime.server.env import Env
-    from cl.runtime.tasks.instance_method_task import InstanceMethodTask
     from cl.runtime.tasks.task_queue import TaskQueue
     from cl.runtime.tasks.task_util import TaskUtil
 

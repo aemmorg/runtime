@@ -188,7 +188,7 @@ class CopyrightUtil:
 
             if content.startswith(copyright_header):
                 # Correct header, check trailing blank line
-                after_header = content[len(copyright_header):]
+                after_header = content[len(copyright_header) :]
                 if after_header and not after_header.startswith("\n"):
                     content = copyright_header + "\n" + after_header
                     with open(file_path, "w", encoding="utf-8") as f:
@@ -284,7 +284,7 @@ class CopyrightUtil:
 
             if content.startswith(copyright_header):
                 # Correct header, check trailing blank line
-                after_header = content[len(copyright_header):]
+                after_header = content[len(copyright_header) :]
                 if after_header and not after_header.startswith("\n"):
                     blank_line_error_files.append(file_path)
             else:

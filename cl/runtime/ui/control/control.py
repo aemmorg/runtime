@@ -100,10 +100,12 @@ class Control(ControlKey, RecordMixin, ABC):
         field_spec = next((field for field in data_type_spec.fields if field.field_name == "control"), None)
 
         # Build a ControlUpdateEvent
-        return [ControlUpdateEvent(
-            control_path=self.control_path,
-            control=DataSerializers.FOR_UI.serialize(self, type_hint=field_spec.field_type_hint),
-        )]
+        return [
+            ControlUpdateEvent(
+                control_path=self.control_path,
+                control=DataSerializers.FOR_UI.serialize(self, type_hint=field_spec.field_type_hint),
+            )
+        ]
 
     def update_value(self, key: str, value: Any) -> list[ControlEvent]:
         """

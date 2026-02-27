@@ -95,7 +95,10 @@ def _start_backend(port: int | None = None, no_browser: bool = False, *, repl: b
         _backend_log_file = open(_backend_log_path, "w")  # noqa: SIM115
 
         _backend_process = _launch_backend(
-            port=port, no_browser=no_browser, stdout=_backend_log_file, stderr=subprocess.STDOUT,
+            port=port,
+            no_browser=no_browser,
+            stdout=_backend_log_file,
+            stderr=subprocess.STDOUT,
         )
         _backend_port = port
         atexit.register(cleanup_backend)

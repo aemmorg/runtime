@@ -12,14 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from unittest.mock import patch
 import pytest
+from unittest.mock import patch
 from click.testing import CliRunner
 from prompt_toolkit.document import Document
 from cl.runtime.cli.main import cli
 from cl.runtime.cli.repl import _COMMANDS
-from cl.runtime.cli.repl import register_commands
 from cl.runtime.cli.repl import SlashCommandCompleter
+from cl.runtime.cli.repl import register_commands
 
 
 @pytest.fixture()

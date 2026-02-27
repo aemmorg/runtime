@@ -22,7 +22,6 @@ from cl.runtime.project.project_util import ProjectUtil
 from cl.runtime.project.resources_util import ResourcesUtil
 from cl.runtime.records.for_dataclasses.extensions import required
 from cl.runtime.records.typename import typename
-from cl.runtime.settings.dynaconf_loader import DynaconfLoader
 from cl.runtime.settings.env_kind import EnvKind
 from cl.runtime.settings.settings import Settings
 

@@ -20,14 +20,12 @@ class StubCorrectDocstrings:
 
     def single_line(self) -> None:
         """Single-line docstring."""
-        pass
 
     def multi_line_simple(self) -> None:
         """Summary on the first line.
 
         Additional details on subsequent lines.
         """
-        pass
 
     def multi_line_with_args(self) -> str:
         """Summary on the first line with args.
@@ -49,7 +47,6 @@ class StubCorrectDocstrings:
             - Second note
 
         """
-        pass
 
     @classmethod
     def class_method_multi_line(cls) -> None:
@@ -58,4 +55,3 @@ class StubCorrectDocstrings:
         This method does nothing but demonstrates correct docstring format
         for a classmethod with deeper indentation.
         """
-        pass

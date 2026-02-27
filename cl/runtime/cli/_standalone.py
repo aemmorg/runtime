@@ -51,6 +51,7 @@ def run_command(click_cmd: click.BaseCommand):
     # Ensure bootstrap is loaded
     if "cl.runtime.bootstrap" not in sys.modules:
         import locate
+
         locate.append_sys_path("../../..")
         import cl.runtime.bootstrap  # noqa: F401 isort: skip
 
@@ -60,6 +61,7 @@ def run_command(click_cmd: click.BaseCommand):
 
     # Configure logging
     from cl.runtime.log.log_config import logging_config  # noqa: E402
+
     logging.config.dictConfig(logging_config)
 
     # Run the command with filtered args and proper prog_name

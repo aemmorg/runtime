@@ -14,8 +14,9 @@
 
 import dataclasses
 from dataclasses import dataclass
-from typing import Any, Sequence, Mapping
-
+from typing import Any
+from typing import Mapping
+from typing import Sequence
 from cl.runtime.records.for_dataclasses.dataclass_mixin import DataclassMixin
 from cl.runtime.records.for_dataclasses.extensions import required
 
@@ -90,4 +91,3 @@ class PackageTemplateParams(DataclassMixin):
     def to_dict(self) -> dict[str, Any]:
         """Convert all fields to a dict suitable for Jinja2 template rendering."""
         return {f.name: getattr(self, f.name) for f in dataclasses.fields(self)}  # TODO(Claude): Use DataSerializer?
-

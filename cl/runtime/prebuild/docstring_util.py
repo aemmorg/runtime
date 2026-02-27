@@ -24,11 +24,31 @@ _RUFF_SELECT = ["D"]
 """Ruff rule selector for all pydocstyle checks."""
 
 _RUFF_IGNORE = [
-    "D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107",
-    "D200", "D202", "D203", "D205", "D212", "D213",
+    "D100",
+    "D101",
+    "D102",
+    "D103",
+    "D104",
+    "D105",
+    "D106",
+    "D107",
+    "D200",
+    "D202",
+    "D203",
+    "D205",
+    "D212",
+    "D213",
     "D301",
-    "D400", "D401", "D402", "D403", "D404",
-    "D410", "D411", "D413", "D415", "D417",
+    "D400",
+    "D401",
+    "D402",
+    "D403",
+    "D404",
+    "D410",
+    "D411",
+    "D413",
+    "D415",
+    "D417",
 ]
 """Ruff pydocstyle rules to ignore (remove from this list as violations are fixed)."""
 
@@ -114,13 +134,14 @@ class DocstringUtil:
             return
 
         violation_count, stdout, stderr = cls._run_ruff_docstring_check(
-            source_files, fix=False, extra_ignore_rules=extra_ignore_rules,
+            source_files,
+            fix=False,
+            extra_ignore_rules=extra_ignore_rules,
         )
 
         if violation_count > 0:
             raise RuntimeError(
-                f"Docstring formatting violations (pydocstyle D rules) "
-                f"in {violation_count} location(s):\n{stdout}"
+                f"Docstring formatting violations (pydocstyle D rules) " f"in {violation_count} location(s):\n{stdout}"
             )
 
     @classmethod
@@ -157,7 +178,9 @@ class DocstringUtil:
 
         # First count existing fixable violations
         violation_count, _, _ = cls._run_ruff_docstring_check(
-            source_files, fix=False, extra_ignore_rules=extra_ignore_rules,
+            source_files,
+            fix=False,
+            extra_ignore_rules=extra_ignore_rules,
         )
 
         if violation_count == 0:
@@ -170,7 +193,9 @@ class DocstringUtil:
 
         # Verify fixes were applied
         remaining, _, _ = cls._run_ruff_docstring_check(
-            source_files, fix=False, extra_ignore_rules=extra_ignore_rules,
+            source_files,
+            fix=False,
+            extra_ignore_rules=extra_ignore_rules,
         )
 
         if verbose:

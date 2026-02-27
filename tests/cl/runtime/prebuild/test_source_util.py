@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
 import subprocess
 import sys
-import pytest
 from cl.runtime.prebuild.source_util import SourceUtil
 from cl.runtime.project.project_util import ProjectUtil
 
@@ -57,8 +57,7 @@ def test_source_util():
             os_count += _count_py_files_via_os(root_dir, exclude_names)
 
     assert source_util_count == os_count, (
-        f"SourceUtil found {source_util_count} files but OS command found {os_count} files "
-        f"for package '{package}'"
+        f"SourceUtil found {source_util_count} files but OS command found {os_count} files " f"for package '{package}'"
     )
     assert source_util_count > 0, "Expected at least some .py files in the runtime package"
 

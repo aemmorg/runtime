@@ -29,10 +29,7 @@ _CSV_SERIALIZER = DataSerializers.FOR_CSV
 
 
 class CsvWriter(Writer):
-    def to_files(
-        self,
-        records: Sequence[RecordMixin]
-    ) -> Iterable[FileData]:
+    def to_files(self, records: Sequence[RecordMixin]) -> Iterable[FileData]:
         """
         Save records as CSV files.
         Records are grouped into one file by record type.
@@ -93,8 +90,7 @@ class CsvWriter(Writer):
             serialized_record.pop("_type", None)
             # Convert snake_case field names to PascalCase column headers
             serialized_record = {
-                CaseUtil.snake_to_pascal_case_keep_trailing_underscore(k): v
-                for k, v in serialized_record.items()
+                CaseUtil.snake_to_pascal_case_keep_trailing_underscore(k): v for k, v in serialized_record.items()
             }
             record_dicts.append(serialized_record)
 

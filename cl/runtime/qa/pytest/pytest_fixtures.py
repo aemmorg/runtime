@@ -27,22 +27,18 @@ from cl.runtime.db.sql.sqlite_db import SqliteDb
 from cl.runtime.db.tenant_key import TenantKey
 from cl.runtime.events.event_broker import EventBroker
 from cl.runtime.log.log_config import logging_config
-from cl.runtime.prebuild.init_file_util import InitFileUtil
-from cl.runtime.prebuild.module_info import ModuleInfo
-from cl.runtime.prebuild.source_util import SourceUtil
-from cl.runtime.project.project_util import ProjectUtil
 from cl.runtime.qa.pytest.pytest_util import PytestUtil
 from cl.runtime.schema.type_info import TypeInfo
 from cl.runtime.server.env import Env
 from cl.runtime.settings.db_settings import DbSettings
 from cl.runtime.settings.env_kind import EnvKind
-from cl.runtime.settings.project_settings import ProjectSettings
 from cl.runtime.settings.qa_settings import QaSettings
 from cl.runtime.settings.sse_settings import SseSettings
 from cl.runtime.tasks.celery.celery_queue import CeleryQueue
 from cl.runtime.tasks.celery.celery_queue import celery_app
 
 # --- Helper functions ---
+
 
 def _db_fixture(request: FixtureRequest, *, db_type: type | None = None, tenant: str | None = None) -> Iterator[Db]:
     """Setup and teardown a temporary databases in DB of the specified type."""
@@ -81,6 +77,7 @@ def _db_fixture(request: FixtureRequest, *, db_type: type | None = None, tenant:
 
 
 # --- Function fixtures ---
+
 
 @pytest.fixture(scope="function")
 def default_db_fixture(request: FixtureRequest, tenant_fixture) -> Iterator[Db]:
@@ -136,6 +133,7 @@ def multi_db_fixture(request, tenant_fixture) -> Iterator[Db]:
     """
     yield from _db_fixture(request, db_type=request.param, tenant=tenant_fixture)
 
+
 @pytest.fixture
 def tenant_fixture(request: FixtureRequest):
     """Parametrize tenant_fixture to change tenant within test."""
@@ -183,7 +181,9 @@ def event_broker_fixture(request: FixtureRequest) -> Iterator[EventBroker]:
     # Remove test broker data after unit test
     broker.drop_test_broker()
 
+
 # --- Session fixtures ---
+
 
 @pytest.fixture(scope="session", autouse=True)
 def configure_logging_fixture(request: FixtureRequest):

@@ -12,9 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import datetime as dt
-
 import pytest
+import datetime as dt
 import orjson
 from cl.runtime.primitive.case_util import CaseUtil
 from cl.runtime.primitive.date_util import DateUtil

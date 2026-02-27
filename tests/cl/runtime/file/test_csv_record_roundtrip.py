@@ -68,8 +68,7 @@ def save_records_to_csv(records: Iterable, file_path: str) -> None:
         serialized_record.pop("_type", None)
         # Convert snake_case field names to PascalCase column headers
         serialized_record = {
-            CaseUtil.snake_to_pascal_case_keep_trailing_underscore(k): v
-            for k, v in serialized_record.items()
+            CaseUtil.snake_to_pascal_case_keep_trailing_underscore(k): v for k, v in serialized_record.items()
         }
         record_dicts.append(serialized_record)
 

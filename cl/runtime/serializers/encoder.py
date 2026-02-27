@@ -15,14 +15,13 @@
 from abc import ABC
 from abc import abstractmethod
 from dataclasses import dataclass
-from types import GeneratorType, MappingProxyType
+from types import GeneratorType
+from types import MappingProxyType
 from typing import Any
-
-from frozendict import frozendict
-
 from cl.runtime.primitive.char_util import CharUtil
 from cl.runtime.records.for_dataclasses.dataclass_mixin import DataclassMixin
-from cl.runtime.records.protocols import is_mapping_type, is_sequence_type
+from cl.runtime.records.protocols import is_mapping_type
+from cl.runtime.records.protocols import is_sequence_type
 from cl.runtime.records.typename import typeof
 
 

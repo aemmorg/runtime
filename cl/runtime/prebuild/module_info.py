@@ -15,8 +15,6 @@
 import hashlib
 import os
 import posixpath
-from typing import Sequence
-
 from cl.runtime.prebuild.source_util import SourceUtil
 from cl.runtime.project.project_util import ProjectUtil
 from cl.runtime.project.resources_util import ResourcesUtil
@@ -114,8 +112,8 @@ class ModuleInfo:
     @classmethod
     def get_abs_monitored_files(cls) -> tuple[str, ...]:
         """The list of absolute paths to source files and settings files for the current Dynaconf environment."""
-        result = (
-            SourceUtil.get_abs_source_files() + DynaconfLoader.instance().get_abs_settings_files(exclude_secrets=True)
+        result = SourceUtil.get_abs_source_files() + DynaconfLoader.instance().get_abs_settings_files(
+            exclude_secrets=True
         )
         return result
 

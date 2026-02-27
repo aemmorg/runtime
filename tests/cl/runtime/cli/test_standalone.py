@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
 import os
 import sys
 from unittest.mock import patch
 import click
-import pytest
 from cl.runtime.cli._standalone import run_command
 from cl.runtime.settings.dynaconf_loader import ENV_SWITCHER_ENVVAR
 

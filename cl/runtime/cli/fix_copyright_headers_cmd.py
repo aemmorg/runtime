@@ -26,7 +26,9 @@ class FixCopyrightHeadersCmd(CliCommand):
         """Return the Click command to register on the CLI group."""
 
         @click.command("fix-copyright-headers")
-        @click.option("--fix", is_flag=True, default=False, help="Automatically fix missing/incorrect copyright headers.")
+        @click.option(
+            "--fix", is_flag=True, default=False, help="Automatically fix missing/incorrect copyright headers."
+        )
         def fix_copyright_headers(fix: bool) -> None:
             """Check (and optionally fix) copyright headers."""
             from cl.runtime.prebuild.copyright_util import CopyrightUtil

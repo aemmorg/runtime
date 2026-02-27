@@ -12,23 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import fnmatch
 import platform
 import posixpath
 from abc import ABC
 from abc import abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Mapping
-from typing import Sequence
-
+from typing import Any
+from typing import Mapping
 from jinja2 import Environment
-
 from cl.runtime.primitive.timestamp import Timestamp
 from cl.runtime.records.data_mixin import DataMixin
 from cl.runtime.records.protocols import is_mapping_type
 from cl.runtime.records.record_mixin import RecordMixin
-from cl.runtime.records.typename import typeof, typenameof
+from cl.runtime.records.typename import typenameof
+from cl.runtime.records.typename import typeof
 from cl.runtime.serializers.data_serializers import DataSerializers
 from cl.runtime.templates.template_engine_key import TemplateEngineKey
 
@@ -38,6 +36,7 @@ _JINJA_ENV_FOR_PATH = Environment(
     keep_trailing_newline=True,
 )
 """Jinja environment for variable substitution in directories and paths, strips whitespace."""
+
 
 def transform_part(part: str) -> str:
     """Replace dot_ prefix by . in file or directory name token."""

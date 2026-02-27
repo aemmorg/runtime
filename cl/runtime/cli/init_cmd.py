@@ -15,8 +15,8 @@
 import os
 from dataclasses import dataclass
 import click
-from cl.runtime.cli.cli_command import CliCommand
 from ruamel.yaml import YAML
+from cl.runtime.cli.cli_command import CliCommand
 
 _DB_CHOICES = {
     "mongo": {"db_type": "BasicMongoDb", "db_mongo_uri": "mongodb://localhost:27017/"},

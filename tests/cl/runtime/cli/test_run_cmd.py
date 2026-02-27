@@ -13,12 +13,9 @@
 # limitations under the License.
 
 import json
-import os
 from contextlib import contextmanager
-from unittest.mock import call
 from unittest.mock import MagicMock
 from unittest.mock import patch
-import pytest
 from click.testing import CliRunner
 from cl.runtime.cli.run_cmd import _output_result
 from cl.runtime.cli.run_cmd import run

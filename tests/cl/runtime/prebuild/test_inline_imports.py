@@ -12,17 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
 import ast
 import os
 import shutil
 import tempfile
-import pytest
 from cl.runtime.prebuild.inline_imports_util import InlineImportsUtil
 
-
-_STUBS_DIR = os.path.normpath(
-    os.path.join(os.path.dirname(__file__), "../../../../stubs/cl/runtime/prebuild")
-)
+_STUBS_DIR = os.path.normpath(os.path.join(os.path.dirname(__file__), "../../../../stubs/cl/runtime/prebuild"))
 
 
 def test_no_inline_imports_in_clean_stub():
@@ -43,6 +40,7 @@ def test_detect_inline_imports_in_stub():
         source = f.read()
     result = InlineImportsUtil._find_inline_imports(source, stub_path)
     assert len(result) == 3, f"Expected 3 inline imports in stub_inline_imports.py, found {len(result)}"
+
 
 # TODO(Claude): Remove the test skip decorator and attempt to fix
 @pytest.mark.skip("Skipping inline imports test temporarily")

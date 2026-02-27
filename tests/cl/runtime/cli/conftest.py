@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
 from contextlib import contextmanager
 from unittest.mock import MagicMock
 from unittest.mock import patch
-import pytest
 from click.testing import CliRunner
 
 

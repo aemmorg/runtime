@@ -14,9 +14,9 @@
 
 """Integration tests for UiRecordUtil.run_save_permanently_records method."""
 
+import pytest
 import os
 import shutil
-import pytest
 from cl.runtime.contexts.context_manager import active
 from cl.runtime.db.data_source import DataSource
 from cl.runtime.file.file_util import FileUtil

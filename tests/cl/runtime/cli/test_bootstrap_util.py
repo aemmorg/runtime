@@ -16,7 +16,6 @@ import os
 from contextlib import contextmanager
 from unittest.mock import MagicMock
 from unittest.mock import patch
-import pytest
 from cl.runtime.cli.bootstrap_util import activate_data_source
 from cl.runtime.cli.bootstrap_util import apply_env_config
 

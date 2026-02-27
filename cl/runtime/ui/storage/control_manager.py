@@ -43,9 +43,7 @@ class ControlManager:
 
     def remove(self, *, selected_controls: list[str]):
         """Remove the given list of controls from the database."""
-        ControlSaver(root_node=self.root_node.build()).remove_selected_controls(
-            selected_controls=selected_controls
-        )
+        ControlSaver(root_node=self.root_node.build()).remove_selected_controls(selected_controls=selected_controls)
 
     def reset(self, **kwargs):
         """

@@ -18,12 +18,14 @@ import os
 def function_with_inline_import():
     """Function that has an inline import."""
     import json
+
     return json.dumps({"cwd": os.getcwd()})
 
 
 def function_with_from_import():
     """Function that has an inline from-import."""
     from pathlib import Path
+
     return str(Path.cwd())
 
 
@@ -33,4 +35,5 @@ class ClassWithInlineImport:
     def method_with_import(self):
         """Method with inline import."""
         from collections import OrderedDict
+
         return OrderedDict()

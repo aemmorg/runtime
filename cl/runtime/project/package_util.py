@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import os
-
 from cl.runtime.project.project_util import ProjectUtil
 from cl.runtime.settings.project_settings import ProjectSettings
 

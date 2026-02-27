@@ -13,7 +13,6 @@
 # limitations under the License.
 
 from typing import Iterable
-
 from cl.runtime.contexts.context_manager import active
 from cl.runtime.db.data_source import DataSource
 from cl.runtime.records.key_mixin import KeyMixin
@@ -49,7 +48,8 @@ class DependencyParser:
         self._dependencies: list[RecordMixin] = list(records)
         self.queue: list[RecordMixin | KeyMixin] = list(records)
         self._traversed_items: dict[str, RecordMixin] = {
-            KeySerializers.DELIMITED.serialize(record.get_key(), TypeHint.for_type(KeyMixin)): record for record in records
+            KeySerializers.DELIMITED.serialize(record.get_key(), TypeHint.for_type(KeyMixin)): record
+            for record in records
         }
         self._is_traversed = False
 
@@ -67,7 +67,8 @@ class DependencyParser:
         self._dependencies = list(self.records)
         self.queue: list[RecordMixin | KeyMixin] = list(self.records)
         self._traversed_items = {
-            KeySerializers.DELIMITED.serialize(record.get_key(), TypeHint.for_type(KeyMixin)): record for record in self.records
+            KeySerializers.DELIMITED.serialize(record.get_key(), TypeHint.for_type(KeyMixin)): record
+            for record in self.records
         }
 
         self._traverse_dependencies()

@@ -14,7 +14,6 @@
 
 import os
 from unittest.mock import patch
-import pytest
 from click.testing import CliRunner
 from ruamel.yaml import YAML
 from cl.runtime.cli.init_cmd import _write_settings_yaml

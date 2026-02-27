@@ -14,7 +14,6 @@
 
 from unittest.mock import MagicMock
 from unittest.mock import patch
-import pytest
 from click.testing import CliRunner
 from cl.runtime.cli.fix_csv_quotes_cmd import fix_csv_quotes
 

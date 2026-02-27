@@ -13,11 +13,13 @@
 # limitations under the License.
 
 from dataclasses import dataclass
-from typing import Any, Mapping
+from typing import Any
+from typing import Mapping
 from box import Box
 from cl.runtime.records.data_mixin import DataMixin
 from cl.runtime.records.protocols import is_mapping_type
-from cl.runtime.records.typename import typenameof, typeof
+from cl.runtime.records.typename import typenameof
+from cl.runtime.records.typename import typeof
 from cl.runtime.serializers.data_serializers import DataSerializers
 from cl.runtime.templates.template_engine import TemplateEngine
 

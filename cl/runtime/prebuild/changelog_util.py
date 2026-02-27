@@ -92,7 +92,8 @@ class ChangelogUtil:
         project_root = ProjectUtil.get_project_root()
 
         cmd = [
-            "git", "log",
+            "git",
+            "log",
             "--all",
             "--format=%ai|%s",
             f"--before={until_date + datetime.timedelta(days=1)}",
@@ -113,8 +114,7 @@ class ChangelogUtil:
 
         if result.returncode != 0:
             raise RuntimeError(
-                f"git log command failed with return code {result.returncode}.\n"
-                f"stderr: {result.stderr}"
+                f"git log command failed with return code {result.returncode}.\n" f"stderr: {result.stderr}"
             )
 
         entries = []
@@ -249,9 +249,7 @@ class ChangelogUtil:
         package_settings = PackageSettings.instance()
         package_dir = package_settings.package_dirs.get(package)
         if package_dir is None:
-            raise RuntimeError(
-                f"Package {package} is not listed in settings.yaml 'package_dirs' field."
-            )
+            raise RuntimeError(f"Package {package} is not listed in settings.yaml 'package_dirs' field.")
 
         entries = cls.get_git_log(
             since_date=since_date,

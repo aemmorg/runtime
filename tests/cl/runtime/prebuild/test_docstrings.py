@@ -12,21 +12,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
 import os
 import shutil
 import subprocess
 import sys
 import tempfile
-import pytest
 from cl.runtime.prebuild.docstring_util import DocstringUtil
-
 
 _STUBS_DIR = os.path.normpath(
     os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "stubs", "cl", "runtime", "prebuild")
 )
 
 _RUFF_D_ARGS = [
-    sys.executable, "-m", "ruff", "check", "--output-format", "concise", "--select", "D", "--ignore",
+    sys.executable,
+    "-m",
+    "ruff",
+    "check",
+    "--output-format",
+    "concise",
+    "--select",
+    "D",
+    "--ignore",
     "D100,D101,D102,D103,D104,D105,D106,D107,D200,D202,D203,D205,D212,D213,"
     "D301,D400,D401,D402,D403,D404,D410,D411,D413,D415,D417",
 ]
@@ -52,7 +59,9 @@ def test_correct_docstrings():
     stub_path = os.path.join(_STUBS_DIR, "stub_correct_docstrings.py")
     assert os.path.isfile(stub_path), f"Stub file not found: {stub_path}"
     violation_count = _count_ruff_d_violations(stub_path)
-    assert violation_count == 0, f"Expected 0 pydocstyle violations in stub_correct_docstrings.py, found {violation_count}"
+    assert (
+        violation_count == 0
+    ), f"Expected 0 pydocstyle violations in stub_correct_docstrings.py, found {violation_count}"
 
 
 def test_docstrings():

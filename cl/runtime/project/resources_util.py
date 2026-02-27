@@ -13,9 +13,9 @@
 # limitations under the License.
 
 import posixpath
-
 from cl.runtime.project.project_util import ProjectUtil
 from cl.runtime.settings.dynaconf_loader import DynaconfLoader
+
 
 class ResourcesUtil:
     """Helper methods for managing resources that persist between runs."""
@@ -32,4 +32,3 @@ class ResourcesUtil:
         """Contains resources used for type system initialization."""
         resources_root = cls.get_resources_root()
         return posixpath.normpath(posixpath.join(resources_root, "bootstrap"))
-

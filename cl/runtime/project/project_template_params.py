@@ -14,8 +14,9 @@
 
 import dataclasses
 from dataclasses import dataclass
-from typing import Any, Sequence, Mapping
-
+from typing import Any
+from typing import Mapping
+from typing import Sequence
 from cl.runtime.records.for_dataclasses.dataclass_mixin import DataclassMixin
 from cl.runtime.records.for_dataclasses.extensions import required
 

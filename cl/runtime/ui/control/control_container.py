@@ -70,8 +70,7 @@ class ControlContainer(Control, ABC):
                 control_path=self.control_path,
                 removed_controls=self._removed_controls,
                 added_controls=DataSerializers.FOR_UI.serialize(
-                    self.list_added_controls(self),
-                    type_hint=field_spec.field_type_hint
+                    self.list_added_controls(self), type_hint=field_spec.field_type_hint
                 ),
             ),
         ]

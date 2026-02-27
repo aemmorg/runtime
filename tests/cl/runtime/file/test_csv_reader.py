@@ -12,14 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
 import os
 import time
-import pytest
 from cl.runtime.contexts.context_manager import active
 from cl.runtime.db.data_source import DataSource
 from cl.runtime.file.csv_reader import CsvReader
 from cl.runtime.qa.qa_util import QaUtil
-from cl.runtime.serializers.csv_util import CsvUtil
 from stubs.cl.runtime.records.for_dataclasses.stub_dataclass_composite import StubDataclassComposite
 from stubs.cl.runtime.records.for_dataclasses.stub_dataclass_derived import StubDataclassDerived
 from stubs.cl.runtime.records.for_dataclasses.stub_dataclass_key import StubDataclassKey
@@ -84,6 +83,7 @@ def test_check_or_fix_format(work_dir_fixture):
     assert not CsvReader.check_or_fix_file("invalid_csv_date_format.csv", fix=False)
     assert not CsvReader.check_or_fix_file("invalid_csv_number_format.csv", fix=False)
     assert not CsvReader.check_or_fix_file("invalid_csv_quotes.csv", fix=False)
+
 
 def test_performance(default_db_fixture, tmp_path):
     """Time load_all for generated CSV files of 100, 1000, and 10000 rows."""

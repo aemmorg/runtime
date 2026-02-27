@@ -15,12 +15,8 @@
 from dataclasses import dataclass
 from typing import Any
 from typing import Sequence
-
-from frozendict import frozendict
-
 from cl.runtime.file.file_util import FileUtil
 from cl.runtime.file.reader import Reader
-from cl.runtime.records.protocols import is_mapping_type, is_sequence_type
 from cl.runtime.records.record_mixin import RecordMixin
 from cl.runtime.records.typename import typename
 from cl.runtime.schema.type_info import TypeInfo
@@ -63,7 +59,7 @@ class YamlReader(Reader):
                     # Support both single record (dict) and multiple records (list)
                     if isinstance(yaml_data, dict):
                         # Wrap into a list with one element
-                        object_dicts =[yaml_data]
+                        object_dicts = [yaml_data]
                     elif isinstance(yaml_data, list):
                         # Already a list
                         object_dicts = yaml_data

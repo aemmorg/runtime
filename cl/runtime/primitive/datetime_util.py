@@ -245,9 +245,7 @@ class DatetimeUtil:
     def validate_compact(cls, value: str) -> None:
         """Validate that datetime string is in compact format: 'yyyymmdd-hhmmssfff'"""
         if not compact_datetime_pattern.match(value):
-            raise RuntimeError(
-                f"Datetime string {value} must be in compact format: 'yyyymmdd-hhmmssfff'."
-            )
+            raise RuntimeError(f"Datetime string {value} must be in compact format: 'yyyymmdd-hhmmssfff'.")
 
     @classmethod
     def validate_datetime(cls, value: dt.datetime) -> None:

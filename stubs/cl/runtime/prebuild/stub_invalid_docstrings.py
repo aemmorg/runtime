@@ -21,26 +21,21 @@ class StubWrongDocstrings:
     def over_indented(self) -> None:
         """Summary is fine.
 
-            Over-indented continuation line.
+        Over-indented continuation line.
         """
-        pass
 
     def triple_single_quotes(self) -> None:
-        '''Single quotes instead of double quotes.'''
-        pass
+        """Single quotes instead of double quotes."""
 
     def surrounding_whitespace(self) -> None:
-        """ Summary with leading whitespace. """
-        pass
+        """Summary with leading whitespace."""
 
     def empty_docstring(self) -> None:
         """"""
-        pass
 
     @classmethod
     def class_method_over_indented(cls) -> None:
         """Summary is fine.
 
-            Over-indented continuation line for a classmethod.
+        Over-indented continuation line for a classmethod.
         """
-        pass

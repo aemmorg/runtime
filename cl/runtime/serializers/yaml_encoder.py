@@ -15,7 +15,6 @@
 import datetime as dt
 from dataclasses import dataclass
 from io import StringIO
-from types import GeneratorType
 from typing import Any
 from uuid import UUID
 from frozendict import frozendict

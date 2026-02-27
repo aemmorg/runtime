@@ -15,9 +15,13 @@
 import pytest
 from cl.runtime.contexts.context_manager import active
 from cl.runtime.db.data_source import DataSource
-from cl.runtime.records.predicates import And, Gte, Gt, Lt, Lte
+from cl.runtime.records.predicates import And
 from cl.runtime.records.predicates import Exists
+from cl.runtime.records.predicates import Gt
+from cl.runtime.records.predicates import Gte
 from cl.runtime.records.predicates import In
+from cl.runtime.records.predicates import Lt
+from cl.runtime.records.predicates import Lte
 from cl.runtime.records.predicates import Not
 from cl.runtime.records.predicates import NotIn
 from cl.runtime.records.predicates import Or
@@ -56,6 +60,7 @@ def test_str_query(multi_db_fixture):
     # assert to_key_str_field(active(DataSource).load_by_query(and_query)) == ["abc"]
     assert to_key_str_field(active(DataSource).load_by_query(exists_query)) == ["def", "xyz"]
     assert to_key_str_field(active(DataSource).load_by_query(does_not_exist_query)) == ["abc"]
+
 
 def test_int_query(multi_db_fixture):
     """Test query for an int field."""

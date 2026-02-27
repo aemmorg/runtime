@@ -55,7 +55,6 @@ class Writer(WriterKey, RecordMixin, ABC):
         Returns:
             FileData objects containing serialized records in binary format
         """
-        pass
 
     def to_zip(
         self,
