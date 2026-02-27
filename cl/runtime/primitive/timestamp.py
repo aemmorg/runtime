@@ -42,32 +42,50 @@ class Timestamp:
     """The last UUIDv7 created during the previous call within the same context."""
 
     @classmethod
-    def create(cls) -> str:
+    def now_uuid7(cls) -> UUID:
         """
         Within the same process, thread and context the returned value is greater than any previous values.
         In all other cases, the value is unique and greater than values returned in prior milliseconds.
         """
 
-        # TODO: Multiple context or threads are not yet supported
+        # TODO: Multiple contexts or threads are not yet supported
 
         # Keep getting new uuid7 until it is more than '_prev_uuid7'
         # At worst this will delay execution by one time tick only
-        while (current_uuid7 := _get_uuid7()) <= cls._prev_uuid7:
+        while (result := _get_uuid7()) <= cls._prev_uuid7:
             pass
 
         # Update _prev_uuid7 with the result to ensure strict ordering within the same process thread and context
-        cls._prev_uuid7 = current_uuid7
-        result = cls.from_uuid7(current_uuid7)
+        cls._prev_uuid7 = result
         return result
 
     @classmethod
-    def create_many(cls, count: int) -> list[str]:
+    def now(cls) -> str:
+        """
+        Within the same process, thread and context the returned value is greater than any previous values.
+        In all other cases, the value is unique and greater than values returned in prior milliseconds.
+        """
+        # TODO: Multiple contexts or threads are not yet supported
+        result = cls.from_uuid7(cls.now_uuid7())
+        return result
+
+    @classmethod
+    def many_uuid7(cls, count: int) -> tuple[UUID, ...]:
         """
         Within the same process, thread and context returned values are ordered and greater than any previous values.
         In all other cases, the returned values are ordered and greater than values returned in prior milliseconds.
         """
         # TODO: Improve performance of create_many by getting many values at the same time and ordering them
-        return [cls.create() for _ in range(count)]
+        return tuple(cls.now_uuid7() for _ in range(count))
+
+    @classmethod
+    def many(cls, count: int) -> tuple[str, ...]:
+        """
+        Within the same process, thread and context returned values are ordered and greater than any previous values.
+        In all other cases, the returned values are ordered and greater than values returned in prior milliseconds.
+        """
+        # TODO: Improve performance of create_many by getting many values at the same time and ordering them
+        return tuple(cls.from_uuid7(x) for x in cls.many_uuid7(count))
 
     @classmethod
     def from_uuid7(cls, value: UUID) -> str:
