@@ -25,7 +25,7 @@ from cl.runtime.records.typename import typename
 from cl.runtime.settings.dynaconf_loader import ENVVAR_PREFIX
 from cl.runtime.settings.dynaconf_loader import DynaconfLoader
 
-PROCESS_TIMESTAMP = Timestamp.create()
+PROCESS_TIMESTAMP = Timestamp.now()
 """Unique UUIDv7-based timestamp set during the Python process launch."""
 
 

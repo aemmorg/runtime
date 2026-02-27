@@ -23,7 +23,7 @@ def test_smoke(multi_db_fixture):
     """Test for SupervisedBinaryExperiment class."""
     # Create and run the experiment
     experiment = StubSupervisedBinaryExperiment(
-        experiment_id=f"test_supervised_binary_experiment.test_smoke.{Timestamp.create()}",
+        experiment_id=f"test_supervised_binary_experiment.test_smoke.{Timestamp.now()}",
         num_trials=5,
         cases=[
             Case(param_id="Test1"),
@@ -34,7 +34,7 @@ def test_smoke(multi_db_fixture):
 
 def test_plot(multi_db_fixture, work_dir_fixture):
     experiment = StubSupervisedBinaryExperiment(
-        experiment_id=f"Test.{Timestamp.create()}",
+        experiment_id=f"Test.{Timestamp.now()}",
         cases=[
             Case(param_id="Test1"),
             Case(param_id="Test2"),

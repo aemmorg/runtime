@@ -79,7 +79,7 @@ class Task(TaskKey, RecordMixin, ABC):
         # Set or validate task_id
         if self.task_id is None:
             # Automatically generate time-ordered unique task run identifier in UUIDv7 format if not specified
-            self.task_id = Timestamp.create()
+            self.task_id = Timestamp.now()
         else:
             # Otherwise validate
             Timestamp.validate(self.task_id, value_name="task_id", data_type="TaskKey")

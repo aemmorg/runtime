@@ -34,7 +34,7 @@ class DatetimeUtil:
         """Current datetime in UTC timezone rounded to the nearest whole milliseconds to match UUIDv7 RFC-9562 spec."""
         # Use Timestamp which relies on uuid_utils to avoid time ordering errors due to the difference
         # in how dt.datetime and uuid_utils read the system timer
-        return Timestamp.to_datetime(Timestamp.create())
+        return Timestamp.to_datetime(Timestamp.now())
 
     @classmethod
     def round(cls, value: dt.datetime) -> dt.datetime:

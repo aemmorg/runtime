@@ -63,7 +63,7 @@ class LogMessage(LogMessageKey, RecordMixin):
 
         # Set timestamp
         if self.timestamp is None:
-            self.timestamp = Timestamp.create()
+            self.timestamp = Timestamp.now()
 
         # Default to Error if not set
         if self.level is None:

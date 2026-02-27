@@ -126,7 +126,7 @@ def _make_filter_add_contextual_info(default_empty=None):
 
         # Time-ordered unique identifier
         if getattr(record, "timestamp", None) is None:
-            record.timestamp = Timestamp.create()
+            record.timestamp = Timestamp.now()
 
         # Human-readable time
         record.readable_time = DatetimeUtil.to_str(Timestamp.to_datetime(record.timestamp))

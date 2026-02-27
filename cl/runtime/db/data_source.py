@@ -109,7 +109,7 @@ class DataSource(DataSourceKey, RecordMixin):
 
         # Use globally unique UUIDv7-based timestamp if not specified
         if self.data_source_id is None:
-            self.data_source_id = Timestamp.create()
+            self.data_source_id = Timestamp.now()
 
         # Load the database object, use default DB if not specified
         if self.db is None:

@@ -26,22 +26,22 @@ def is_ordered(values: Iterable[str]):
     return all(values[i] < values[i + 1] for i in range(len(values) - 1))
 
 
-def test_create():
-    """Test Timestamp.create_one method."""
+def test_now():
+    """Test Timestamp.now method."""
 
-    result_1 = [Timestamp.create() for _ in range(10)]
-    result_2 = [Timestamp.create() for _ in range(10)]
+    result_1 = [Timestamp.now() for _ in range(10)]
+    result_2 = [Timestamp.now() for _ in range(10)]
     result = result_1 + result_2
     assert is_ordered(result_1)
     assert is_ordered(result_1)
     assert is_ordered(result)
 
 
-def test_create_many():
-    """Test Timestamp.create_one method."""
+def test_many():
+    """Test Timestamp.many method."""
 
-    result_1 = Timestamp.create_many(10)
-    result_2 = Timestamp.create_many(10)
+    result_1 = Timestamp.many(10)
+    result_2 = Timestamp.many(10)
     result = result_1 + result_2
     assert is_ordered(result_1)
     assert is_ordered(result_1)
@@ -58,7 +58,7 @@ def test_time_ordering():
         datetime_before = DatetimeUtil.floor(dt.datetime.now(dt.timezone.utc))
 
         # Get result
-        datetime_result = Timestamp.to_datetime(Timestamp.create())
+        datetime_result = Timestamp.to_datetime(Timestamp.now())
 
         # Datetime after rounded up to 1ms per UUIDv7 RFC-9562 standard
         datetime_after = DatetimeUtil.ceil(dt.datetime.now(dt.timezone.utc))

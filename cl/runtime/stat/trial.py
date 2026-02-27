@@ -39,4 +39,4 @@ class Trial(TrialKey, RecordMixin, ABC):
         """Use instead of __init__ in the builder pattern, invoked by the build method in base to derived order."""
         # Create a unique timestamp
         if self.timestamp is None:
-            self.timestamp = Timestamp.create()
+            self.timestamp = Timestamp.now()

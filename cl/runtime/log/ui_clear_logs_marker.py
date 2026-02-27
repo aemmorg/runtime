@@ -29,4 +29,4 @@ class UiClearLogsMarker(UiClearLogsMarkerKey, RecordMixin):
     def __init(self) -> None:
         """Use instead of __init__ in the builder pattern, invoked by the build method in base to derived order."""
         if self.clear_logs_timestamp is None:
-            self.clear_logs_timestamp = Timestamp.create()
+            self.clear_logs_timestamp = Timestamp.now()

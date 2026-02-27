@@ -31,4 +31,4 @@ class Storage(StorageKey, LifecycleMixin, RecordMixin, ABC):
         """Use instead of __init__ in the builder pattern, invoked by the build method in base to derived order."""
         if self.storage_id is None:
             # Use globally unique UUIDv7-based timestamp if not specified
-            self.storage_id = Timestamp.create()
+            self.storage_id = Timestamp.now()

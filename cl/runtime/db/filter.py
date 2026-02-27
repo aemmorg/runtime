@@ -30,4 +30,4 @@ class Filter(FilterKey, RecordMixin, ABC):
         """Use instead of __init__ in the builder pattern, invoked by the build method in base to derived order."""
         # Create a temporary identifier if not specified
         if self.filter_id is None:
-            self.filter_id = f"_{Timestamp.create()}"
+            self.filter_id = f"_{Timestamp.now()}"
