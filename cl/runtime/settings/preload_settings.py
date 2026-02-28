@@ -29,9 +29,7 @@ class PreloadSettings(Settings):
 
     Notes:
         - Each element of 'dir_path' will be searched for csv, yaml, and json subdirectories
-        - For CSV, the data is in csv/.../ClassName.csv where ... is optional dataset
-        - For YAML, the data is in yaml/ClassName/.../KeyToken1;KeyToken2.yaml where ... is optional dataset
-        - For JSON, the data is in json/ClassName/.../KeyToken1;KeyToken2.json where ... is optional dataset
+        - The data for ClassName is in ClassName.*.ext where * is an arbitrary string to permit multiple files per class
     """
 
     def __init(self) -> None:

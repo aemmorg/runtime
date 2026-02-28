@@ -193,11 +193,8 @@ class FileUtil:
         filename = os.path.basename(file_path)
         filename_without_extension, _ = os.path.splitext(filename)
 
-        # Extract class name prefix before any dot suffix (e.g. ClassName.20260225.csv -> ClassName)
-        class_name_token = filename_without_extension.split(".", 1)[0]
-
-        # Filename has format Type;KeyField1;KeyField2;...
-        type_from_filename = class_name_token.split(";", 1)[0]
+        # Filename has format Type.KeyField1;KeyField2...
+        type_from_filename = filename_without_extension.split(".", 1)[0]
 
         # Validate that filename is a valid type in TypeInfo
         try:
