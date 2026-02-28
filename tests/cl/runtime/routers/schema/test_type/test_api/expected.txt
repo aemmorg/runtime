@@ -11,11 +11,6 @@ cl.UiAppState:
       ModuleName: cl
     Name: UiAppStateKey
   Elements:
-  - Value:
-      Type: String
-    Name: Datatype
-    Comment: Record class name.
-    ReadOnly: true
   - Key:
       Module:
         ModuleName: cl

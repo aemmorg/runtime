@@ -98,10 +98,13 @@ class DataService(PydanticMixin):
         # Get schema dict for type
         schema_dict = cls._get_schema_dict(common_base_record_type)
 
-        # Serialize records in UI format and add '_key' and 'Datatype' attributes (Datatype first)
+        # Check if the table is polymorphic (has descendant types in DB)
+        include_datatype = TypeResponseUtil.has_descendant_types(common_base_record_type)
+
+        # Serialize records in UI format and add '_key' attribute (and 'Datatype' if polymorphic)
         data = [
             {
-                "Datatype": typename(type(x)),
+                **({"Datatype": typename(type(x))} if include_datatype else {}),
                 **_UI_SERIALIZER.serialize(x),
                 "_key": _KEY_SERIALIZER.serialize(x.get_key()),
             }
@@ -130,10 +133,13 @@ class DataService(PydanticMixin):
         # Get schema dict for type
         schema_dict = cls._get_schema_dict(type_)
 
-        # Serialize records in UI format and add '_key' and 'Datatype' attributes (Datatype first)
+        # Check if the table is polymorphic (has descendant types in DB)
+        include_datatype = TypeResponseUtil.has_descendant_types(type_)
+
+        # Serialize records in UI format and add '_key' attribute (and 'Datatype' if polymorphic)
         data = [
             {
-                "Datatype": typename(type(x)),
+                **({"Datatype": typename(type(x))} if include_datatype else {}),
                 **_UI_SERIALIZER.serialize(x),
                 "_key": _KEY_SERIALIZER.serialize(x.get_key()),
             }

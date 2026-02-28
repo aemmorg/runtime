@@ -23,6 +23,7 @@ from cl.runtime.records.protocols import is_primitive_type
 from cl.runtime.records.record_mixin import RecordMixin
 from cl.runtime.records.typename import typename
 from cl.runtime.records.typename import typeof
+from cl.runtime.routers.schema.type_response_util import TypeResponseUtil
 from cl.runtime.routers.storage.records_with_schema_response import RecordsWithSchemaResponse
 from cl.runtime.routers.storage.select_request import SelectRequest
 from cl.runtime.schema.type_info import TypeInfo
@@ -76,8 +77,13 @@ class SelectResponse(RecordsWithSchemaResponse):
         else:
             raise RuntimeError(f"Type {request.type_} is neither a record nor a key.")
 
+        # Check if the table is polymorphic (has descendant types in DB)
+        include_datatype = TypeResponseUtil.has_descendant_types(common_base_record_type)
+
         # Serialize records for table.
-        serialized_records = [cls._serialize_record_for_table(record) for record in records]
+        serialized_records = [
+            cls._serialize_record_for_table(record, include_datatype=include_datatype) for record in records
+        ]
 
         # Get schema dict for type.
         schema_dict = cls._get_schema_dict(common_base_record_type)
@@ -85,7 +91,7 @@ class SelectResponse(RecordsWithSchemaResponse):
         return SelectResponse(schema_=schema_dict, data=serialized_records)  # noqa
 
     @classmethod
-    def _serialize_record_for_table(cls, record: RecordMixin) -> dict[str, Any]:
+    def _serialize_record_for_table(cls, record: RecordMixin, *, include_datatype: bool) -> dict[str, Any]:
         """
         Serialize record to ui table format.
         Contains only fields of supported types, _key and _t will be added based on record.
@@ -107,9 +113,9 @@ class SelectResponse(RecordsWithSchemaResponse):
             )
         }
 
-        # Serialize record to ui format, filter table fields, and add Datatype (first), _t, and _key
+        # Serialize record to ui format, filter table fields, and add _t and _key
         record_type_name = typename(type(record))
-        table_dict = {"Datatype": record_type_name}
+        table_dict = {"Datatype": record_type_name} if include_datatype else {}
         table_dict.update(
             {k: v for k, v in DataSerializers.FOR_UI.serialize(record).items() if k in table_fields}
         )

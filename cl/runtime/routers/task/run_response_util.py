@@ -22,6 +22,7 @@ from cl.runtime.records.protocols import is_data_key_or_record_type
 from cl.runtime.records.protocols import is_key_type
 from cl.runtime.records.protocols import is_primitive_type
 from cl.runtime.records.protocols import is_sequence_type
+from cl.runtime.routers.schema.type_response_util import TypeResponseUtil
 from cl.runtime.routers.task.run_request import RunRequest
 from cl.runtime.serializers.data_serializers import DataSerializers
 from cl.runtime.tasks.instance_method_task import InstanceMethodTask
@@ -91,11 +92,12 @@ class RunResponseUtil:
             return result
         else:
             serialized = _ui_serializer.serialize(result)
-            if isinstance(serialized, dict):
+            include_datatype = is_data_key_or_record_type(type(result)) and TypeResponseUtil.has_descendant_types(type(result))
+            if include_datatype and isinstance(serialized, dict):
                 result_dict = {"Datatype": serialized.get("_t", "")}
                 result_dict.update(serialized)
                 serialized = result_dict
-            elif isinstance(serialized, (list, tuple)):
+            elif include_datatype and isinstance(serialized, (list, tuple)):
                 reordered = []
                 for item in serialized:
                     if isinstance(item, dict) and "_t" in item:

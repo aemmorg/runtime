@@ -15,6 +15,7 @@
 from __future__ import annotations
 from cl.runtime.contexts.context_manager import active
 from cl.runtime.db.data_source import DataSource
+from cl.runtime.routers.schema.type_response_util import TypeResponseUtil
 from cl.runtime.routers.storage.load_request import LoadRequest
 from cl.runtime.routers.storage.records_with_schema_response import RecordsWithSchemaResponse
 from cl.runtime.schema.type_decl import TypeDecl
@@ -61,18 +62,21 @@ class LoadResponse(RecordsWithSchemaResponse):
 
         # TODO: Decide if this is the right logic to return empty response if records not found
         if loaded_record_types:
+            # Find a common base
+            common_base = TypeInfo.get_common_base_type(types=loaded_record_types)
+
+            # Check if the table is polymorphic (has descendant types in DB)
+            include_datatype = TypeResponseUtil.has_descendant_types(common_base)
+
             # At least one of the records is not None
             serialized_records = []
             for record in loaded_records:
                 serialized = _UI_SERIALIZER.serialize(record)
-                if isinstance(serialized, dict):
+                if include_datatype and isinstance(serialized, dict):
                     result_dict = {"Datatype": serialized.get("_t", "")}
                     result_dict.update(serialized)
                     serialized = result_dict
                 serialized_records.append(serialized)
-
-            # Find a common base
-            common_base = TypeInfo.get_common_base_type(types=loaded_record_types)
 
             # Create schema dict for the common base
             schema_dict = cls._get_schema_dict(common_base)

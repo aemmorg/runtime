@@ -26,6 +26,17 @@ class TypeResponseUtil:
     """Response helper class for the /schema/typeV2 route."""
 
     @classmethod
+    def has_descendant_types(cls, record_type: type) -> bool:
+        """Check if RecordTypePresence has entries for any descendant of the given type."""
+        descendant_names = set(TypeInfo.get_child_type_names(record_type))
+        if not descendant_names:
+            return False
+        ds = active(DataSource)
+        present_record_types = ds.get_record_types(key_type=record_type.get_key_type())
+        present_type_names = {typename(x) for x in present_record_types}
+        return bool(descendant_names & present_type_names)
+
+    @classmethod
     def get_type(cls, request: TypeRequest) -> dict[str, dict]:
         """Supports /schema/type route."""
 
@@ -46,8 +57,8 @@ class TypeResponseUtil:
         record_type_key_in_result = f"{ModuleDeclKey().build().module_name}.{typename(record_type)}"
         record_type_result = result.get(record_type_key_in_result)
 
-        # Add a synthetic Datatype element to the schema (guard against cached results)
-        if record_type_result is not None:
+        # Add a synthetic Datatype element to the schema only if descendant types exist in DB
+        if record_type_result is not None and cls.has_descendant_types(record_type):
             elements = record_type_result.get("Elements", None)
             if elements is not None and not any(e.get("Name") == "Datatype" for e in elements):
                 datatype_element = {
