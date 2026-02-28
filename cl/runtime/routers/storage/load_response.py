@@ -15,6 +15,7 @@
 from __future__ import annotations
 from cl.runtime.contexts.context_manager import active
 from cl.runtime.db.data_source import DataSource
+from cl.runtime.db.data_source_util import DataSourceUtil
 from cl.runtime.routers.schema.type_response_util import TypeResponseUtil
 from cl.runtime.routers.storage.load_request import LoadRequest
 from cl.runtime.routers.storage.records_with_schema_response import RecordsWithSchemaResponse
@@ -68,12 +69,23 @@ class LoadResponse(RecordsWithSchemaResponse):
             # Check if the table is polymorphic (has descendant types in DB)
             include_datatype = TypeResponseUtil.has_descendant_types(common_base)
 
+            # Check if the parent chain has multiple datasets or databases
+            ds = active(DataSource)
+            include_dataset = DataSourceUtil.has_multiple_datasets(ds)
+            include_database = DataSourceUtil.has_multiple_databases(ds)
+
             # At least one of the records is not None
             serialized_records = []
             for record in loaded_records:
                 serialized = _UI_SERIALIZER.serialize(record)
-                if include_datatype and isinstance(serialized, dict):
-                    result_dict = {"Datatype": serialized.get("_t", "")}
+                if isinstance(serialized, dict) and (include_datatype or include_dataset or include_database):
+                    result_dict = {}
+                    if include_datatype:
+                        result_dict["Datatype"] = serialized.get("_t", "")
+                    if include_dataset:
+                        result_dict["Dataset"] = ds.dataset.dataset_id
+                    if include_database:
+                        result_dict["Database"] = ds.db.db_id
                     result_dict.update(serialized)
                     serialized = result_dict
                 serialized_records.append(serialized)

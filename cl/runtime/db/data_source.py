@@ -101,6 +101,9 @@ class DataSource(DataSourceKey, RecordMixin):
     _backup_loaded_tables: set | None = None
     """Tracks which key_types have been loaded from backup into the main DB."""
 
+    _parent_chain_cache: list | None = None
+    """Cached parent chain populated by DataSourceUtil (optional)."""
+
     def get_key(self) -> DataSourceKey:
         return DataSourceKey(data_source_id=self.data_source_id).build()
 

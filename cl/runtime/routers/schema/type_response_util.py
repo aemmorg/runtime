@@ -14,7 +14,9 @@
 
 from __future__ import annotations
 from cl.runtime.contexts.context_manager import active
+from cl.runtime.contexts.context_manager import active_or_none
 from cl.runtime.db.data_source import DataSource
+from cl.runtime.db.data_source_util import DataSourceUtil
 from cl.runtime.records.typename import typename
 from cl.runtime.routers.schema.type_request import TypeRequest
 from cl.runtime.schema.module_decl_key import ModuleDeclKey
@@ -68,6 +70,35 @@ class TypeResponseUtil:
                     "ReadOnly": True,
                 }
                 elements.insert(0, datatype_element)
+
+        # Add synthetic Dataset and Database elements if the parent chain has multiple values
+        ds = active_or_none(DataSource)
+        if record_type_result is not None and ds is not None:
+            include_dataset = DataSourceUtil.has_multiple_datasets(ds)
+            include_database = DataSourceUtil.has_multiple_databases(ds)
+        else:
+            include_dataset = False
+            include_database = False
+        if record_type_result is not None and (include_dataset or include_database):
+            elements = record_type_result.get("Elements", None)
+            if elements is not None:
+                # Insert after Datatype if present, otherwise at position 0
+                insert_idx = 1 if any(e.get("Name") == "Datatype" for e in elements) else 0
+                # Insert Database first, then Dataset at the same index so Dataset ends up before Database
+                if include_database and not any(e.get("Name") == "Database" for e in elements):
+                    elements.insert(insert_idx, {
+                        "Value": {"Type": "String"},
+                        "Name": "Database",
+                        "Comment": "Database identifier.",
+                        "ReadOnly": True,
+                    })
+                if include_dataset and not any(e.get("Name") == "Dataset" for e in elements):
+                    elements.insert(insert_idx, {
+                        "Value": {"Type": "String"},
+                        "Name": "Dataset",
+                        "Comment": "Dataset of the data source.",
+                        "ReadOnly": True,
+                    })
 
         # Add synthetic table item to schema
         table_type_key_in_result = f"{ModuleDeclKey().build().module_name}.{request.type_name}"

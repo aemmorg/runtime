@@ -15,6 +15,7 @@
 from typing import Any
 from cl.runtime.contexts.context_manager import active
 from cl.runtime.db.data_source import DataSource
+from cl.runtime.db.data_source_util import DataSourceUtil
 from cl.runtime.primitive.case_util import CaseUtil
 from cl.runtime.records.for_pydantic.pydantic_mixin import PydanticMixin
 from cl.runtime.records.key_mixin import KeyMixin
@@ -93,17 +94,36 @@ class RunResponseUtil:
         else:
             serialized = _ui_serializer.serialize(result)
             include_datatype = is_data_key_or_record_type(type(result)) and TypeResponseUtil.has_descendant_types(type(result))
-            if include_datatype and isinstance(serialized, dict):
-                result_dict = {"Datatype": serialized.get("_t", "")}
+
+            # Check if the parent chain has multiple datasets or databases
+            ds = active(DataSource)
+            include_dataset = DataSourceUtil.has_multiple_datasets(ds)
+            include_database = DataSourceUtil.has_multiple_databases(ds)
+
+            if isinstance(serialized, dict) and (include_datatype or include_dataset or include_database):
+                result_dict = {}
+                if include_datatype:
+                    result_dict["Datatype"] = serialized.get("_t", "")
+                if include_dataset:
+                    result_dict["Dataset"] = ds.dataset.dataset_id
+                if include_database:
+                    result_dict["Database"] = ds.db.db_id
                 result_dict.update(serialized)
                 serialized = result_dict
-            elif include_datatype and isinstance(serialized, (list, tuple)):
+            elif isinstance(serialized, (list, tuple)) and (include_datatype or include_dataset or include_database):
                 reordered = []
                 for item in serialized:
-                    if isinstance(item, dict) and "_t" in item:
-                        result_dict = {"Datatype": item["_t"]}
-                        result_dict.update(item)
-                        item = result_dict
+                    if isinstance(item, dict):
+                        result_dict = {}
+                        if include_datatype and "_t" in item:
+                            result_dict["Datatype"] = item["_t"]
+                        if include_dataset:
+                            result_dict["Dataset"] = ds.dataset.dataset_id
+                        if include_database:
+                            result_dict["Database"] = ds.db.db_id
+                        if result_dict:
+                            result_dict.update(item)
+                            item = result_dict
                     reordered.append(item)
                 serialized = reordered
             return serialized
