@@ -14,10 +14,8 @@
 
 import pytest
 import os
-import shutil
 import subprocess
 import sys
-import tempfile
 from cl.runtime.prebuild.docstring_util import DocstringUtil
 
 _STUBS_DIR = os.path.normpath(
@@ -76,26 +74,25 @@ def test_fix_docstrings():
     stub_path = os.path.join(_STUBS_DIR, invalid_docstrings_filename)
     assert os.path.isfile(stub_path), f"Stub file not found: {stub_path}"
 
-    # Verify the stub file has violations before fixing
-    before_count = _count_ruff_d_violations(stub_path)
-    assert before_count > 0, f"Expected pydocstyle violations in {invalid_docstrings_filename}, found {before_count}"
+    # Save the original content so it can be restored after the test
+    with open(stub_path, "r", encoding="utf-8") as f:
+        original_content = f.read()
 
-    # Copy to a temp file and fix it
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as tmp:
-        tmp_path = tmp.name
     try:
-        shutil.copy2(stub_path, tmp_path)
+        # Verify the stub file has violations before fixing
+        before_count = _count_ruff_d_violations(stub_path)
+        assert before_count > 0, f"Expected pydocstyle violations in {invalid_docstrings_filename}, found {before_count}"
 
-        # Run ruff fix on the temp copy
+        # Run ruff fix on the stub file
         subprocess.run(
-            _RUFF_D_ARGS + ["--fix", "--unsafe-fixes", tmp_path],
+            _RUFF_D_ARGS + ["--fix", "--unsafe-fixes", stub_path],
             capture_output=True,
             text=True,
         )
 
         # Verify no fixable violations remain after fixing
         result = subprocess.run(
-            _RUFF_D_ARGS + [tmp_path],
+            _RUFF_D_ARGS + [stub_path],
             capture_output=True,
             text=True,
         )
@@ -105,7 +102,9 @@ def test_fix_docstrings():
                 fixable_count += 1
         assert fixable_count == 0, f"Expected 0 fixable pydocstyle violations after fix, found {fixable_count}"
     finally:
-        os.unlink(tmp_path)
+        # Restore the original content so the test is repeatable
+        with open(stub_path, "w", encoding="utf-8") as f:
+            f.write(original_content)
 
 
 if __name__ == "__main__":
