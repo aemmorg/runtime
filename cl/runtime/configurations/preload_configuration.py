@@ -22,6 +22,7 @@ from cl.runtime.contexts.context_manager import active
 from cl.runtime.db.data_source import DataSource
 from cl.runtime.file.csv_reader import CsvReader
 from cl.runtime.file.json_reader import JsonReader
+from cl.runtime.file.jsonl_reader import JsonlReader
 from cl.runtime.file.yaml_reader import YamlReader
 from cl.runtime.settings.preload_settings import PreloadSettings
 
@@ -58,6 +59,7 @@ class PreloadConfiguration(Configuration):
         reader_dict = {
             "csv": CsvReader().build(),
             "json": JsonReader().build(),
+            "jsonl": JsonlReader().build(),
             "yaml": YamlReader().build(),
         }
 

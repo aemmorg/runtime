@@ -1,0 +1,4 @@
+JSONL files:
+  - StubDataclassComposite.jsonl (3 records)
+  - StubDataclassDerived.jsonl (2 records)
+  - StubDataclassNestedFields.jsonl (3 records)

@@ -43,6 +43,9 @@ class FileKind(IntEnum):
     YAML = auto()
     """YAML data."""
 
+    JSONL = auto()
+    """JSONL (JSON Lines) data."""
+
     ZIP = auto()
     """ZIP archive."""
 

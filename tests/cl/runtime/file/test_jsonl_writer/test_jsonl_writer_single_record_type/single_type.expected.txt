@@ -1,0 +1,4 @@
+File: StubDataclassDerived.jsonl
+{"_type":"StubDataclassDerived","id":"test_id_1","derived_str_field":"test_value_1"}
+{"_type":"StubDataclassDerived","id":"test_id_2","derived_str_field":"test_value_2"}
+{"_type":"StubDataclassDerived","id":"test_id_3","derived_str_field":"test_value_3"}
