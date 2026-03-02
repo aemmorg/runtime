@@ -220,6 +220,8 @@ class PrimitiveSerializer(Serializer):
                 return data
             elif value_format == TimeFormat.DEFAULT:
                 return TimeUtil.to_iso_str(data)
+            elif value_format == TimeFormat.COMPACT_STR:
+                return TimeUtil.to_compact_str(data)
             elif value_format == TimeFormat.ISO_INT:
                 return TimeUtil.to_iso_int(data)
             else:
@@ -458,6 +460,14 @@ class PrimitiveSerializer(Serializer):
                     return TimeUtil.from_iso_str(data)
                 elif isinstance(data, dt.time):
                     # Pass through dt.time
+                    return data
+                else:
+                    raise self._deserialization_error(data, schema_type_name, value_format)
+            elif value_format == TimeFormat.COMPACT_STR:
+                if isinstance(data, str):
+                    data = CsvUtil.strip_quotes(data)
+                    return TimeUtil.from_compact_str(data)
+                elif isinstance(data, dt.time):
                     return data
                 else:
                     raise self._deserialization_error(data, schema_type_name, value_format)

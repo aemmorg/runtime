@@ -18,6 +18,9 @@ import re
 # Compile the regex pattern for time in ISO-8601 format hh:mm:ss.fff without timezone
 time_pattern = re.compile(r"^\d{2}:\d{2}:\d{2}\.\d{3}$")
 
+# Compile the regex pattern for time in compact format hhmmssfff without timezone
+compact_time_pattern = re.compile(r"^\d{9}$")
+
 
 class TimeUtil:
     """Utility class for dt.time."""
@@ -83,6 +86,26 @@ class TimeUtil:
             millisecond=round(time_from_str.microsecond / 1000.0),
         )
         return result
+
+    @classmethod
+    def to_compact_str(cls, value: dt.time) -> str:
+        """Convert to string in compact format without separators: 'hhmmssfff'"""
+
+        # Validate timezone and rounding to milliseconds
+        cls.validate_time(value)
+
+        # Already round number of milliseconds
+        millisecond = value.microsecond // 1000
+
+        # Convert to string
+        result = f"{value.hour:02}{value.minute:02}{value.second:02}{millisecond:03}"
+        return result
+
+    @classmethod
+    def from_compact_str(cls, value: str) -> dt.time:
+        """Convert from string in compact format without separators: 'hhmmssfff'"""
+        cls.validate_compact_str(value)
+        return cls.from_iso_int(int(value))
 
     @classmethod
     def to_fields(cls, value: dt.time) -> tuple[int, int, int, int]:
@@ -162,6 +185,12 @@ class TimeUtil:
                 f"Time string {value} must be in ISO-8601 format rounded to milliseconds "
                 f"without timezone: 'hh:mm:ss.fff'."
             )
+
+    @classmethod
+    def validate_compact_str(cls, value: str) -> None:
+        """Validate that time string is in compact format: 'hhmmssfff'"""
+        if not compact_time_pattern.match(value):
+            raise RuntimeError(f"Time string {value} must be in compact format: 'hhmmssfff'.")
 
     @classmethod
     def validate_time(cls, value: dt.time) -> None:
