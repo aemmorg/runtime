@@ -25,5 +25,8 @@ class TimeFormat(IntEnum):
     DEFAULT = auto()
     """ISO 8601 time string to millisecond precision without timezone: hh:mm:ss.fff"""
 
+    COMPACT_STR = auto()
+    """Compact time string to millisecond precision without separators or timezone: hhmmssfff"""
+
     ISO_INT = auto()
     """ISO 8601 readable int to millisecond precision without timezone: hhmmssfff"""

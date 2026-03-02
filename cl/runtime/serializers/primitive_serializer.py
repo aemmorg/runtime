@@ -208,9 +208,9 @@ class PrimitiveSerializer(Serializer):
             if (value_format := self.date_format) == DateFormat.PASSTHROUGH:
                 return data
             elif value_format == DateFormat.DEFAULT:
-                return DateUtil.to_str(data)
-            elif value_format == DateFormat.COMPACT:
-                return DateUtil.to_compact(data)
+                return DateUtil.to_iso_str(data)
+            elif value_format == DateFormat.COMPACT_STR:
+                return DateUtil.to_compact_str(data)
             elif value_format == DateFormat.ISO_INT:
                 return DateUtil.to_iso_int(data)
             else:
@@ -219,7 +219,7 @@ class PrimitiveSerializer(Serializer):
             if (value_format := self.time_format) == TimeFormat.PASSTHROUGH:
                 return data
             elif value_format == TimeFormat.DEFAULT:
-                return TimeUtil.to_str(data)
+                return TimeUtil.to_iso_str(data)
             elif value_format == TimeFormat.ISO_INT:
                 return TimeUtil.to_iso_int(data)
             else:
@@ -228,9 +228,9 @@ class PrimitiveSerializer(Serializer):
             if (value_format := self.datetime_format) == DatetimeFormat.PASSTHROUGH:
                 return data
             elif value_format == DatetimeFormat.DEFAULT:
-                return DatetimeUtil.to_str(data)
-            elif value_format == DatetimeFormat.COMPACT:
-                return DatetimeUtil.to_compact(data)
+                return DatetimeUtil.to_iso_str(data)
+            elif value_format == DatetimeFormat.COMPACT_STR:
+                return DatetimeUtil.to_compact_str(data)
             else:
                 raise ErrorUtil.enum_value_error(value_format, DatetimeFormat)
         elif schema_type_name == "UUID":
@@ -421,7 +421,7 @@ class PrimitiveSerializer(Serializer):
                     # Deserialize from string, strip leading and trailing triple quotes if present
                     data = CsvUtil.strip_quotes(data)
                     # Date as string in ISO-8601 string format ("yyyy-mm-dd")
-                    return DateUtil.from_str(data)
+                    return DateUtil.from_iso_str(data)
                 elif isinstance(data, dt.date):
                     # Pass through dt.date
                     return data
@@ -438,10 +438,10 @@ class PrimitiveSerializer(Serializer):
                     return DateUtil.from_iso_int(data)
                 else:
                     raise self._deserialization_error(data, schema_type_name, value_format)
-            elif value_format == DateFormat.COMPACT:
+            elif value_format == DateFormat.COMPACT_STR:
                 if isinstance(data, str):
                     data = CsvUtil.strip_quotes(data)
-                    return DateUtil.from_compact(data)
+                    return DateUtil.from_compact_str(data)
                 elif isinstance(data, dt.date):
                     return data
                 else:
@@ -455,7 +455,7 @@ class PrimitiveSerializer(Serializer):
                     # Deserialize from string, strip leading and trailing triple quotes if present
                     data = CsvUtil.strip_quotes(data)
                     # Convert from string in ISO-8601 format with milliseconds ("hh:mm:ss.fff")
-                    return TimeUtil.from_str(data)
+                    return TimeUtil.from_iso_str(data)
                 elif isinstance(data, dt.time):
                     # Pass through dt.time
                     return data
@@ -479,16 +479,16 @@ class PrimitiveSerializer(Serializer):
                     # Deserialize from string, strip leading and trailing triple quotes if present
                     data = CsvUtil.strip_quotes(data)
                     # Convert from string in ISO-8601 format with milliseconds in UTC ("yyyy-mm-ddThh:mm:ss.fffZ")
-                    return DatetimeUtil.from_str(data)
+                    return DatetimeUtil.from_iso_str(data)
                 elif isinstance(data, dt.datetime):
                     # Pass through dt.datetime
                     return data
                 else:
                     raise self._deserialization_error(data, schema_type_name, value_format)
-            elif value_format == DatetimeFormat.COMPACT:
+            elif value_format == DatetimeFormat.COMPACT_STR:
                 if isinstance(data, str):
                     data = CsvUtil.strip_quotes(data)
-                    return DatetimeUtil.from_compact(data)
+                    return DatetimeUtil.from_compact_str(data)
                 elif isinstance(data, dt.datetime):
                     return data
                 else:

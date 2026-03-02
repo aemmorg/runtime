@@ -154,11 +154,11 @@ class DatasetUtil:
 
         elif isinstance(dataset_level, dt.date):
             # Convert to ISO-8601 format for date (yyyy-mm-dd)
-            return DateUtil.to_str(dataset_level)
+            return DateUtil.to_iso_str(dataset_level)
         elif isinstance(dataset_level, dt.datetime):
             # Convert to ISO-8601 format for datetime (yyyy-mm-dd) with validation
             # Datetime must be rounded to milliseconds and in UTC timezone
-            return DatetimeUtil.to_str(dataset_level)
+            return DatetimeUtil.to_iso_str(dataset_level)
         else:
             # TODO: Add other primitive types
             raise Exception(

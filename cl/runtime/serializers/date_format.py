@@ -25,8 +25,8 @@ class DateFormat(IntEnum):
     DEFAULT = auto()
     """ISO 8601 date string: yyyy-mm-dd"""
 
+    COMPACT_STR = auto()
+    """Compact date string without separators: yyyymmdd"""
+
     ISO_INT = auto()
     """ISO 8601 readable int: yyyymmdd"""
-
-    COMPACT = auto()
-    """Compact date string without separators: yyyymmdd"""

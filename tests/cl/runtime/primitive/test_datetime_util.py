@@ -188,26 +188,26 @@ def test_to_from_str():
 
     for sample in get_valid_samples():
         from_iso_int_result = DatetimeUtil.from_iso_int(sample[0])
-        from_str_result = DatetimeUtil.from_str(sample[1])
+        from_str_result = DatetimeUtil.from_iso_str(sample[1])
         assert from_str_result == from_iso_int_result
 
-        to_str_result = DatetimeUtil.to_str(from_iso_int_result)
+        to_str_result = DatetimeUtil.to_iso_str(from_iso_int_result)
         assert to_str_result == sample[1]
 
     for sample in get_invalid_datetime_samples():
         with pytest.raises(Exception):
-            DatetimeUtil.to_str(sample)
+            DatetimeUtil.to_iso_str(sample)
 
     for sample in get_invalid_string_samples():
         with pytest.raises(Exception):
-            DatetimeUtil.from_str(sample)
+            DatetimeUtil.from_iso_str(sample)
 
 
 def test_to_from_iso_int():
     """Test for to_iso_int, from_iso_int methods."""
 
     for sample in get_valid_samples():
-        from_str = DatetimeUtil.from_str(sample[1])
+        from_str = DatetimeUtil.from_iso_str(sample[1])
         from_iso_int = DatetimeUtil.from_iso_int(sample[0])
         assert from_iso_int == from_str
 

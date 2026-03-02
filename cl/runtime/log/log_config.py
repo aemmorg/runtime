@@ -129,7 +129,7 @@ def _make_filter_add_contextual_info(default_empty=None):
             record.timestamp = Timestamp.now()
 
         # Human-readable time
-        record.readable_time = DatetimeUtil.to_str(Timestamp.to_datetime(record.timestamp))
+        record.readable_time = DatetimeUtil.to_iso_str(Timestamp.to_datetime(record.timestamp))
 
         # PID of process
         record.pid = os.getpid()

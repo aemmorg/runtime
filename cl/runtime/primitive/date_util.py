@@ -26,32 +26,32 @@ class DateUtil:
     """Utility class for dt.date."""
 
     @classmethod
-    def to_str(cls, value: dt.date) -> str:
+    def to_iso_str(cls, value: dt.date) -> str:
         """Convert to string in ISO-8601 format: 'yyyy-mm-dd'"""
         result = f"{value.year:04}-{value.month:02}-{value.day:02}"
         return result
 
     @classmethod
-    def from_str(cls, value: str) -> dt.date:
+    def from_iso_str(cls, value: str) -> dt.date:
         """Convert from string in ISO-8601 format: 'yyyy-mm-dd'"""
 
         # Validate string format
-        cls.validate_str(value)
+        cls.validate_iso_str(value)
 
         # Convert to date using strict parsing
         result = dt.date.fromisoformat(value)
         return result
 
     @classmethod
-    def to_compact(cls, value: dt.date) -> str:
+    def to_compact_str(cls, value: dt.date) -> str:
         """Convert to string in compact format without separators: 'yyyymmdd'"""
         result = f"{value.year:04}{value.month:02}{value.day:02}"
         return result
 
     @classmethod
-    def from_compact(cls, value: str) -> dt.date:
+    def from_compact_str(cls, value: str) -> dt.date:
         """Convert from string in compact format without separators: 'yyyymmdd'"""
-        cls.validate_compact(value)
+        cls.validate_compact_str(value)
         return cls.from_iso_int(int(value))
 
     @classmethod
@@ -99,13 +99,13 @@ class DateUtil:
         return result
 
     @classmethod
-    def validate_str(cls, value: str) -> None:
+    def validate_iso_str(cls, value: str) -> None:
         """Validate that date string is in ISO-8601 format: 'yyyy-mm-dd'"""
         if not date_pattern.match(value):
             raise RuntimeError(f"Date string {value} must be in ISO-8601 format: 'yyyy-mm-dd'.")
 
     @classmethod
-    def validate_compact(cls, value: str) -> None:
+    def validate_compact_str(cls, value: str) -> None:
         """Validate that date string is in compact format: 'yyyymmdd'"""
         if not compact_date_pattern.match(value):
             raise RuntimeError(f"Date string {value} must be in compact format: 'yyyymmdd'.")

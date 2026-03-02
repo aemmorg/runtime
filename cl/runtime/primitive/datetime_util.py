@@ -52,7 +52,7 @@ class DatetimeUtil:
         return cls._round(value, ceil)
 
     @classmethod
-    def to_str(cls, value: dt.datetime) -> str:
+    def to_iso_str(cls, value: dt.datetime) -> str:
         """Convert to string in ISO-8601 format rounded to milliseconds: 'yyyy-mm-ddThh:mm:ss.fffZ'"""
 
         # Validate timezone and rounding to milliseconds
@@ -69,11 +69,11 @@ class DatetimeUtil:
         return result
 
     @classmethod
-    def from_str(cls, value: str) -> dt.datetime:
+    def from_iso_str(cls, value: str) -> dt.datetime:
         """Convert from string in ISO-8601 format rounded to milliseconds: 'yyyy-mm-ddThh:mm:ss.fffZ'"""
 
         # Validate string format
-        DatetimeUtil.validate_str(value)
+        DatetimeUtil.validate_iso_str(value)
 
         # Convert assuming rounding to milliseconds is already done
         datetime_from_str: dt.datetime = dt.datetime.fromisoformat(value[:-1])
@@ -90,7 +90,7 @@ class DatetimeUtil:
         return result
 
     @classmethod
-    def to_compact(cls, value: dt.datetime) -> str:
+    def to_compact_str(cls, value: dt.datetime) -> str:
         """Convert to string in compact format with dash separator: 'yyyymmdd-hhmmssfff'"""
 
         # Validate timezone and rounding to milliseconds
@@ -105,10 +105,10 @@ class DatetimeUtil:
         return result
 
     @classmethod
-    def from_compact(cls, value: str) -> dt.datetime:
+    def from_compact_str(cls, value: str) -> dt.datetime:
         """Convert from string in compact format with dash separator: 'yyyymmdd-hhmmssfff'"""
 
-        DatetimeUtil.validate_compact(value)
+        DatetimeUtil.validate_compact_str(value)
 
         year = int(value[0:4])
         month = int(value[4:6])
@@ -233,7 +233,7 @@ class DatetimeUtil:
         return result
 
     @classmethod
-    def validate_str(cls, value: str) -> None:
+    def validate_iso_str(cls, value: str) -> None:
         """Validate that datetime string is in ISO-8601 format rounded to milliseconds: 'yyyy-mm-ddThh:mm:ss.fffZ'"""
         if not datetime_pattern.match(value):
             raise RuntimeError(
@@ -242,7 +242,7 @@ class DatetimeUtil:
             )
 
     @classmethod
-    def validate_compact(cls, value: str) -> None:
+    def validate_compact_str(cls, value: str) -> None:
         """Validate that datetime string is in compact format: 'yyyymmdd-hhmmssfff'"""
         if not compact_datetime_pattern.match(value):
             raise RuntimeError(f"Datetime string {value} must be in compact format: 'yyyymmdd-hhmmssfff'.")

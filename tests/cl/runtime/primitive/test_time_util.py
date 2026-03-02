@@ -110,26 +110,26 @@ def test_to_from_str():
 
     for sample in get_valid_samples():
         from_iso_int_result = TimeUtil.from_iso_int(sample[0])
-        from_str_result = TimeUtil.from_str(sample[1])
+        from_str_result = TimeUtil.from_iso_str(sample[1])
         assert from_str_result == from_iso_int_result
 
-        to_str_result = TimeUtil.to_str(from_iso_int_result)
+        to_str_result = TimeUtil.to_iso_str(from_iso_int_result)
         assert to_str_result == sample[1]
 
     for sample in get_invalid_time_samples():
         with pytest.raises(Exception):
-            TimeUtil.to_str(sample)
+            TimeUtil.to_iso_str(sample)
 
     for sample in get_invalid_string_samples():
         with pytest.raises(Exception):
-            TimeUtil.from_str(sample)
+            TimeUtil.from_iso_str(sample)
 
 
 def test_to_from_iso_int():
     """Test for to_iso_int, from_iso_int methods."""
 
     for sample in get_valid_samples():
-        from_str = TimeUtil.from_str(sample[1])
+        from_str = TimeUtil.from_iso_str(sample[1])
         from_iso_int = TimeUtil.from_iso_int(sample[0])
         assert from_iso_int == from_str
 

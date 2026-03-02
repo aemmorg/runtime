@@ -123,9 +123,9 @@ class PrimitiveSerializers:
         bool_format=BoolFormat.DEFAULT,  # TODO: Review, should be passthrough
         int_format=IntFormat.PASSTHROUGH,
         long_format=LongFormat.PASSTHROUGH,
-        date_format=DateFormat.COMPACT,
+        date_format=DateFormat.COMPACT_STR,
         time_format=TimeFormat.DEFAULT,
-        datetime_format=DatetimeFormat.COMPACT,
+        datetime_format=DatetimeFormat.COMPACT_STR,
         uuid_format=UuidFormat.DEFAULT,
         timestamp_format=TimestampFormat.UUID,  # TODO: Review, should accept DEFAULT
         bytes_format=BytesFormat.COMPACT,

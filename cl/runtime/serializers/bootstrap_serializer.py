@@ -197,9 +197,9 @@ class BootstrapSerializer(Serializer):
             if (value_format := self.date_format) == DateFormat.PASSTHROUGH:
                 return data
             elif value_format == DateFormat.DEFAULT:
-                return DateUtil.to_str(data)
-            elif value_format == DateFormat.COMPACT:
-                return DateUtil.to_compact(data)
+                return DateUtil.to_iso_str(data)
+            elif value_format == DateFormat.COMPACT_STR:
+                return DateUtil.to_compact_str(data)
             elif value_format == DateFormat.ISO_INT:
                 return DateUtil.to_iso_int(data)
             else:
@@ -208,7 +208,7 @@ class BootstrapSerializer(Serializer):
             if (value_format := self.time_format) == TimeFormat.PASSTHROUGH:
                 return data
             elif value_format == TimeFormat.DEFAULT:
-                return TimeUtil.to_str(data)
+                return TimeUtil.to_iso_str(data)
             elif value_format == TimeFormat.ISO_INT:
                 return TimeUtil.to_iso_int(data)
             else:
@@ -217,9 +217,9 @@ class BootstrapSerializer(Serializer):
             if (value_format := self.datetime_format) == DatetimeFormat.PASSTHROUGH:
                 return data
             elif value_format == DatetimeFormat.DEFAULT:
-                return DatetimeUtil.to_str(data)
-            elif value_format == DatetimeFormat.COMPACT:
-                return DatetimeUtil.to_compact(data)
+                return DatetimeUtil.to_iso_str(data)
+            elif value_format == DatetimeFormat.COMPACT_STR:
+                return DatetimeUtil.to_compact_str(data)
             else:
                 raise ErrorUtil.enum_value_error(value_format, DatetimeFormat)
         elif data_type_name == "UUID":

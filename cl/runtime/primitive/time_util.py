@@ -54,8 +54,8 @@ class TimeUtil:
         return result
 
     @classmethod
-    def to_str(cls, value: dt.time) -> str:
-        """Convert to string in ISO-8601 format rounded to milliseconds: 'hh:mm:ss.fff'"""
+    def to_iso_str(cls, value: dt.time) -> str:
+        """Convert to string in ISO-8601 format rounded to milliseconds without timezone: 'hh:mm:ss.fff'"""
 
         # Validate timezone and rounding to milliseconds
         cls.validate_time(value)
@@ -68,11 +68,11 @@ class TimeUtil:
         return result
 
     @classmethod
-    def from_str(cls, value: str) -> dt.time:
-        """Convert from string in ISO-8601 format rounded to milliseconds: 'hh:mm:ss.fff'"""
+    def from_iso_str(cls, value: str) -> dt.time:
+        """Convert from string in ISO-8601 format rounded to milliseconds without timezone: 'hh:mm:ss.fff'"""
 
         # Validate string format and that tzinfo is None
-        cls.validate_str(value)
+        cls.validate_iso_str(value)
 
         # Convert assuming rounding to milliseconds is already done
         time_from_str: dt.time = dt.time.fromisoformat(value)
@@ -155,8 +155,8 @@ class TimeUtil:
         return result
 
     @classmethod
-    def validate_str(cls, value: str) -> None:
-        """Validate that time string is in ISO-8601 format rounded to milliseconds: 'hh:mm:ss.fff'"""
+    def validate_iso_str(cls, value: str) -> None:
+        """Validate ISO-8601 format rounded to milliseconds without timezone: 'hh:mm:ss.fff'"""
         if not time_pattern.match(value):
             raise RuntimeError(
                 f"Time string {value} must be in ISO-8601 format rounded to milliseconds "
