@@ -23,6 +23,7 @@ from cl.runtime.db.data_source import DataSource
 from cl.runtime.file.csv_reader import CsvReader
 from cl.runtime.file.json_reader import JsonReader
 from cl.runtime.file.jsonl_reader import JsonlReader
+from cl.runtime.file.excel_reader import ExcelReader
 from cl.runtime.file.yaml_reader import YamlReader
 from cl.runtime.settings.preload_settings import PreloadSettings
 
@@ -54,6 +55,23 @@ class PreloadConfiguration(Configuration):
         # Use preload_dirs if dirs field is None
         preload_settings = PreloadSettings.instance()
         dirs = self.dirs or preload_settings.preload_dirs
+
+        # Convert XLSX files to CSV before loading
+        ExcelReader.convert_to_csv(
+            dirs=dirs,
+            ext="xlsx",
+            file_include_patterns=self.file_include_patterns,
+            file_exclude_patterns=self.file_exclude_patterns,
+        )
+
+        # Fix CSV files on disk before loading to ensure DB gets data in the correct format
+        CsvReader.check_or_fix_format(
+            dirs=dirs,
+            ext="csv",
+            fix=True,
+            file_include_patterns=self.file_include_patterns,
+            file_exclude_patterns=self.file_exclude_patterns,
+        )
 
         # Specify readers for each file extension
         reader_dict = {

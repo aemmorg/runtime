@@ -219,10 +219,12 @@ class CsvReader(Reader):
         # Convert PascalCase column headers to snake_case field names
         row_dict = {CaseUtil.pascal_to_snake_case(k) if not k.startswith("_") else k: v for k, v in row_dict.items()}
 
-        # Normalize Excel-modified formats (thousand separators in numbers, locale-specific dates and datetimes)
+        # Normalize Excel-modified formats (thousand separators in numbers, locale-specific dates, times and datetimes)
         row_dict = {
             k: (
-                CsvUtil.normalize_numeric_str(CsvUtil.normalize_datetime_str(CsvUtil.normalize_date_str(v)))
+                CsvUtil.normalize_numeric_str(
+                    CsvUtil.normalize_datetime_str(CsvUtil.normalize_time_str(CsvUtil.normalize_date_str(v)))
+                )
                 if v is not None
                 else v
             )

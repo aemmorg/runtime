@@ -33,6 +33,12 @@ class CsvUtil:
     # Compact datetime pattern (yyyymmdd-hhmmssfff)
     _COMPACT_DATETIME_RE = re.compile(r"^\d{8}-\d{9}$")
 
+    # ISO-8601 time pattern (hh:mm:ss.fff)
+    _ISO_TIME_RE = re.compile(r"^\d{2}:\d{2}:\d{2}\.\d{3}$")
+
+    # Compact time pattern (hhmmssfff)
+    _COMPACT_TIME_RE = re.compile(r"^\d{9}$")
+
     # Pattern for values that look like dates (contain / or month names)
     _DATE_LIKE_RE = re.compile(
         r"(?:\d{1,2}/\d{1,2}/|\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec))",
@@ -99,6 +105,10 @@ class CsvUtil:
         if not cls._DATE_LIKE_RE.search(value):
             return value
 
+        # Require at least 2 numeric groups to avoid parsing partial dates like "Aug 2021" (month-year only)
+        if len(re.findall(r"\d+", value)) < 2:
+            return value
+
         # Try dateutil parsing as a fallback for Excel-reformatted dates
         try:
             from dateutil.parser import parse
@@ -131,6 +141,26 @@ class CsvUtil:
         return value
 
     @classmethod
+    def normalize_time_str(cls, value: str) -> str:
+        """Normalize a time string to compact format (hhmmssfff).
+
+        Converts old ISO-8601 format (hh:mm:ss.fff) to compact format.
+        Returns the original string if it cannot be recognized as a time.
+        """
+
+        value = cls.strip_quotes(value)
+
+        # Already in compact format
+        if cls._COMPACT_TIME_RE.match(value):
+            return value
+
+        # Old ISO format - convert to compact by removing separators
+        if cls._ISO_TIME_RE.match(value):
+            return value[0:2] + value[3:5] + value[6:8] + value[9:12]
+
+        return value
+
+    @classmethod
     def normalize_numeric_str(cls, value: str) -> str:
         """Normalize an Excel-modified numeric string by stripping thousand separators.
 
@@ -151,9 +181,10 @@ class CsvUtil:
 
     @classmethod
     def normalize_value(cls, value: str) -> str:
-        """Apply all normalizations to a CSV cell value: strip inner quotes, dates, datetimes, and numbers."""
+        """Apply all normalizations to a CSV cell value: strip inner quotes, dates, times, datetimes, and numbers."""
         value = cls.strip_quotes(value)
         value = cls.normalize_date_str(value)
+        value = cls.normalize_time_str(value)
         value = cls.normalize_datetime_str(value)
         value = cls.normalize_numeric_str(value)
         return value
