@@ -69,7 +69,7 @@ class CsvDb(Db):
         key_type: type[KeyMixin],
         keys: Sequence[KeyMixin],
         *,
-        datasets: Sequence[str],
+        datasets: Sequence[str] | None = None,
         tenant: str,
         project_to: type[TRecord] | None = None,
         sort_order: SortOrder,
@@ -90,7 +90,7 @@ class CsvDb(Db):
         self,
         key_type: type[KeyMixin],
         *,
-        datasets: Sequence[str],
+        datasets: Sequence[str] | None = None,
         tenant: str,
         cast_to: type[TRecord] | None = None,
         restrict_to: type[TRecord] | None = None,
@@ -152,7 +152,7 @@ class CsvDb(Db):
         self,
         query: QueryMixin,
         *,
-        datasets: Sequence[str],
+        datasets: Sequence[str] | None = None,
         tenant: str,
         cast_to: type[TRecord] | None = None,
         restrict_to: type[TRecord] | None = None,
@@ -167,7 +167,7 @@ class CsvDb(Db):
         self,
         query: QueryMixin,
         *,
-        datasets: Sequence[str],
+        datasets: Sequence[str] | None = None,
         tenant: str,
         restrict_to: type | None = None,
     ) -> int:
@@ -178,7 +178,7 @@ class CsvDb(Db):
         key_type: type[KeyMixin],
         records: Sequence[RecordMixin],
         *,
-        datasets: Sequence[str],
+        datasets: Sequence[str] | None = None,
         tenant: str,
         save_policy: SavePolicy,
     ) -> None:
@@ -241,7 +241,7 @@ class CsvDb(Db):
         key_type: type[KeyMixin],
         keys: Sequence[KeyMixin],
         *,
-        datasets: Sequence[str],
+        datasets: Sequence[str] | None = None,
         tenant: str,
     ) -> None:
         raise NotImplementedError(f"{typename(type(self))} does not support delete_many.")
@@ -250,7 +250,7 @@ class CsvDb(Db):
         self,
         query: QueryMixin,
         *,
-        datasets: Sequence[str],
+        datasets: Sequence[str] | None = None,
         tenant: str,
         restrict_to: type | None = None,
     ) -> None:

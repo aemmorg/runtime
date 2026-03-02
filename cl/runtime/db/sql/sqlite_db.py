@@ -69,7 +69,7 @@ class SqliteDb(Db):
         key_type: type[KeyMixin],
         keys: Sequence[KeyMixin],
         *,
-        datasets: Sequence[str],
+        datasets: Sequence[str] | None = None,
         tenant: str,
         project_to: type[TRecord] | None = None,
         sort_order: SortOrder,  # Default value not provided due to the lack of natural default for this method
@@ -99,9 +99,16 @@ class SqliteDb(Db):
             f'SELECT * FROM {self._quote_identifier(table_name)} WHERE "_tenant" = ? AND "_key" IN ({placeholders})'
         )
 
-        if sort_order is not None:
-            # Add order by '_key' condition
-            select_sql = self._add_order(select_sql, sort_field="_key", sort_order=sort_order)
+        # Filter by datasets if specified
+        if datasets is not None:
+            ds_placeholders = ",".join("?" for _ in datasets)
+            select_sql += f' AND "_dataset" IN ({ds_placeholders})'
+            values.extend(datasets)
+
+        # Sort by _dataset ascending, then by _key in the specified order
+        if sort_order is not None and sort_order != SortOrder.UNORDERED:
+            order_dir = "DESC" if sort_order == SortOrder.DESC else "ASC"
+            select_sql += f' ORDER BY "_dataset" ASC, "_key" {order_dir}'
 
         # Execute SQL query
         conn = self._get_connection()
@@ -117,7 +124,7 @@ class SqliteDb(Db):
         self,
         key_type: type[KeyMixin],
         *,
-        datasets: Sequence[str],
+        datasets: Sequence[str] | None = None,
         tenant: str,
         cast_to: type[TRecord] | None = None,
         restrict_to: type[TRecord] | None = None,
@@ -143,6 +150,12 @@ class SqliteDb(Db):
 
         select_sql, values = f'SELECT * FROM {self._quote_identifier(table_name)} WHERE "_tenant" = ?', [tenant]
 
+        # Filter by datasets if specified
+        if datasets is not None:
+            ds_placeholders = ",".join("?" for _ in datasets)
+            select_sql += f' AND "_dataset" IN ({ds_placeholders})'
+            values.extend(datasets)
+
         if restrict_to is not None:
             # Add filter condition on type
             subtype_names = TypeInfo.get_child_and_self_type_names(restrict_to, type_kind=TypeKind.RECORD)
@@ -151,8 +164,10 @@ class SqliteDb(Db):
             select_sql += f' AND "_type" IN ({placeholders})'
             values += subtype_names
 
-        # Add order by '_key' condition
-        select_sql = self._add_order(select_sql, sort_field="_key", sort_order=sort_order)
+        # Sort by _dataset ascending, then by _key in the specified order
+        if sort_order != SortOrder.UNORDERED:
+            order_dir = "DESC" if sort_order == SortOrder.DESC else "ASC"
+            select_sql += f' ORDER BY "_dataset" ASC, "_key" {order_dir}'
 
         # Add 'limit' and 'skip' conditions
         select_sql, add_params = self._add_limit_and_skip(select_sql, limit=limit, skip=skip)
@@ -180,7 +195,7 @@ class SqliteDb(Db):
         self,
         query: QueryMixin,
         *,
-        datasets: Sequence[str],
+        datasets: Sequence[str] | None = None,
         tenant: str,
         cast_to: type[TRecord] | None = None,
         restrict_to: type[TRecord] | None = None,
@@ -236,11 +251,20 @@ class SqliteDb(Db):
 
         select_sql = f'SELECT * FROM {self._quote_identifier(table_name)} WHERE "_tenant" = ?'
 
+        # Filter by datasets if specified
+        if datasets is not None:
+            ds_placeholders = ",".join("?" for _ in datasets)
+            select_sql += f' AND "_dataset" IN ({ds_placeholders})'
+            # Insert dataset values right after tenant (values[0])
+            values = [values[0]] + list(datasets) + values[1:]
+
         if where:
             select_sql += f" AND {where}"
 
-        # Add order by '_key' condition
-        select_sql = self._add_order(select_sql, sort_field="_key", sort_order=sort_order)
+        # Sort by _dataset ascending, then by _key in the specified order
+        if sort_order != SortOrder.UNORDERED:
+            order_dir = "DESC" if sort_order == SortOrder.DESC else "ASC"
+            select_sql += f' ORDER BY "_dataset" ASC, "_key" {order_dir}'
 
         # Add 'limit' and 'skip' conditions
         select_sql, add_params = self._add_limit_and_skip(select_sql, limit=limit, skip=skip)
@@ -274,7 +298,7 @@ class SqliteDb(Db):
         self,
         query: QueryMixin,
         *,
-        datasets: Sequence[str],
+        datasets: Sequence[str] | None = None,
         tenant: str,
         restrict_to: type | None = None,
     ) -> int:
@@ -323,6 +347,12 @@ class SqliteDb(Db):
 
         select_sql = f'SELECT COUNT(*) FROM {self._quote_identifier(table_name)} WHERE "_tenant" = ?'
 
+        # Filter by datasets if specified
+        if datasets is not None:
+            ds_placeholders = ",".join("?" for _ in datasets)
+            select_sql += f' AND "_dataset" IN ({ds_placeholders})'
+            values = [values[0]] + list(datasets) + values[1:]
+
         if where:
             select_sql += f" AND {where}"
 
@@ -362,6 +392,7 @@ class SqliteDb(Db):
         for record in records:
             serialized_record = _DATA_SERIALIZER.serialize(record)
             serialized_record["_key"] = _KEY_SERIALIZER.serialize(record.get_key())
+            serialized_record["_dataset"] = datasets[0]
             serialized_record["_tenant"] = tenant
             serialized_records.append(serialized_record)
 
@@ -396,7 +427,7 @@ class SqliteDb(Db):
         key_type: type[KeyMixin],
         keys: Sequence[KeyMixin],
         *,
-        datasets: Sequence[str],
+        datasets: Sequence[str] | None = None,
         tenant: str,
     ) -> None:
 
@@ -420,19 +451,25 @@ class SqliteDb(Db):
         # Build SQL query to delete records by keys
         placeholders = ",".join("?" for _ in serialized_keys)
         values = [tenant, *serialized_keys]
-        select_sql = (
+        delete_sql = (
             f'DELETE FROM {self._quote_identifier(table_name)} WHERE "_tenant" = ? AND "_key" IN ({placeholders})'
         )
 
+        # Filter by datasets if specified
+        if datasets is not None:
+            ds_placeholders = ",".join("?" for _ in datasets)
+            delete_sql += f' AND "_dataset" IN ({ds_placeholders})'
+            values.extend(datasets)
+
         # Execute SQL query
         conn = self._get_connection()
-        conn.execute(select_sql, values)
+        conn.execute(delete_sql, values)
 
     def delete_by_query(
         self,
         query: QueryMixin,
         *,
-        datasets: Sequence[str],
+        datasets: Sequence[str] | None = None,
         tenant: str,
         restrict_to: type | None = None,
     ) -> None:
@@ -478,6 +515,12 @@ class SqliteDb(Db):
             values += subtype_names
 
         delete_sql = f'DELETE FROM {self._quote_identifier(table_name)} WHERE "_tenant" = ?'
+
+        # Filter by datasets if specified
+        if datasets is not None:
+            ds_placeholders = ",".join("?" for _ in datasets)
+            delete_sql += f' AND "_dataset" IN ({ds_placeholders})'
+            values = [values[0]] + list(datasets) + values[1:]
 
         if where:
             delete_sql += f" AND {where}"
@@ -542,7 +585,7 @@ class SqliteDb(Db):
         table_name = self._get_validated_table_name(key_type=key_type)
 
         # List of columns that are present in the table by default
-        column_defs = ["_key", "_type", "_tenant"]
+        column_defs = ["_key", "_dataset", "_type", "_tenant"]
 
         # Validate and quote data type columns
         column_defs.extend(
@@ -554,7 +597,7 @@ class SqliteDb(Db):
 
         sql = (
             f"CREATE TABLE IF NOT EXISTS {self._quote_identifier(table_name)} "
-            + f'({", ".join(column_defs)}, PRIMARY KEY (_key, _tenant));'
+            + f'({", ".join(column_defs)}, PRIMARY KEY (_key, _dataset, _tenant));'
         )
 
         conn = self._get_connection()

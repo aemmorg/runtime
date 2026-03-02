@@ -131,7 +131,7 @@ class BasicCouchDb(Db):
         key_type: type[KeyMixin],
         keys: Sequence[KeyMixin],
         *,
-        datasets: Sequence[str],
+        datasets: Sequence[str] | None = None,
         tenant: str,
         project_to: type[TRecord] | None = None,
         sort_order: SortOrder,  # Default value not provided due to the lack of natural default for this method
@@ -171,7 +171,7 @@ class BasicCouchDb(Db):
         self,
         key_type: type[KeyMixin],
         *,
-        datasets: Sequence[str],
+        datasets: Sequence[str] | None = None,
         tenant: str,
         cast_to: type[TRecord] | None = None,
         restrict_to: type[TRecord] | None = None,
@@ -192,10 +192,11 @@ class BasicCouchDb(Db):
 
         # Create a query dictionary
         query_dict = {
-            "_dataset": {"$in": list(datasets)},
             "_tenant": tenant,
             "_collection": collection_name,
         }
+        if datasets is not None:
+            query_dict["_dataset"] = {"$in": list(datasets)}
 
         # Filter by restrict_to if specified
         self._apply_restrict_to(query_dict=query_dict, key_type=key_type, restrict_to=restrict_to)
@@ -229,7 +230,7 @@ class BasicCouchDb(Db):
         self,
         query: QueryMixin,
         *,
-        datasets: Sequence[str],
+        datasets: Sequence[str] | None = None,
         tenant: str,
         cast_to: type[TRecord] | None = None,
         restrict_to: type[TRecord] | None = None,
@@ -259,10 +260,11 @@ class BasicCouchDb(Db):
 
         # Create query dict
         query_dict = {
-            "_dataset": {"$in": list(datasets)},
             "_tenant": tenant,
             "_collection": collection_name,
         }
+        if datasets is not None:
+            query_dict["_dataset"] = {"$in": list(datasets)}
 
         # Serialize the query and update query dict
         query_dict.update(BootstrapSerializers.FOR_MONGO_QUERY.serialize(query))
@@ -314,7 +316,7 @@ class BasicCouchDb(Db):
         self,
         query: QueryMixin,
         *,
-        datasets: Sequence[str],
+        datasets: Sequence[str] | None = None,
         tenant: str,
         restrict_to: type | None = None,
     ) -> int:
@@ -339,10 +341,11 @@ class BasicCouchDb(Db):
 
         # Create query dict
         query_dict = {
-            "_dataset": {"$in": list(datasets)},
             "_tenant": tenant,
             "_collection": collection_name,
         }
+        if datasets is not None:
+            query_dict["_dataset"] = {"$in": list(datasets)}
 
         # Serialize the query and update query dict
         query_dict.update(BootstrapSerializers.FOR_MONGO_QUERY.serialize(query))
@@ -428,7 +431,7 @@ class BasicCouchDb(Db):
         key_type: type[KeyMixin],
         keys: Sequence[KeyMixin],
         *,
-        datasets: Sequence[str],
+        datasets: Sequence[str] | None = None,
         tenant: str,
     ) -> None:
 
@@ -449,7 +452,7 @@ class BasicCouchDb(Db):
             try:
                 doc = couch_db.get(doc_id)
                 # Verify dataset and tenant match
-                if doc.get("_dataset") in datasets and doc.get("_tenant") == tenant:
+                if (datasets is None or doc.get("_dataset") in datasets) and doc.get("_tenant") == tenant:
                     couch_db.delete(doc)
             except NotFound:
                 pass  # Document doesn't exist, skip
@@ -458,7 +461,7 @@ class BasicCouchDb(Db):
         self,
         query: QueryMixin,
         *,
-        datasets: Sequence[str],
+        datasets: Sequence[str] | None = None,
         tenant: str,
         restrict_to: type | None = None,
     ) -> None:
@@ -483,10 +486,11 @@ class BasicCouchDb(Db):
 
         # Create query dict
         query_dict = {
-            "_dataset": {"$in": list(datasets)},
             "_tenant": tenant,
             "_collection": collection_name,
         }
+        if datasets is not None:
+            query_dict["_dataset"] = {"$in": list(datasets)}
 
         # Serialize the query and update query dict
         query_dict.update(BootstrapSerializers.FOR_MONGO_QUERY.serialize(query))
@@ -692,9 +696,10 @@ class BasicCouchDb(Db):
         records_list = list(records)
 
         if sort_order == SortOrder.ASC:
-            records_list.sort(key=lambda x: x.get(sort_field, ""))
+            records_list.sort(key=lambda x: (x.get("_dataset", ""), x.get(sort_field, "")))
         elif sort_order == SortOrder.DESC:
             records_list.sort(key=lambda x: x.get(sort_field, ""), reverse=True)
+            records_list.sort(key=lambda x: x.get("_dataset", ""))
         elif sort_order == SortOrder.INPUT:
             # Not implemented. Return unchanged records by default.
             pass
@@ -707,7 +712,7 @@ class BasicCouchDb(Db):
         self,
         record_dict: dict[str, Any],
         *,
-        expected_datasets: Sequence[str],
+        expected_datasets: Sequence[str] | None = None,
     ) -> dict[str, Any]:
         """Prune and validate fields that are not part of the serialized record data and return the same instance."""
 
@@ -721,7 +726,9 @@ class BasicCouchDb(Db):
             if ":" in _id:
                 # Remove collection prefix from _id
                 record_dict["_id"] = _id.split(":", 1)[1]
-        assert record_dict.pop("_dataset") in expected_datasets
+        dataset_val = record_dict.pop("_dataset")
+        if expected_datasets is not None:
+            assert dataset_val in expected_datasets
         del record_dict["_key"]
         if "_collection" in record_dict:
             del record_dict["_collection"]
@@ -747,18 +754,19 @@ class BasicCouchDb(Db):
         return query
 
     def _get_couch_keys_filter(
-        self, keys: Sequence[KeyMixin], *, datasets: Sequence[str], tenant: str, collection_name: str
+        self, keys: Sequence[KeyMixin], *, datasets: Sequence[str] | None, tenant: str, collection_name: str
     ) -> dict[str, Any]:
         """Get filter for loading records that match one of the specified keys."""
         serialized_keys = tuple(_KEY_SERIALIZER.serialize(key) for key in keys)
         # Build list of document IDs
         doc_ids = [f"{collection_name}:{key}" for key in serialized_keys]
         selector = {
-            "_dataset": {"$in": list(datasets)},
             "_tenant": tenant,
             "_collection": collection_name,
             "_id": {"$in": doc_ids},
         }
+        if datasets is not None:
+            selector["_dataset"] = {"$in": list(datasets)}
         return self._build_mango_query(selector)
 
     def _add_index(

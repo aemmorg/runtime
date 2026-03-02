@@ -127,7 +127,7 @@ class BasicMongoDb(Db):
         key_type: type[KeyMixin],
         keys: Sequence[KeyMixin],
         *,
-        datasets: Sequence[str],
+        datasets: Sequence[str] | None = None,
         tenant: str,
         project_to: type[TRecord] | None = None,
         sort_order: SortOrder,  # Default value not provided due to the lack of natural default for this method
@@ -159,7 +159,7 @@ class BasicMongoDb(Db):
         self,
         key_type: type[KeyMixin],
         *,
-        datasets: Sequence[str],
+        datasets: Sequence[str] | None = None,
         tenant: str,
         cast_to: type[TRecord] | None = None,
         restrict_to: type[TRecord] | None = None,
@@ -178,10 +178,11 @@ class BasicMongoDb(Db):
         collection = self._get_mongo_collection(key_type=key_type)
 
         # Create a query dictionary
-        query_dict = {
-            "_dataset": {"$in": list(datasets)},
+        query_dict: dict[str, Any] = {
             "_tenant": tenant,
         }
+        if datasets is not None:
+            query_dict["_dataset"] = {"$in": list(datasets)}
 
         # Filter by restrict_to if specified
         self._apply_restrict_to(query_dict=query_dict, key_type=key_type, restrict_to=restrict_to)
@@ -210,7 +211,7 @@ class BasicMongoDb(Db):
         self,
         query: QueryMixin,
         *,
-        datasets: Sequence[str],
+        datasets: Sequence[str] | None = None,
         tenant: str,
         cast_to: type[TRecord] | None = None,
         restrict_to: type[TRecord] | None = None,
@@ -238,10 +239,11 @@ class BasicMongoDb(Db):
         self._add_index(collection=collection, query_type=typeof(query))
 
         # Create query dict
-        query_dict = {
-            "_dataset": {"$in": list(datasets)},
+        query_dict: dict[str, Any] = {
             "_tenant": tenant,
         }
+        if datasets is not None:
+            query_dict["_dataset"] = {"$in": list(datasets)}
 
         # Serialize the query and update query dict
         query_dict.update(BootstrapSerializers.FOR_MONGO_QUERY.serialize(query))
@@ -288,7 +290,7 @@ class BasicMongoDb(Db):
         self,
         query: QueryMixin,
         *,
-        datasets: Sequence[str],
+        datasets: Sequence[str] | None = None,
         tenant: str,
         restrict_to: type | None = None,
     ) -> int:
@@ -311,10 +313,11 @@ class BasicMongoDb(Db):
         self._add_index(collection=collection, query_type=typeof(query))
 
         # Create query dict
-        query_dict = {
-            "_dataset": {"$in": list(datasets)},
+        query_dict: dict[str, Any] = {
             "_tenant": tenant,
         }
+        if datasets is not None:
+            query_dict["_dataset"] = {"$in": list(datasets)}
 
         # Serialize the query and update query dict
         query_dict.update(BootstrapSerializers.FOR_MONGO_QUERY.serialize(query))
@@ -388,7 +391,7 @@ class BasicMongoDb(Db):
         key_type: type[KeyMixin],
         keys: Sequence[KeyMixin],
         *,
-        datasets: Sequence[str],
+        datasets: Sequence[str] | None = None,
         tenant: str,
     ) -> None:
 
@@ -409,7 +412,7 @@ class BasicMongoDb(Db):
         self,
         query: QueryMixin,
         *,
-        datasets: Sequence[str],
+        datasets: Sequence[str] | None = None,
         tenant: str,
         restrict_to: type | None = None,
     ) -> None:
@@ -432,10 +435,11 @@ class BasicMongoDb(Db):
         self._add_index(collection=collection, query_type=typeof(query))
 
         # Create query dict
-        query_dict = {
-            "_dataset": {"$in": list(datasets)},
+        query_dict: dict[str, Any] = {
             "_tenant": tenant,
         }
+        if datasets is not None:
+            query_dict["_dataset"] = {"$in": list(datasets)}
 
         # Serialize the query and update query dict
         query_dict.update(BootstrapSerializers.FOR_MONGO_QUERY.serialize(query))
@@ -645,9 +649,9 @@ class BasicMongoDb(Db):
         if sort_order == SortOrder.UNORDERED:
             return records  # no sort applied
         elif sort_order == SortOrder.ASC:
-            return records.sort(sort_field, direction=pymongo.ASCENDING)
+            return records.sort([("_dataset", pymongo.ASCENDING), (sort_field, pymongo.ASCENDING)])
         elif sort_order == SortOrder.DESC:
-            return records.sort(sort_field, direction=pymongo.DESCENDING)
+            return records.sort([("_dataset", pymongo.ASCENDING), (sort_field, pymongo.DESCENDING)])
         elif sort_order == SortOrder.INPUT:
             # Not implemented. Return unchanged records by default.
             return records
@@ -658,25 +662,31 @@ class BasicMongoDb(Db):
         self,
         record_dict: dict[str, Any],
         *,
-        expected_datasets: Sequence[str],
+        expected_datasets: Sequence[str] | None = None,
     ) -> dict[str, Any]:
         """Prune and validate fields that are not part of the serialized record data and return the same instance."""
 
         # Remove or pop and validate
         del record_dict["_id"]
-        assert record_dict.pop("_dataset") in expected_datasets
+        dataset_val = record_dict.pop("_dataset")
+        if expected_datasets is not None:
+            assert dataset_val in expected_datasets
         del record_dict["_key"]
 
         return record_dict
 
-    def _get_mongo_keys_filter(self, keys: Sequence[KeyMixin], *, datasets: Sequence[str], tenant: str) -> dict[str, Any]:
+    def _get_mongo_keys_filter(
+        self, keys: Sequence[KeyMixin], *, datasets: Sequence[str] | None, tenant: str
+    ) -> dict[str, Any]:
         """Get filter for loading records that match one of the specified keys."""
         serialized_keys = tuple(_KEY_SERIALIZER.serialize(key) for key in keys)
-        return {
-            "_dataset": {"$in": list(datasets)},
+        result: dict[str, Any] = {
             "_tenant": tenant,
             "_key": {"$in": serialized_keys},
         }
+        if datasets is not None:
+            result["_dataset"] = {"$in": list(datasets)}
+        return result
 
     def _add_index(
         self,
