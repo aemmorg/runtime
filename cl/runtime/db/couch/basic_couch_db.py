@@ -131,7 +131,7 @@ class BasicCouchDb(Db):
         key_type: type[KeyMixin],
         keys: Sequence[KeyMixin],
         *,
-        dataset: str,
+        datasets: Sequence[str],
         tenant: str,
         project_to: type[TRecord] | None = None,
         sort_order: SortOrder,  # Default value not provided due to the lack of natural default for this method
@@ -140,7 +140,7 @@ class BasicCouchDb(Db):
         # Check params
         assert TypeCheck.guard_key_type(key_type)
         assert TypeCheck.guard_key_sequence(keys)
-        self._check_dataset(dataset)
+        self._check_datasets(datasets)
         self._check_tenant(tenant)
 
         # Get CouchDB database and collection name for the key type
@@ -148,7 +148,7 @@ class BasicCouchDb(Db):
         collection_name = self._get_collection_name(key_type=key_type)
 
         # Query for all records in one call using $in operator
-        keys_filter = self._get_couch_keys_filter(keys, dataset=dataset, tenant=tenant, collection_name=collection_name)
+        keys_filter = self._get_couch_keys_filter(keys, datasets=datasets, tenant=tenant, collection_name=collection_name)
         # Add sort to the Mango query
         sort_list = None
         if sort_order != SortOrder.UNORDERED:
@@ -162,7 +162,7 @@ class BasicCouchDb(Db):
 
         # Prune the fields used by Db that are not part of the serialized record data and deserialize
         result = tuple(
-            _RECORD_SERIALIZER.deserialize(self._with_pruned_fields(x, expected_dataset=dataset))
+            _RECORD_SERIALIZER.deserialize(self._with_pruned_fields(x, expected_datasets=datasets))
             for x in serialized_records
         )
         return cast(tuple[TRecord, ...], result)
@@ -171,7 +171,7 @@ class BasicCouchDb(Db):
         self,
         key_type: type[KeyMixin],
         *,
-        dataset: str,
+        datasets: Sequence[str],
         tenant: str,
         cast_to: type[TRecord] | None = None,
         restrict_to: type[TRecord] | None = None,
@@ -183,7 +183,7 @@ class BasicCouchDb(Db):
 
         # Check params
         assert TypeCheck.guard_key_type(key_type)
-        self._check_dataset(dataset)
+        self._check_datasets(datasets)
         self._check_tenant(tenant)
 
         # Get CouchDB database and collection name for the key type
@@ -192,7 +192,7 @@ class BasicCouchDb(Db):
 
         # Create a query dictionary
         query_dict = {
-            "_dataset": dataset,
+            "_dataset": {"$in": list(datasets)},
             "_tenant": tenant,
             "_collection": collection_name,
         }
@@ -220,7 +220,7 @@ class BasicCouchDb(Db):
 
         # Prune the fields used by Db that are not part of the serialized record data and deserialize
         result = tuple(
-            _RECORD_SERIALIZER.deserialize(self._with_pruned_fields(x, expected_dataset=dataset))
+            _RECORD_SERIALIZER.deserialize(self._with_pruned_fields(x, expected_datasets=datasets))
             for x in serialized_records
         )
         return cast(tuple[TRecord, ...], result)
@@ -229,7 +229,7 @@ class BasicCouchDb(Db):
         self,
         query: QueryMixin,
         *,
-        dataset: str,
+        datasets: Sequence[str],
         tenant: str,
         cast_to: type[TRecord] | None = None,
         restrict_to: type[TRecord] | None = None,
@@ -243,7 +243,7 @@ class BasicCouchDb(Db):
         query.check_frozen()
 
         # Check dataset
-        self._check_dataset(dataset)
+        self._check_datasets(datasets)
         self._check_tenant(tenant)
 
         # Get table name from key type and check it has an acceptable format
@@ -259,7 +259,7 @@ class BasicCouchDb(Db):
 
         # Create query dict
         query_dict = {
-            "_dataset": dataset,
+            "_dataset": {"$in": list(datasets)},
             "_tenant": tenant,
             "_collection": collection_name,
         }
@@ -305,7 +305,7 @@ class BasicCouchDb(Db):
 
         # Prune the fields used by Db that are not part of the serialized record data and deserialize
         result = tuple(
-            _RECORD_SERIALIZER.deserialize(self._with_pruned_fields(x, expected_dataset=dataset))
+            _RECORD_SERIALIZER.deserialize(self._with_pruned_fields(x, expected_datasets=datasets))
             for x in serialized_records
         )
         return cast(tuple[TRecord, ...], result)
@@ -314,7 +314,7 @@ class BasicCouchDb(Db):
         self,
         query: QueryMixin,
         *,
-        dataset: str,
+        datasets: Sequence[str],
         tenant: str,
         restrict_to: type | None = None,
     ) -> int:
@@ -323,7 +323,7 @@ class BasicCouchDb(Db):
         query.check_frozen()
 
         # Check dataset
-        self._check_dataset(dataset)
+        self._check_datasets(datasets)
         self._check_tenant(tenant)
 
         # Get table name from key type and check it has an acceptable format
@@ -339,7 +339,7 @@ class BasicCouchDb(Db):
 
         # Create query dict
         query_dict = {
-            "_dataset": dataset,
+            "_dataset": {"$in": list(datasets)},
             "_tenant": tenant,
             "_collection": collection_name,
         }
@@ -376,7 +376,7 @@ class BasicCouchDb(Db):
         key_type: type[KeyMixin],
         records: Sequence[RecordMixin],
         *,
-        dataset: str,
+        datasets: Sequence[str],
         tenant: str,
         save_policy: SavePolicy,
     ) -> None:
@@ -384,7 +384,7 @@ class BasicCouchDb(Db):
         # Check params
         assert TypeCheck.guard_key_type(key_type)
         assert TypeCheck.guard_record_sequence(records)
-        self._check_dataset(dataset)
+        self._check_datasets(datasets)
         self._check_tenant(tenant)
 
         # Get CouchDB database and collection name for the key type
@@ -400,7 +400,7 @@ class BasicCouchDb(Db):
             # Serialize record
             serialized_record = _RECORD_SERIALIZER.serialize(record)
             serialized_record["_id"] = doc_id
-            serialized_record["_dataset"] = dataset
+            serialized_record["_dataset"] = datasets[0]
             serialized_record["_key"] = serialized_key
             serialized_record["_tenant"] = tenant
             serialized_record["_collection"] = collection_name
@@ -428,14 +428,14 @@ class BasicCouchDb(Db):
         key_type: type[KeyMixin],
         keys: Sequence[KeyMixin],
         *,
-        dataset: str,
+        datasets: Sequence[str],
         tenant: str,
     ) -> None:
 
         # Check params
         assert TypeCheck.guard_key_type(key_type)
         assert TypeCheck.guard_key_sequence(keys)
-        self._check_dataset(dataset)
+        self._check_datasets(datasets)
         self._check_tenant(tenant)
 
         # Get CouchDB database and collection name for the key type
@@ -449,7 +449,7 @@ class BasicCouchDb(Db):
             try:
                 doc = couch_db.get(doc_id)
                 # Verify dataset and tenant match
-                if doc.get("_dataset") == dataset and doc.get("_tenant") == tenant:
+                if doc.get("_dataset") in datasets and doc.get("_tenant") == tenant:
                     couch_db.delete(doc)
             except NotFound:
                 pass  # Document doesn't exist, skip
@@ -458,7 +458,7 @@ class BasicCouchDb(Db):
         self,
         query: QueryMixin,
         *,
-        dataset: str,
+        datasets: Sequence[str],
         tenant: str,
         restrict_to: type | None = None,
     ) -> None:
@@ -467,7 +467,7 @@ class BasicCouchDb(Db):
         query.check_frozen()
 
         # Check dataset
-        self._check_dataset(dataset)
+        self._check_datasets(datasets)
         self._check_tenant(tenant)
 
         # Get table name from key type and check it has an acceptable format
@@ -483,7 +483,7 @@ class BasicCouchDb(Db):
 
         # Create query dict
         query_dict = {
-            "_dataset": dataset,
+            "_dataset": {"$in": list(datasets)},
             "_tenant": tenant,
             "_collection": collection_name,
         }
@@ -707,7 +707,7 @@ class BasicCouchDb(Db):
         self,
         record_dict: dict[str, Any],
         *,
-        expected_dataset: str,
+        expected_datasets: Sequence[str],
     ) -> dict[str, Any]:
         """Prune and validate fields that are not part of the serialized record data and return the same instance."""
 
@@ -721,7 +721,7 @@ class BasicCouchDb(Db):
             if ":" in _id:
                 # Remove collection prefix from _id
                 record_dict["_id"] = _id.split(":", 1)[1]
-        assert record_dict.pop("_dataset") == expected_dataset
+        assert record_dict.pop("_dataset") in expected_datasets
         del record_dict["_key"]
         if "_collection" in record_dict:
             del record_dict["_collection"]
@@ -747,14 +747,14 @@ class BasicCouchDb(Db):
         return query
 
     def _get_couch_keys_filter(
-        self, keys: Sequence[KeyMixin], *, dataset: str, tenant: str, collection_name: str
+        self, keys: Sequence[KeyMixin], *, datasets: Sequence[str], tenant: str, collection_name: str
     ) -> dict[str, Any]:
         """Get filter for loading records that match one of the specified keys."""
         serialized_keys = tuple(_KEY_SERIALIZER.serialize(key) for key in keys)
         # Build list of document IDs
         doc_ids = [f"{collection_name}:{key}" for key in serialized_keys]
         selector = {
-            "_dataset": dataset,
+            "_dataset": {"$in": list(datasets)},
             "_tenant": tenant,
             "_collection": collection_name,
             "_id": {"$in": doc_ids},

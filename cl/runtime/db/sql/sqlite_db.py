@@ -69,7 +69,7 @@ class SqliteDb(Db):
         key_type: type[KeyMixin],
         keys: Sequence[KeyMixin],
         *,
-        dataset: str,
+        datasets: Sequence[str],
         tenant: str,
         project_to: type[TRecord] | None = None,
         sort_order: SortOrder,  # Default value not provided due to the lack of natural default for this method
@@ -78,7 +78,7 @@ class SqliteDb(Db):
         # Check params
         assert TypeCheck.guard_key_type(key_type)
         assert TypeCheck.guard_key_sequence(keys)
-        self._check_dataset(dataset)
+        self._check_datasets(datasets)
         self._check_tenant(tenant)
 
         if not keys:
@@ -117,7 +117,7 @@ class SqliteDb(Db):
         self,
         key_type: type[KeyMixin],
         *,
-        dataset: str,
+        datasets: Sequence[str],
         tenant: str,
         cast_to: type[TRecord] | None = None,
         restrict_to: type[TRecord] | None = None,
@@ -129,7 +129,7 @@ class SqliteDb(Db):
 
         # Check params
         assert TypeCheck.guard_key_type(key_type)
-        self._check_dataset(dataset)
+        self._check_datasets(datasets)
         self._check_tenant(tenant)
 
         if project_to is not None:
@@ -180,7 +180,7 @@ class SqliteDb(Db):
         self,
         query: QueryMixin,
         *,
-        dataset: str,
+        datasets: Sequence[str],
         tenant: str,
         cast_to: type[TRecord] | None = None,
         restrict_to: type[TRecord] | None = None,
@@ -194,7 +194,7 @@ class SqliteDb(Db):
         query.check_frozen()
 
         # Check dataset
-        self._check_dataset(dataset)
+        self._check_datasets(datasets)
         self._check_tenant(tenant)
 
         if project_to is not None:
@@ -274,7 +274,7 @@ class SqliteDb(Db):
         self,
         query: QueryMixin,
         *,
-        dataset: str,
+        datasets: Sequence[str],
         tenant: str,
         restrict_to: type | None = None,
     ) -> int:
@@ -283,7 +283,7 @@ class SqliteDb(Db):
         query.check_frozen()
 
         # Check dataset
-        self._check_dataset(dataset)
+        self._check_datasets(datasets)
         self._check_tenant(tenant)
 
         # Get table name from key type and check it has an acceptable format
@@ -338,7 +338,7 @@ class SqliteDb(Db):
         key_type: type[KeyMixin],
         records: Sequence[RecordMixin],
         *,
-        dataset: str,
+        datasets: Sequence[str],
         tenant: str,
         save_policy: SavePolicy,
     ) -> None:
@@ -346,7 +346,7 @@ class SqliteDb(Db):
         # Check params
         assert TypeCheck.guard_key_type(key_type)
         assert TypeCheck.guard_record_sequence(records)
-        self._check_dataset(dataset)
+        self._check_datasets(datasets)
         self._check_tenant(tenant)
 
         if not records:
@@ -396,14 +396,14 @@ class SqliteDb(Db):
         key_type: type[KeyMixin],
         keys: Sequence[KeyMixin],
         *,
-        dataset: str,
+        datasets: Sequence[str],
         tenant: str,
     ) -> None:
 
         # Check params
         assert TypeCheck.guard_key_type(key_type)
         assert TypeCheck.guard_key_sequence(keys)
-        self._check_dataset(dataset)
+        self._check_datasets(datasets)
         self._check_tenant(tenant)
 
         if not keys:
@@ -432,7 +432,7 @@ class SqliteDb(Db):
         self,
         query: QueryMixin,
         *,
-        dataset: str,
+        datasets: Sequence[str],
         tenant: str,
         restrict_to: type | None = None,
     ) -> None:
@@ -440,7 +440,7 @@ class SqliteDb(Db):
         query.check_frozen()
 
         # Check dataset
-        self._check_dataset(dataset)
+        self._check_datasets(datasets)
         self._check_tenant(tenant)
 
         # Get table name from key type and check it has an acceptable format

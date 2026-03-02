@@ -69,7 +69,7 @@ class CsvDb(Db):
         key_type: type[KeyMixin],
         keys: Sequence[KeyMixin],
         *,
-        dataset: str,
+        datasets: Sequence[str],
         tenant: str,
         project_to: type[TRecord] | None = None,
         sort_order: SortOrder,
@@ -78,11 +78,11 @@ class CsvDb(Db):
         # Check params
         assert TypeCheck.guard_key_type(key_type)
         assert TypeCheck.guard_key_sequence(keys)
-        self._check_dataset(dataset)
+        self._check_datasets(datasets)
         self._check_tenant(tenant)
 
         # Load all records then filter by requested keys
-        all_records = self._load_all(key_type, dataset=dataset, tenant=tenant, sort_order=sort_order)
+        all_records = self._load_all(key_type, datasets=datasets, tenant=tenant, sort_order=sort_order)
         requested_keys = set(_KEY_SERIALIZER.serialize(k) for k in keys)
         return tuple(r for r in all_records if _KEY_SERIALIZER.serialize(r.get_key()) in requested_keys)
 
@@ -90,7 +90,7 @@ class CsvDb(Db):
         self,
         key_type: type[KeyMixin],
         *,
-        dataset: str,
+        datasets: Sequence[str],
         tenant: str,
         cast_to: type[TRecord] | None = None,
         restrict_to: type[TRecord] | None = None,
@@ -102,7 +102,7 @@ class CsvDb(Db):
 
         # Check params
         assert TypeCheck.guard_key_type(key_type)
-        self._check_dataset(dataset)
+        self._check_datasets(datasets)
         self._check_tenant(tenant)
 
         csv_file_path = self._get_csv_file_path(key_type)
@@ -152,7 +152,7 @@ class CsvDb(Db):
         self,
         query: QueryMixin,
         *,
-        dataset: str,
+        datasets: Sequence[str],
         tenant: str,
         cast_to: type[TRecord] | None = None,
         restrict_to: type[TRecord] | None = None,
@@ -167,7 +167,7 @@ class CsvDb(Db):
         self,
         query: QueryMixin,
         *,
-        dataset: str,
+        datasets: Sequence[str],
         tenant: str,
         restrict_to: type | None = None,
     ) -> int:
@@ -178,7 +178,7 @@ class CsvDb(Db):
         key_type: type[KeyMixin],
         records: Sequence[RecordMixin],
         *,
-        dataset: str,
+        datasets: Sequence[str],
         tenant: str,
         save_policy: SavePolicy,
     ) -> None:
@@ -186,7 +186,7 @@ class CsvDb(Db):
         # Check params
         assert TypeCheck.guard_key_type(key_type)
         assert TypeCheck.guard_record_sequence(records)
-        self._check_dataset(dataset)
+        self._check_datasets(datasets)
         self._check_tenant(tenant)
 
         if not records:
@@ -241,7 +241,7 @@ class CsvDb(Db):
         key_type: type[KeyMixin],
         keys: Sequence[KeyMixin],
         *,
-        dataset: str,
+        datasets: Sequence[str],
         tenant: str,
     ) -> None:
         raise NotImplementedError(f"{typename(type(self))} does not support delete_many.")
@@ -250,7 +250,7 @@ class CsvDb(Db):
         self,
         query: QueryMixin,
         *,
-        dataset: str,
+        datasets: Sequence[str],
         tenant: str,
         restrict_to: type | None = None,
     ) -> None:

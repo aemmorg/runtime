@@ -48,7 +48,7 @@ class LocalCache(Db):
         key_type: type[KeyMixin],
         keys: Sequence[KeyMixin],
         *,
-        dataset: str,
+        datasets: Sequence[str],
         tenant: str,
         project_to: type[TRecord] | None = None,
         sort_order: SortOrder,  # Default value not provided due to the lack of natural default for this method
@@ -57,7 +57,7 @@ class LocalCache(Db):
         # Check params
         assert TypeCheck.guard_key_type(key_type)
         assert TypeCheck.guard_key_sequence(keys)
-        self._check_dataset(dataset)
+        self._check_datasets(datasets)
         self._check_tenant(tenant)
 
         if (table_cache := self.__cache.get(key_type, None)) is not None:
@@ -76,7 +76,7 @@ class LocalCache(Db):
         self,
         key_type: type[KeyMixin],
         *,
-        dataset: str,
+        datasets: Sequence[str],
         tenant: str,
         cast_to: type[TRecord] | None = None,
         restrict_to: type[TRecord] | None = None,
@@ -91,7 +91,7 @@ class LocalCache(Db):
         self,
         query: QueryMixin,
         *,
-        dataset: str,
+        datasets: Sequence[str],
         tenant: str,
         cast_to: type[TRecord] | None = None,
         restrict_to: type[TRecord] | None = None,
@@ -106,7 +106,7 @@ class LocalCache(Db):
         self,
         query: QueryMixin,
         *,
-        dataset: str,
+        datasets: Sequence[str],
         tenant: str,
         restrict_to: type | None = None,
     ) -> int:
@@ -117,7 +117,7 @@ class LocalCache(Db):
         key_type: type[KeyMixin],
         records: Sequence[RecordMixin],
         *,
-        dataset: str,
+        datasets: Sequence[str],
         tenant: str,
         save_policy: SavePolicy,
     ) -> None:
@@ -125,7 +125,7 @@ class LocalCache(Db):
         # Check params
         assert TypeCheck.guard_key_type(key_type)
         assert TypeCheck.guard_record_sequence(records)
-        self._check_dataset(dataset)
+        self._check_datasets(datasets)
         self._check_tenant(tenant)
 
         # TODO: Provide a more performant implementation
@@ -153,7 +153,7 @@ class LocalCache(Db):
         key_type: type[KeyMixin],
         keys: Sequence[KeyMixin],
         *,
-        dataset: str,
+        datasets: Sequence[str],
         tenant: str,
     ) -> None:
         raise NotImplementedError()
@@ -162,7 +162,7 @@ class LocalCache(Db):
         self,
         query: QueryMixin,
         *,
-        dataset: str,
+        datasets: Sequence[str],
         tenant: str,
         restrict_to: type | None = None,
     ) -> None:

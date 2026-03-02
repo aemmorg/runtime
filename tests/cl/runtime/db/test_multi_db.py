@@ -379,7 +379,7 @@ def test_parent_data_source(multi_db_fixture):
     # Create child DataSource with parent set to the base
     child_ds = DataSource(
         db=base_ds.db,
-        dataset=base_ds.dataset,
+        datasets=base_ds.datasets,
         tenant=TenantKey(tenant_id="test_tenant"),
         parent=base_ds,
     ).build()
@@ -418,7 +418,7 @@ def test_parent_data_source_delete(multi_db_fixture):
     # Create child DataSource with parent set to the base
     child_ds = DataSource(
         db=base_ds.db,
-        dataset=base_ds.dataset,
+        datasets=base_ds.datasets,
         tenant=TenantKey(tenant_id="test_tenant"),
         parent=base_ds,
     ).build()
@@ -446,7 +446,7 @@ def test_load_all_only_for_tenant(multi_db_fixture):
     # Create child DataSource with parent set to the base
     child_ds = DataSource(
         db=base_ds.db,
-        dataset=base_ds.dataset,
+        datasets=base_ds.datasets,
         tenant=TenantKey(tenant_id="test_tenant"),
         parent=base_ds,
     ).build()
@@ -473,7 +473,7 @@ def test_load_record_from_another_tenant(multi_db_fixture):
     # Create child DataSource with parent set to the base
     child_ds = DataSource(
         db=base_ds.db,
-        dataset=base_ds.dataset,
+        datasets=base_ds.datasets,
         tenant=TenantKey(tenant_id="test_tenant"),
         parent=base_ds,
     ).build()

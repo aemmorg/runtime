@@ -105,7 +105,7 @@ class RunResponseUtil:
                 if include_datatype:
                     result_dict["Datatype"] = serialized.get("_t", "")
                 if include_dataset:
-                    result_dict["Dataset"] = ds.dataset.dataset_id
+                    result_dict["Dataset"] = ";".join(ds.datasets)
                 if include_database:
                     result_dict["Database"] = ds.db.db_id
                 result_dict.update(serialized)
@@ -118,7 +118,7 @@ class RunResponseUtil:
                         if include_datatype and "_t" in item:
                             result_dict["Datatype"] = item["_t"]
                         if include_dataset:
-                            result_dict["Dataset"] = ds.dataset.dataset_id
+                            result_dict["Dataset"] = ";".join(ds.datasets)
                         if include_database:
                             result_dict["Database"] = ds.db.db_id
                         if result_dict:

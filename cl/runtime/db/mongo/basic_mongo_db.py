@@ -127,7 +127,7 @@ class BasicMongoDb(Db):
         key_type: type[KeyMixin],
         keys: Sequence[KeyMixin],
         *,
-        dataset: str,
+        datasets: Sequence[str],
         tenant: str,
         project_to: type[TRecord] | None = None,
         sort_order: SortOrder,  # Default value not provided due to the lack of natural default for this method
@@ -136,21 +136,21 @@ class BasicMongoDb(Db):
         # Check params
         assert TypeCheck.guard_key_type(key_type)
         assert TypeCheck.guard_key_sequence(keys)
-        self._check_dataset(dataset)
+        self._check_datasets(datasets)
         self._check_tenant(tenant)
 
         # Get MongoDB collection for the key type
         collection = self._get_mongo_collection(key_type=key_type)
 
         # Query for all records in one call using $in operator
-        serialized_records = collection.find(self._get_mongo_keys_filter(keys, dataset=dataset, tenant=tenant))
+        serialized_records = collection.find(self._get_mongo_keys_filter(keys, datasets=datasets, tenant=tenant))
 
         # Apply sort to the iterable
         serialized_records = self._apply_sort(serialized_records, sort_field="_key", sort_order=sort_order)
 
         # Prune the fields used by Db that are not part of the serialized record data and deserialize
         result = tuple(
-            _RECORD_SERIALIZER.deserialize(self._with_pruned_fields(x, expected_dataset=dataset))
+            _RECORD_SERIALIZER.deserialize(self._with_pruned_fields(x, expected_datasets=datasets))
             for x in serialized_records
         )
         return cast(tuple[TRecord, ...], result)
@@ -159,7 +159,7 @@ class BasicMongoDb(Db):
         self,
         key_type: type[KeyMixin],
         *,
-        dataset: str,
+        datasets: Sequence[str],
         tenant: str,
         cast_to: type[TRecord] | None = None,
         restrict_to: type[TRecord] | None = None,
@@ -171,7 +171,7 @@ class BasicMongoDb(Db):
 
         # Check params
         assert TypeCheck.guard_key_type(key_type)
-        self._check_dataset(dataset)
+        self._check_datasets(datasets)
         self._check_tenant(tenant)
 
         # Get MongoDB collection for the key type
@@ -179,7 +179,7 @@ class BasicMongoDb(Db):
 
         # Create a query dictionary
         query_dict = {
-            "_dataset": dataset,
+            "_dataset": {"$in": list(datasets)},
             "_tenant": tenant,
         }
 
@@ -201,7 +201,7 @@ class BasicMongoDb(Db):
 
         # Prune the fields used by Db that are not part of the serialized record data and deserialize
         result = tuple(
-            _RECORD_SERIALIZER.deserialize(self._with_pruned_fields(x, expected_dataset=dataset))
+            _RECORD_SERIALIZER.deserialize(self._with_pruned_fields(x, expected_datasets=datasets))
             for x in serialized_records
         )
         return cast(tuple[TRecord, ...], result)
@@ -210,7 +210,7 @@ class BasicMongoDb(Db):
         self,
         query: QueryMixin,
         *,
-        dataset: str,
+        datasets: Sequence[str],
         tenant: str,
         cast_to: type[TRecord] | None = None,
         restrict_to: type[TRecord] | None = None,
@@ -224,7 +224,7 @@ class BasicMongoDb(Db):
         query.check_frozen()
 
         # Check dataset
-        self._check_dataset(dataset)
+        self._check_datasets(datasets)
         self._check_tenant(tenant)
 
         # Get table name from key type and check it has an acceptable format
@@ -239,7 +239,7 @@ class BasicMongoDb(Db):
 
         # Create query dict
         query_dict = {
-            "_dataset": dataset,
+            "_dataset": {"$in": list(datasets)},
             "_tenant": tenant,
         }
 
@@ -279,7 +279,7 @@ class BasicMongoDb(Db):
 
         # Prune the fields used by Db that are not part of the serialized record data and deserialize
         result = tuple(
-            _RECORD_SERIALIZER.deserialize(self._with_pruned_fields(x, expected_dataset=dataset))
+            _RECORD_SERIALIZER.deserialize(self._with_pruned_fields(x, expected_datasets=datasets))
             for x in serialized_records
         )
         return cast(tuple[TRecord, ...], result)
@@ -288,7 +288,7 @@ class BasicMongoDb(Db):
         self,
         query: QueryMixin,
         *,
-        dataset: str,
+        datasets: Sequence[str],
         tenant: str,
         restrict_to: type | None = None,
     ) -> int:
@@ -297,7 +297,7 @@ class BasicMongoDb(Db):
         query.check_frozen()
 
         # Check dataset
-        self._check_dataset(dataset)
+        self._check_datasets(datasets)
         self._check_tenant(tenant)
 
         # Get table name from key type and check it has an acceptable format
@@ -312,7 +312,7 @@ class BasicMongoDb(Db):
 
         # Create query dict
         query_dict = {
-            "_dataset": dataset,
+            "_dataset": {"$in": list(datasets)},
             "_tenant": tenant,
         }
 
@@ -346,7 +346,7 @@ class BasicMongoDb(Db):
         key_type: type[KeyMixin],
         records: Sequence[RecordMixin],
         *,
-        dataset: str,
+        datasets: Sequence[str],
         tenant: str,
         save_policy: SavePolicy,
     ) -> None:
@@ -354,7 +354,7 @@ class BasicMongoDb(Db):
         # Check params
         assert TypeCheck.guard_key_type(key_type)
         assert TypeCheck.guard_record_sequence(records)
-        self._check_dataset(dataset)
+        self._check_datasets(datasets)
         self._check_tenant(tenant)
 
         # Get MongoDB collection for the key type
@@ -365,14 +365,14 @@ class BasicMongoDb(Db):
             # Serialize key
             serialized_key = _KEY_SERIALIZER.serialize(record.get_key())
             key_dict = {
-                "_dataset": dataset,
+                "_dataset": datasets[0],
                 "_key": serialized_key,
                 "_tenant": tenant,
             }
 
             # Serialize record
             serialized_record = _RECORD_SERIALIZER.serialize(record)
-            serialized_record["_dataset"] = dataset
+            serialized_record["_dataset"] = datasets[0]
             serialized_record["_key"] = serialized_key
             serialized_record["_tenant"] = tenant
 
@@ -388,28 +388,28 @@ class BasicMongoDb(Db):
         key_type: type[KeyMixin],
         keys: Sequence[KeyMixin],
         *,
-        dataset: str,
+        datasets: Sequence[str],
         tenant: str,
     ) -> None:
 
         # Check params
         assert TypeCheck.guard_key_type(key_type)
         assert TypeCheck.guard_key_sequence(keys)
-        self._check_dataset(dataset)
+        self._check_datasets(datasets)
         self._check_tenant(tenant)
 
         # Get MongoDB collection for the key type
         collection = self._get_mongo_collection(key_type=key_type)
 
         # Create filter and delete
-        keys_filter = self._get_mongo_keys_filter(keys, dataset=dataset, tenant=tenant)
+        keys_filter = self._get_mongo_keys_filter(keys, datasets=datasets, tenant=tenant)
         collection.delete_many(keys_filter)
 
     def delete_by_query(
         self,
         query: QueryMixin,
         *,
-        dataset: str,
+        datasets: Sequence[str],
         tenant: str,
         restrict_to: type | None = None,
     ) -> None:
@@ -418,7 +418,7 @@ class BasicMongoDb(Db):
         query.check_frozen()
 
         # Check dataset
-        self._check_dataset(dataset)
+        self._check_datasets(datasets)
         self._check_tenant(tenant)
 
         # Get table name from key type and check it has an acceptable format
@@ -433,7 +433,7 @@ class BasicMongoDb(Db):
 
         # Create query dict
         query_dict = {
-            "_dataset": dataset,
+            "_dataset": {"$in": list(datasets)},
             "_tenant": tenant,
         }
 
@@ -658,22 +658,22 @@ class BasicMongoDb(Db):
         self,
         record_dict: dict[str, Any],
         *,
-        expected_dataset: str,
+        expected_datasets: Sequence[str],
     ) -> dict[str, Any]:
         """Prune and validate fields that are not part of the serialized record data and return the same instance."""
 
         # Remove or pop and validate
         del record_dict["_id"]
-        assert record_dict.pop("_dataset") == expected_dataset
+        assert record_dict.pop("_dataset") in expected_datasets
         del record_dict["_key"]
 
         return record_dict
 
-    def _get_mongo_keys_filter(self, keys: Sequence[KeyMixin], *, dataset: str, tenant: str) -> dict[str, Any]:
+    def _get_mongo_keys_filter(self, keys: Sequence[KeyMixin], *, datasets: Sequence[str], tenant: str) -> dict[str, Any]:
         """Get filter for loading records that match one of the specified keys."""
         serialized_keys = tuple(_KEY_SERIALIZER.serialize(key) for key in keys)
         return {
-            "_dataset": dataset,
+            "_dataset": {"$in": list(datasets)},
             "_tenant": tenant,
             "_key": {"$in": serialized_keys},
         }

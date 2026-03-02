@@ -60,7 +60,7 @@ class DataSourceUtil:
             data_source: The active DataSource instance.
         """
         chain = cls.get_parent_chain(data_source)
-        return len({ds.dataset.dataset_id for ds in chain}) > 1
+        return len({d for ds in chain for d in ds.datasets}) > 1
 
     @classmethod
     def has_multiple_databases(cls, data_source: DataSource) -> bool:

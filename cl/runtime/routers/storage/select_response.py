@@ -92,7 +92,7 @@ class SelectResponse(RecordsWithSchemaResponse):
                 include_datatype=include_datatype,
                 include_dataset=include_dataset,
                 include_database=include_database,
-                dataset_value=ds.dataset.dataset_id if include_dataset else "",
+                dataset_value=";".join(ds.datasets) if include_dataset else "",
                 database_value=ds.db.db_id if include_database else "",
             )
             for record in records

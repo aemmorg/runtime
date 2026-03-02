@@ -24,7 +24,6 @@ from cl.runtime.contexts.context_manager import active
 from cl.runtime.contexts.context_manager import active_or_default
 from cl.runtime.db.data_source_key import DataSourceKey
 from cl.runtime.db.dataset import Dataset
-from cl.runtime.db.dataset_key import DatasetKey
 from cl.runtime.db.db import Db
 from cl.runtime.db.db_key import DbKey
 from cl.runtime.db.filter import Filter
@@ -68,8 +67,8 @@ class DataSource(DataSourceKey, RecordMixin):
     db: DbKey = required()
     """Database where lookup is performed (initialized to DB from the current context if not specified)."""
 
-    dataset: DatasetKey = required()
-    """Dataset within the database (initialized to the root dataset if not specified)."""
+    datasets: list[str] = required()
+    """Datasets within the database (initialized to the root dataset if not specified)."""
 
     tenant: TenantKey = required()
     """Tenant within the database (initialized to the common tenant if not specified)."""
@@ -121,8 +120,8 @@ class DataSource(DataSourceKey, RecordMixin):
             self.db = self.load_one(self.db)
 
         # Use root dataset if not specified
-        if self.dataset is None:
-            self.dataset = Dataset.get_root()
+        if self.datasets is None:
+            self.datasets = [Dataset.get_root().dataset_id]
 
         # Use common tenant if not specified
         if self.tenant is None:
@@ -380,7 +379,7 @@ class DataSource(DataSourceKey, RecordMixin):
             self._get_db().load_many(
                 key_type,
                 keys_for_key_type,
-                dataset=self.dataset.dataset_id,
+                datasets=self.datasets,
                 tenant=self.tenant.tenant_id,
                 project_to=project_to,
                 sort_order=db_sort_order,
@@ -481,7 +480,7 @@ class DataSource(DataSourceKey, RecordMixin):
 
         result = self._get_db().load_all(
             key_type=key_type,
-            dataset=self.dataset.dataset_id,
+            datasets=self.datasets,
             tenant=self.tenant.tenant_id,
             cast_to=cast_to,
             restrict_to=restrict_to,
@@ -613,7 +612,7 @@ class DataSource(DataSourceKey, RecordMixin):
 
         result = self._get_db().load_by_query(
             query,
-            dataset=self.dataset.dataset_id,
+            datasets=self.datasets,
             tenant=self.tenant.tenant_id,
             cast_to=cast_to,
             restrict_to=restrict_to,
@@ -660,7 +659,7 @@ class DataSource(DataSourceKey, RecordMixin):
 
         result = self._get_db().count_by_query(
             query,
-            dataset=self.dataset.dataset_id,
+            datasets=self.datasets,
             tenant=self.tenant.tenant_id,
             restrict_to=restrict_to,
         )
@@ -805,7 +804,7 @@ class DataSource(DataSourceKey, RecordMixin):
 
         self._get_db().delete_by_query(
             query,
-            dataset=self.dataset.dataset_id,
+            datasets=self.datasets,
             tenant=self.tenant.tenant_id,
             restrict_to=restrict_to,
         )
@@ -859,7 +858,7 @@ class DataSource(DataSourceKey, RecordMixin):
                     self._get_db().delete_many(
                         key_type,
                         records_for_key_type,
-                        dataset=self.dataset.dataset_id,
+                        datasets=self.datasets,
                         tenant=self.tenant.tenant_id,
                     )
                     for key_type, records_for_key_type in self._group_inputs_by_key_type(
@@ -874,7 +873,7 @@ class DataSource(DataSourceKey, RecordMixin):
                     self._get_db().save_many(
                         key_type,
                         records_for_key_type,
-                        dataset=self.dataset.dataset_id,
+                        datasets=self.datasets,
                         tenant=self.tenant.tenant_id,
                         save_policy=SavePolicy.INSERT,
                     )
@@ -886,7 +885,7 @@ class DataSource(DataSourceKey, RecordMixin):
                     self._get_db().save_many(
                         key_type,
                         records_for_key_type,
-                        dataset=self.dataset.dataset_id,
+                        datasets=self.datasets,
                         tenant=self.tenant.tenant_id,
                         save_policy=SavePolicy.REPLACE,
                     )
@@ -900,7 +899,7 @@ class DataSource(DataSourceKey, RecordMixin):
                         self._backup.save_many(
                             key_type,
                             records_for_key_type,
-                            dataset=self.dataset.dataset_id,
+                            datasets=self.datasets,
                             tenant=self.tenant.tenant_id,
                             save_policy=SavePolicy.INSERT,
                         )
@@ -911,7 +910,7 @@ class DataSource(DataSourceKey, RecordMixin):
                         self._backup.save_many(
                             key_type,
                             records_for_key_type,
-                            dataset=self.dataset.dataset_id,
+                            datasets=self.datasets,
                             tenant=self.tenant.tenant_id,
                             save_policy=SavePolicy.REPLACE,
                         )
@@ -958,14 +957,14 @@ class DataSource(DataSourceKey, RecordMixin):
         # Load all records from backup for this key_type
         records = self._backup.load_all(
             key_type,
-            dataset=self.dataset.dataset_id,
+            datasets=self.datasets,
             tenant=self.tenant.tenant_id,
         )
         if records:
             self._get_db().save_many(
                 key_type,
                 records,
-                dataset=self.dataset.dataset_id,
+                datasets=self.datasets,
                 tenant=self.tenant.tenant_id,
                 save_policy=SavePolicy.REPLACE,
             )

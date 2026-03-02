@@ -110,7 +110,7 @@ class DataService(PydanticMixin):
         data = [
             {
                 **({"Datatype": typename(type(x))} if include_datatype else {}),
-                **({"Dataset": ds.dataset.dataset_id} if include_dataset else {}),
+                **({"Dataset": ";".join(ds.datasets)} if include_dataset else {}),
                 **({"Database": ds.db.db_id} if include_database else {}),
                 **_UI_SERIALIZER.serialize(x),
                 "_key": _KEY_SERIALIZER.serialize(x.get_key()),
@@ -151,7 +151,7 @@ class DataService(PydanticMixin):
         data = [
             {
                 **({"Datatype": typename(type(x))} if include_datatype else {}),
-                **({"Dataset": ds.dataset.dataset_id} if include_dataset else {}),
+                **({"Dataset": ";".join(ds.datasets)} if include_dataset else {}),
                 **({"Database": ds.db.db_id} if include_database else {}),
                 **_UI_SERIALIZER.serialize(x),
                 "_key": _KEY_SERIALIZER.serialize(x.get_key()),
