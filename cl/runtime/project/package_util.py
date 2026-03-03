@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import os
-from cl.runtime.project.project_util import ProjectUtil
+from cl.runtime.project.project_layout import ProjectLayout
 from cl.runtime.settings.project_settings import ProjectSettings
 
 
@@ -54,7 +54,7 @@ class PackageUtil:
         """
 
         caller_dir = os.path.normpath(os.path.abspath(os.path.dirname(caller_file)))
-        project_root = os.path.normpath(ProjectUtil.get_project_root())
+        project_root = os.path.normpath(ProjectLayout.get_project_root())
         project_dirs = ProjectSettings.instance().project_dirs
 
         for namespace, directory in project_dirs.items():

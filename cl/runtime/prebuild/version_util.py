@@ -21,7 +21,7 @@ from cl.runtime.exceptions.error_util import ErrorUtil
 from cl.runtime.prebuild.import_util import ImportUtil
 from cl.runtime.prebuild.version_format import VersionFormat
 from cl.runtime.project.package_util import PackageUtil
-from cl.runtime.project.project_util import ProjectUtil
+from cl.runtime.project.project_layout import ProjectLayout
 from cl.runtime.settings.project_settings import ProjectSettings
 from cl.runtime.settings.version_settings import VersionSettings
 
@@ -125,7 +125,7 @@ class VersionUtil:
 
         # Find containing package to get the package root
         containing_package = PackageUtil.get_containing_package(module)
-        package_root = ProjectUtil.get_package_root(containing_package)
+        package_root = ProjectLayout.get_package_root(containing_package)
         module_path = module.replace(".", "/")
         init_file = Path(package_root) / module_path / "__init__.py"
 

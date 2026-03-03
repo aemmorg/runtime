@@ -17,7 +17,7 @@ from cl.runtime.settings.package_settings import PackageSettings
 
 
 def test_package_settings():
-    """Test ProjectUtil class."""
+    """Test ProjectLayout class."""
 
     # Project settings
     PackageSettings.instance()

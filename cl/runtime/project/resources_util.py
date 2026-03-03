@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import posixpath
-from cl.runtime.project.project_util import ProjectUtil
+from cl.runtime.project.project_layout import ProjectLayout
 from cl.runtime.settings.dynaconf_loader import DynaconfLoader
 
 
@@ -23,7 +23,7 @@ class ResourcesUtil:
     @classmethod
     def get_resources_root(cls) -> str:
         """Contains resources that persist across multiple code runs, specific to Dynaconf environment."""
-        project_root = ProjectUtil.get_project_root()
+        project_root = ProjectLayout.get_project_root()
         settings_env = DynaconfLoader.instance().get_settings_env()
         return posixpath.normpath(posixpath.join(project_root, "resources", settings_env))
 

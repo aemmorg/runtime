@@ -24,8 +24,8 @@ from pathlib import Path
 from cl.runtime.settings.project_settings import ProjectSettings
 from cl.runtime.exceptions.error_util import ErrorUtil
 from cl.runtime.project.project_template_params import ProjectTemplateParams
-from cl.runtime.project.project_layout_kind import ProjectUtilKind
-from cl.runtime.project.project_util import ProjectUtil
+from cl.runtime.project.project_layout_kind import ProjectLayoutKind
+from cl.runtime.project.project_layout import ProjectLayout
 from cl.runtime.settings.package_settings import PackageSettings
 from cl.runtime.templates.jinja_template_engine import JinjaTemplateEngine
 
@@ -60,25 +60,25 @@ def build_template_params() -> ProjectTemplateParams:
 def init_project() -> None:
     """Initialize project files."""
 
-    if (project_layout := ProjectUtil.get_project_layout_kind()) != ProjectUtilKind.MULTIREPO:
+    if (project_layout := ProjectLayout.get_project_layout_kind()) != ProjectLayoutKind.MULTIREPO:
         raise RuntimeError(f"Cannot run init_multirepo script when project layout is {project_layout.name.lower()}.")
 
     # Build template params
     params = build_template_params()
 
     # Get template directory path relative to where the current Python file is located
-    if (layout_kind := ProjectUtil.get_project_layout_kind()) == ProjectUtilKind.MULTIREPO:
+    if (layout_kind := ProjectLayout.get_project_layout_kind()) == ProjectLayoutKind.MULTIREPO:
         template_dir = str(Path(__file__).parent / "init_project/multirepo")
-    elif layout_kind == ProjectUtilKind.MONOREPO:
+    elif layout_kind == ProjectLayoutKind.MONOREPO:
         template_dir = str(Path(__file__).parent / "init_project/monorepo")
     else:
-        raise ErrorUtil.enum_value_error(layout_kind, ProjectUtilKind)
+        raise ErrorUtil.enum_value_error(layout_kind, ProjectLayoutKind)
 
     # Create Jinja2 template engine and render all templates in the template directory
     engine = JinjaTemplateEngine().build()
     engine.render_dir(
         template_dir=template_dir,
-        output_dir=ProjectUtil.get_project_root(),
+        output_dir=ProjectLayout.get_project_root(),
         data=params,
     )
 

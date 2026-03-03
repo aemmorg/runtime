@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from typing import Mapping
 from typing import Sequence
 from typing_extensions import final  # TODO: !!! Do not import from typing_extensions
-from cl.runtime.project.project_util import ProjectUtil
+from cl.runtime.project.project_layout import ProjectLayout
 from cl.runtime.records.for_dataclasses.extensions import required
 from cl.runtime.settings.dynaconf_loader import DynaconfLoader
 from cl.runtime.settings.settings import Settings
@@ -82,7 +82,7 @@ class ProjectSettings(Settings):
         """
 
         # Absolute paths to source and stub directories for all packages
-        project_root = ProjectUtil.get_project_root()
+        project_root = ProjectLayout.get_project_root()
         package_paths = tuple(os.path.join(project_root, x) for x in self.project_dirs.values())
         package_paths = self._normalize_paths(package_paths)
 

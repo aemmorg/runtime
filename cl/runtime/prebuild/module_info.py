@@ -16,7 +16,7 @@ import hashlib
 import os
 import posixpath
 from cl.runtime.prebuild.source_util import SourceUtil
-from cl.runtime.project.project_util import ProjectUtil
+from cl.runtime.project.project_layout import ProjectLayout
 from cl.runtime.project.resources_util import ResourcesUtil
 from cl.runtime.settings.dynaconf_loader import DynaconfLoader
 
@@ -44,7 +44,7 @@ class ModuleInfo:
             Dictionary mapping relative path (forward-slash, relative to project root) to hex hash.
         """
         # Compute hashes and store in ModuleInfo.csv under path relative to project root
-        project_root = ProjectUtil.get_project_root()
+        project_root = ProjectLayout.get_project_root()
         result = {}
         for abs_path in cls.get_abs_monitored_files():
             rel_path = os.path.relpath(abs_path, project_root).replace(os.sep, "/")

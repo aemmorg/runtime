@@ -14,7 +14,7 @@
 
 from dataclasses import dataclass
 from typing_extensions import final
-from cl.runtime.project.project_util import ProjectUtil
+from cl.runtime.project.project_layout import ProjectLayout
 from cl.runtime.settings.settings import Settings
 
 
@@ -36,4 +36,4 @@ class PreloadSettings(Settings):
         """Use instead of __init__ in the builder pattern, invoked by the build method in base to derived order."""
 
         # Convert to absolute paths if specified as relative paths and convert to list if single value is specified
-        self.preload_dirs = ProjectUtil.normalize_paths("dirs", self.preload_dirs)
+        self.preload_dirs = ProjectLayout.normalize_paths("dirs", self.preload_dirs)

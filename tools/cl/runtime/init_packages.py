@@ -31,7 +31,7 @@ import platform
 from pathlib import Path
 from cl.runtime.prebuild.copyright_util import CopyrightUtil
 from cl.runtime.prebuild.version_util import VersionUtil
-from cl.runtime.project.project_util import ProjectUtil
+from cl.runtime.project.project_layout import ProjectLayout
 from cl.runtime.settings.package_settings import PackageSettings
 from cl.runtime.templates.jinja_template_engine import JinjaTemplateEngine
 from cl.runtime.templates.template_engine import transform_part
@@ -65,7 +65,7 @@ def build_template_params(
     """
     # Settings for the specified package
     package_settings = PackageSettings.instance(package=package_namespace)
-    package_root = ProjectUtil.get_package_root(package_namespace)
+    package_root = ProjectLayout.get_package_root(package_namespace)
 
     # Use YAML override for authors if specified, otherwise extract from COPYRIGHT file
     package_authors = package_settings.package_authors or CopyrightUtil.get_authors(package_root, package_namespace)
@@ -194,7 +194,7 @@ def init_packages() -> None:
         # Create Jinja2 template engine and render all templates in the template directory
         engine.render_dir(
             template_dir=template_dir,
-            output_dir=ProjectUtil.get_package_root(package),
+            output_dir=ProjectLayout.get_package_root(package),
             data=params,
         )
 

@@ -16,7 +16,7 @@ from dataclasses import dataclass
 import click
 from cl.runtime.cli.cli_command import CliCommand
 from cl.runtime.file.csv_reader import CsvReader
-from cl.runtime.project.project_util import ProjectUtil
+from cl.runtime.project.project_layout import ProjectLayout
 from cl.runtime.settings.project_settings import ProjectSettings
 
 
@@ -36,13 +36,13 @@ class FixCsvQuotesCmd(CliCommand):
 
             dirs = set()
             for package in packages:
-                if (x := ProjectUtil.get_package_source_root(package)) is not None and x not in dirs:
+                if (x := ProjectLayout.get_package_source_root(package)) is not None and x not in dirs:
                     dirs.add(x)
-                if (x := ProjectUtil.get_package_stubs_root(package)) is not None and x not in dirs:
+                if (x := ProjectLayout.get_package_stubs_root(package)) is not None and x not in dirs:
                     dirs.add(x)
-                if (x := ProjectUtil.get_package_tests_root(package)) is not None and x not in dirs:
+                if (x := ProjectLayout.get_package_tests_root(package)) is not None and x not in dirs:
                     dirs.add(x)
-                if (x := ProjectUtil.get_package_preloads_root(package)) is not None and x not in dirs:
+                if (x := ProjectLayout.get_package_preloads_root(package)) is not None and x not in dirs:
                     dirs.add(x)
 
             CsvReader.check_or_fix_quotes(

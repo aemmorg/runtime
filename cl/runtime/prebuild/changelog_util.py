@@ -17,7 +17,7 @@ import os
 import re
 import subprocess
 from pathlib import Path
-from cl.runtime.project.project_util import ProjectUtil
+from cl.runtime.project.project_layout import ProjectLayout
 from cl.runtime.settings.package_settings import PackageSettings
 
 
@@ -46,7 +46,7 @@ class ChangelogUtil:
         Returns:
             Absolute path to the package's CHANGELOG.md file.
         """
-        package_root = ProjectUtil.get_package_root(package)
+        package_root = ProjectLayout.get_package_root(package)
         return os.path.join(package_root, cls._CHANGELOG_FILENAME)
 
     @classmethod
@@ -89,7 +89,7 @@ class ChangelogUtil:
         Returns:
             List of (date, subject) tuples.
         """
-        project_root = ProjectUtil.get_project_root()
+        project_root = ProjectLayout.get_project_root()
 
         cmd = [
             "git",

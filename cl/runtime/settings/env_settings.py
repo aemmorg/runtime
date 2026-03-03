@@ -18,7 +18,7 @@ from typing_extensions import final
 from cl.runtime.primitive.case_util import CaseUtil
 from cl.runtime.primitive.enum_util import EnumUtil
 from cl.runtime.primitive.identifier_util import IdentifierUtil
-from cl.runtime.project.project_util import ProjectUtil
+from cl.runtime.project.project_layout import ProjectLayout
 from cl.runtime.project.resources_util import ResourcesUtil
 from cl.runtime.records.for_dataclasses.extensions import required
 from cl.runtime.records.typename import typename
@@ -116,8 +116,8 @@ class EnvSettings(Settings):
             IdentifierUtil.guard_valid_identifier(self.env_dir, allow_braces=True, allow_directory_separators=True)
             # Perform variable substitution
             env_dir_vars = {
-                "project_root": ProjectUtil.get_project_root(),
-                "project_resources": ResourcesUtil.get_resources_root(),  # TODO: Update after ProjectUtil changes
+                "project_root": ProjectLayout.get_project_root(),
+                "project_resources": ResourcesUtil.get_resources_root(),  # TODO: Update after ProjectLayout changes
                 "env_id": self.env_id,
                 "env_kind": CaseUtil.upper_to_snake_case(self.env_kind.name),
                 "env_user": self.env_user,

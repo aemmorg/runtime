@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import os
-from cl.runtime.project.project_util import ProjectUtil
+from cl.runtime.project.project_layout import ProjectLayout
 from cl.runtime.settings.project_settings import ProjectSettings
 
 
@@ -43,9 +43,9 @@ class InitFileUtil:
         all_root_paths = set()
         for package in packages:
             # Add paths to source and stubs directories
-            if (x := ProjectUtil.get_package_source_root(package)) is not None and x not in all_root_paths:
+            if (x := ProjectLayout.get_package_source_root(package)) is not None and x not in all_root_paths:
                 all_root_paths.add(x)
-            if (x := ProjectUtil.get_package_stubs_root(package)) is not None and x not in all_root_paths:
+            if (x := ProjectLayout.get_package_stubs_root(package)) is not None and x not in all_root_paths:
                 all_root_paths.add(x)
 
         # Apply to each element of root_paths

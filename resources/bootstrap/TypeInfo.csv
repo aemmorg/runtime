@@ -190,7 +190,7 @@ PrimitiveDecl,Record,cl.runtime.schema.primitive_decl.PrimitiveDecl,None,Primiti
 PrimitiveSerializer,Data,cl.runtime.serializers.primitive_serializer.PrimitiveSerializer,None,PrimitiveSerializer;Serializer,PrimitiveSerializer
 PrimitiveSpec,Data,cl.runtime.schema.primitive_spec.PrimitiveSpec,None,PrimitiveSpec;TypeSpec,PrimitiveSpec
 ProcessQueue,Record,cl.runtime.tasks.process_queue.ProcessQueue,None,ProcessQueue;TaskQueue;TaskQueueKey,ProcessQueue
-ProjectUtilKind,Enum,cl.runtime.project.project_layout_kind.ProjectUtilKind,None,,
+ProjectLayoutKind,Enum,cl.runtime.project.project_layout_kind.ProjectLayoutKind,None,,
 ProjectSettings,Data,cl.runtime.settings.project_settings.ProjectSettings,None,ProjectSettings;Settings,ProjectSettings
 PydanticMixin,Data,cl.runtime.records.for_pydantic.pydantic_mixin.PydanticMixin,None,,DataService;FilterScreenItem;PydanticMixin;RecordPanel;ScreensResponse;SelectDataResponse;StubPydantic;StubPydanticData;StubPydanticHandlers;StubPydanticHandlersKey;StubPydanticKey;StubPydanticNestedFields;TableScreenItem;TypeScreenItem
 QaSettings,Data,cl.runtime.settings.qa_settings.QaSettings,None,QaSettings;Settings,QaSettings

@@ -19,7 +19,7 @@ from pathlib import Path
 import ruamel.yaml
 from cl.runtime.auth.secrets_provider import SecretsProvider
 from cl.runtime.primitive.datetime_util import DatetimeUtil
-from cl.runtime.project.project_util import ProjectUtil
+from cl.runtime.project.project_layout import ProjectLayout
 from cl.runtime.settings.secrets_settings import SecretsSettings
 
 
@@ -80,7 +80,7 @@ class LocalSecretsProvider(SecretsProvider):
         }
 
     def _get_secrets_dir(self) -> Path:
-        return Path(ProjectUtil.get_project_root()).joinpath(Path(SecretsSettings.instance().secrets_path))
+        return Path(ProjectLayout.get_project_root()).joinpath(Path(SecretsSettings.instance().secrets_path))
 
     def _load_secrets(self) -> dict[str, dict]:
         secrets_path = self._get_secrets_dir() / ".secrets.yaml"

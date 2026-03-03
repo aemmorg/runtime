@@ -16,7 +16,7 @@ from enum import IntEnum
 from enum import auto
 
 
-class ProjectUtilKind(IntEnum):
+class ProjectLayoutKind(IntEnum):
     """Specifies monorepo vs multirepo project layout."""
 
     MULTIREPO = auto()
