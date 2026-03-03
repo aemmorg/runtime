@@ -54,7 +54,7 @@ class TemplateEngine(TemplateEngineKey, RecordMixin, ABC):
         """Use instead of __init__ in the builder pattern, invoked by the build method in base to derived order."""
         if self.engine_id is None:
             # Use globally unique UUIDv7-based timestamp if not specified
-            self.engine_id = Timestamp.now()
+            self.engine_id = Timestamp.create()
 
     @abstractmethod
     def render(self, *, body: str, data: DataMixin | Mapping[str, Any]) -> str:

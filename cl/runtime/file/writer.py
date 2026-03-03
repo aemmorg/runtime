@@ -40,7 +40,7 @@ class Writer(WriterKey, RecordMixin, ABC):
         """Use instead of __init__ in the builder pattern, invoked by the build method in base to derived order."""
         # Use globally unique UUIDv7-based timestamp if not specified
         if self.writer_id is None:
-            self.writer_id = Timestamp.now()
+            self.writer_id = Timestamp.create()
 
     @abstractmethod
     def to_files(

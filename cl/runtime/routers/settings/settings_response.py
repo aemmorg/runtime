@@ -26,7 +26,7 @@ from cl.runtime.settings.dynaconf_loader import ENVVAR_PREFIX
 from cl.runtime.settings.dynaconf_loader import DynaconfLoader
 from cl.runtime.settings.project_settings import ProjectSettings
 
-SESSION_ID = Timestamp.now()
+SESSION_ID = Timestamp.create()
 
 
 def _get_envs() -> list[EnvInfo]:

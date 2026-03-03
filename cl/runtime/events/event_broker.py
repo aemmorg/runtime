@@ -49,7 +49,7 @@ class EventBroker(EventBrokerKey, RecordMixin, ABC):
         """Use instead of __init__ in the builder pattern, invoked by the build method in base to derived order."""
         # Use globally unique UUIDv7-based timestamp if not specified
         if self.broker_id is None:
-            self.broker_id = Timestamp.now()
+            self.broker_id = Timestamp.create()
 
         if self.tenant is None:
             self.tenant = Tenant.get_common()

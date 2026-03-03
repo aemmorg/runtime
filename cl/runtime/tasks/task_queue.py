@@ -46,7 +46,7 @@ class TaskQueue(TaskQueueKey, ABC):
 
         # Use globally unique UUIDv7-based timestamp if not specified
         if self.queue_id is None:
-            self.queue_id = Timestamp.now()
+            self.queue_id = Timestamp.create()
 
         if self.tenant is None:
             self.tenant = Tenant.get_common()

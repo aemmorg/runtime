@@ -23,7 +23,7 @@ def test_resume(multi_db_fixture):
 
     # Create and run the experiment with num_trials set to 5
     num_trials_set = StubBinaryExperiment(
-        experiment_id=f"test_launch_all_trials.num_trials_set.{Timestamp.now()}",
+        experiment_id=f"test_launch_all_trials.num_trials_set.{Timestamp.create()}",
         num_trials=2,
         cases=[
             Case(param_id="Test1"),

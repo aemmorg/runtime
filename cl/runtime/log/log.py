@@ -40,7 +40,7 @@ class Log(LogKey, RecordMixin, ABC):
         """Use instead of __init__ in the builder pattern, invoked by the build method in base to derived order."""
         if self.log_id is None:
             # Use globally unique UUIDv7-based timestamp if not specified
-            self.log_id = Timestamp.now()
+            self.log_id = Timestamp.create()
 
     @classmethod
     def default(cls) -> Self:

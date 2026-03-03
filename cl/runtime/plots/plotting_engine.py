@@ -32,7 +32,7 @@ class PlottingEngine(PlottingEngineKey, RecordMixin, ABC):
         """Use instead of __init__ in the builder pattern, invoked by the build method in base to derived order."""
         if self.plotting_engine_id is None:
             # Use globally unique UUIDv7-based timestamp if not specified
-            self.plotting_engine_id = Timestamp.now()
+            self.plotting_engine_id = Timestamp.create()
 
     @abstractmethod
     def render_html(self, plot: Plot) -> bytes:

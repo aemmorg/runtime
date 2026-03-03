@@ -123,11 +123,11 @@ def test_now():
         datetime_before = DatetimeUtil.floor(dt.datetime.now(dt.timezone.utc))
 
         # Datetime from ordered UUID before rounded down to 1ms per UUIDv7 RFC-9562 standard
-        from_ordered_uuid_before = Timestamp.to_datetime(Timestamp.now())
+        from_ordered_uuid_before = Timestamp.to_datetime(Timestamp.create())
         now = DatetimeUtil.now()
 
         # Datetime from ordered UUID after rounded down to 1ms per UUIDv7 RFC-9562 standard
-        from_ordered_uuid_after = Timestamp.to_datetime(Timestamp.now())
+        from_ordered_uuid_after = Timestamp.to_datetime(Timestamp.create())
 
         # Datetime after rounded up to 1ms per UUIDv7 RFC-9562 standard
         datetime_after = DatetimeUtil.ceil(dt.datetime.now(dt.timezone.utc))

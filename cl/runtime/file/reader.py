@@ -32,7 +32,7 @@ class Reader(ReaderKey, RecordMixin, ABC):
         """Use instead of __init__ in the builder pattern, invoked by the build method in base to derived order."""
         # Use globally unique UUIDv7-based timestamp if not specified
         if self.reader_id is None:
-            self.reader_id = Timestamp.now()
+            self.reader_id = Timestamp.create()
 
     @abstractmethod
     def load_all(

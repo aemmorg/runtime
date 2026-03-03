@@ -97,7 +97,7 @@ class DbEventBroker(EventBroker):
             self._sent_event_buffer: deque[str] = deque(maxlen=100)
 
         if self._from_timestamp is None:
-            self._from_timestamp = Timestamp.now()
+            self._from_timestamp = Timestamp.create()
 
         if self._event_queue is None:
             self._event_queue: asyncio.Queue[Event] = asyncio.Queue()

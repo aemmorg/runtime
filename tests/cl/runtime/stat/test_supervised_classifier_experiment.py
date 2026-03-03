@@ -23,7 +23,7 @@ def test_smoke(multi_db_fixture):
     """Test for BinaryExperiment class with supervised=True."""
     # Create and run the experiment
     experiment = StubSupervisedClassifierExperiment(
-        experiment_id=f"test_supervised_classifier_experiment.test_smoke.{Timestamp.now()}",
+        experiment_id=f"test_supervised_classifier_experiment.test_smoke.{Timestamp.create()}",
         class_labels=["A", "B", "C"],
         num_trials=5,
         cases=[
@@ -35,7 +35,7 @@ def test_smoke(multi_db_fixture):
 
 def test_plot(multi_db_fixture, work_dir_fixture):
     experiment = StubSupervisedClassifierExperiment(
-        experiment_id=f"Test.{Timestamp.now()}",
+        experiment_id=f"Test.{Timestamp.create()}",
         cases=[
             Case(param_id="Test1"),
             Case(param_id="Test2"),

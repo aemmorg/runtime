@@ -33,4 +33,4 @@ class EventKey(DataclassMixin, KeyMixin):
     def __init(self) -> None:
         """Use instead of __init__ in the builder pattern, invoked by the build method in base to derived order."""
         if self.timestamp is None:
-            self.timestamp = Timestamp.now()
+            self.timestamp = Timestamp.create()

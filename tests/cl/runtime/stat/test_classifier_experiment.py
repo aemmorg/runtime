@@ -23,7 +23,7 @@ def test_smoke(multi_db_fixture):
     """Test for ClassifierExperiment."""
     # Create and run the experiment
     experiment = StubClassifierExperiment(
-        experiment_id=f"test_classifier_experiment.test_smoke.{Timestamp.now()}",
+        experiment_id=f"test_classifier_experiment.test_smoke.{Timestamp.create()}",
         num_trials=5,
         class_labels=["A", "B", "C"],
         cases=[
@@ -35,7 +35,7 @@ def test_smoke(multi_db_fixture):
 
 def test_plot(multi_db_fixture, work_dir_fixture):
     experiment = StubClassifierExperiment(
-        experiment_id=f"Test.{Timestamp.now()}",
+        experiment_id=f"Test.{Timestamp.create()}",
         cases=[
             Case(param_id="Test1"),
             Case(param_id="Test2"),
