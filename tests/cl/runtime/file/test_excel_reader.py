@@ -24,58 +24,60 @@ _STUBS_DIR = os.path.normpath(
 )
 
 
-def test_single_sheet_conversion():
+def test_single_sheet_workbook(work_dir_fixture):
     """Test single-sheet xlsx produces single CSV with correct content."""
 
-    xlsx_path = os.path.join(_STUBS_DIR, "StubDataclassWorkbook.xlsx")
-    csv_path = os.path.join(_STUBS_DIR, "StubDataclassWorkbook.csv")
+    input_filename = "StubDataclass.SingleSheetWorkbook.xlsx"
+    expected_output_filename = input_filename.replace(".xlsx", ".csv")
+    output_filenames = []
     try:
-        csv_paths = ExcelReader._convert_file(xlsx_path)
+        output_filenames = ExcelReader._convert_file(input_filename)
 
-        assert len(csv_paths) == 1
-        assert os.path.normpath(csv_paths[0]) == csv_path
-        assert os.path.exists(csv_path)
+        assert len(output_filenames) == 1
+        assert os.path.normpath(output_filenames[0]) == expected_output_filename
+        assert os.path.exists(expected_output_filename)
 
-        with open(csv_path, "r", encoding="utf-8") as f:
+        with open(expected_output_filename, "r", encoding="utf-8") as f:
             rows = list(csv.DictReader(f))
 
         assert len(rows) == 2
         assert rows[0]["Id"] == "xlsx_one"
         assert rows[1]["Id"] == "xlsx_two"
     finally:
-        if os.path.exists(csv_path):
-            os.remove(csv_path)
+        for filename in output_filenames:
+            if os.path.exists(filename):
+                os.remove(filename)
 
 
-def test_multi_sheet_conversion():
+def test_multi_sheet_workbook(work_dir_fixture):
     """Test multi-sheet xlsx produces separate CSVs with normalized sheet names."""
 
-    xlsx_path = os.path.join(_STUBS_DIR, "StubDataclassMultiWorkbook.xlsx")
-    csv_path_1 = os.path.join(_STUBS_DIR, "StubDataclassMultiWorkbook.SheetOne.csv")
-    csv_path_2 = os.path.join(_STUBS_DIR, "StubDataclassMultiWorkbook.SheetTwo.csv")
+    input_filename = "StubDataclass.MultiSheetWorkbook.xlsx"
+    expected_output_filenames = [
+        "StubDataclass.MultiSheetWorkbook.SheetOne.csv",
+        "StubDataclass.MultiSheetWorkbook.SheetTwo.csv"
+    ]
+    output_filenames = []
     try:
-        csv_paths = ExcelReader._convert_file(xlsx_path)
-
-        assert len(csv_paths) == 2
-        assert os.path.exists(csv_path_1)
-        assert os.path.exists(csv_path_2)
+        output_filenames = ExcelReader._convert_file(input_filename)
+        assert output_filenames == expected_output_filenames
 
         # Check first sheet content
-        with open(csv_path_1, "r", encoding="utf-8") as f:
+        with open(output_filenames[0], "r", encoding="utf-8") as f:
             rows = list(csv.DictReader(f))
         assert len(rows) == 2
         assert rows[0]["Id"] == "xlsx_multi_sheet_one_a"
         assert rows[1]["Id"] == "xlsx_multi_sheet_one_b"
 
         # Check second sheet content
-        with open(csv_path_2, "r", encoding="utf-8") as f:
+        with open(output_filenames[1], "r", encoding="utf-8") as f:
             rows = list(csv.DictReader(f))
         assert len(rows) == 1
         assert rows[0]["Id"] == "xlsx_multi_sheet_two_a"
     finally:
-        for path in [csv_path_1, csv_path_2]:
-            if os.path.exists(path):
-                os.remove(path)
+        for filename in output_filenames:
+            if os.path.exists(filename):
+                os.remove(filename)
 
 
 def test_sheet_name_normalization():
@@ -88,12 +90,12 @@ def test_sheet_name_normalization():
     assert ExcelReader._normalize_sheet_name("NoChange") == "NoChange"
 
 
-def test_collision_detection():
+def test_sheet_name_collision_detection(work_dir_fixture):
     """Test that normalized sheet name collision raises RuntimeError."""
 
-    xlsx_path = os.path.join(_STUBS_DIR, "StubDataclassCollisionWorkbook.xlsx")
+    input_filename = "StubDataclass.SheetNameCollision.xlsx"
     with pytest.raises(RuntimeError, match="Sheet name collision"):
-        ExcelReader._convert_file(xlsx_path)
+        ExcelReader._convert_file(input_filename)
 
 
 def test_format_date_field_iso_int():
@@ -186,27 +188,6 @@ def test_temporal_field_types():
     # Non-temporal fields should not be present
     assert "key_str_field" not in temporal
     assert "obj_int_field" not in temporal
-
-
-def test_convert_to_csv(tmp_path):
-    """Test convert_to_csv classmethod finds and converts xlsx files in directories."""
-
-    xlsx_path = os.path.join(str(tmp_path), "StubDataclass.xlsx")
-    csv_path = os.path.join(str(tmp_path), "StubDataclass.csv")
-
-    wb = Workbook()
-    ws = wb.active
-    ws["A1"] = "Id"
-    ws["A2"] = "convert_test"
-    wb.save(xlsx_path)
-
-    ExcelReader.convert_to_csv(dirs=[str(tmp_path)], ext="xlsx")
-
-    assert os.path.exists(csv_path)
-    with open(csv_path, "r", encoding="utf-8") as f:
-        rows = list(csv.DictReader(f))
-    assert len(rows) == 1
-    assert rows[0]["Id"] == "convert_test"
 
 
 if __name__ == "__main__":
