@@ -28,11 +28,11 @@ class ProjectTemplateParams(DataclassMixin):
     package_dirs: Sequence[str] = required()
     """Ordered package directory names from PackageSettings."""
 
-    combined_package_dependencies: Sequence[str] | None = None
-    """Combined dependencies from all packages."""
+    main_package_entries: Sequence[Mapping[str, str]] = required()
+    """List of dicts with 'name' and 'path' for each main package (for path-dependency rendering)."""
 
     combined_test_dependencies: Sequence[str] | None = None
-    """Combined test dependencies from all packages."""
+    """Combined test dependencies from all packages (concatenated without dep-tree resolution)."""
 
     def to_dict(self) -> Mapping[str, Any]:
         """Convert all fields to a dict suitable for Jinja2 template rendering."""

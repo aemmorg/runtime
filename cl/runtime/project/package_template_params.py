@@ -59,13 +59,10 @@ class PackageTemplateParams(DataclassMixin):
     """URL mapping for pyproject.toml (e.g., Repository -> URL)."""
 
     package_dependencies: Sequence[str] | None = None
-    """Direct package dependencies."""
+    """Direct package dependencies from this package's settings.yaml only."""
 
-    combined_package_dependencies: Sequence[str] | None = None
-    """Combined dependencies from current and all earlier packages."""
-
-    combined_test_dependencies: Sequence[str] | None = None
-    """Combined test dependencies from current and all earlier packages."""
+    package_test_dependencies: Sequence[str] | None = None
+    """Direct test dependencies from this package's settings.yaml only."""
 
     package_has_shared_data: bool | None = None
     """If True, include py.typed marker in pyproject.toml."""  # TODO(Claude): Why py.typed if it is data rather than code that is shared?

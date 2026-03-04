@@ -1,6 +1,10 @@
 [project]
+name = "project"
+version = "0.0.0"
+description = "Project root for dependency resolution"
+requires-python = ">=3.11"
 dependencies = [
-{% for dep in combined_package_dependencies %}    "{{ dep }}",
+{% for entry in main_package_entries %}    "{{ entry.name }}",
 {% endfor %}]
 {%- if combined_test_dependencies %}
 
@@ -9,6 +13,22 @@ test = [
 {% for dep in combined_test_dependencies %}    "{{ dep }}",
 {% endfor %}]
 {%- endif %}
+
+# uv path dependency sources (used by uv pip compile / uv lock)
+[tool.uv.sources]
+{% for entry in main_package_entries %}{{ entry.name }} = { path = "{{ entry.path }}", editable = true }
+{% endfor %}
+# Poetry path dependency sources (used by poetry lock / poetry export)
+[tool.poetry]
+name = "project"
+version = "0.0.0"
+description = "Project root for dependency resolution"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = ">=3.11"
+{% for entry in main_package_entries %}{{ entry.name }} = { path = "{{ entry.path }}", develop = true }
+{% endfor %}
 
 [tool.autoflake]
 recursive = true

@@ -21,6 +21,8 @@ import cl.runtime.bootstrap
 # isort: on
 
 import argparse
+import subprocess
+import sys
 from pathlib import Path
 from cl.runtime.exceptions.error_util import ErrorUtil
 from cl.runtime.project.project_template_params import ProjectTemplateParams
@@ -32,28 +34,37 @@ from cl.runtime.templates.jinja_template_engine import JinjaTemplateEngine
 
 
 def build_template_params() -> ProjectTemplateParams:
-    """Build template parameters for the project including package directories and combined dependencies."""
+    """Build template parameters for the project including package directories and path dependencies."""
 
     # Extract unique package directory names (excluding stubs and ".")
     package_dirs = ProjectSettings.instance().get_package_dirs()
 
-    # Collect combined dependencies from all main packages in order
+    # Collect main packages and build path-dependency entries
     all_packages = ProjectSettings.instance().get_packages()
+    project_dirs_map = ProjectSettings.instance().project_dirs
     main_packages = [p for p in all_packages if not p.startswith("stubs.")]
 
-    combined_package_dependencies = []
+    main_package_entries = []
     combined_test_dependencies = []
     for package in main_packages:
         pkg_settings = PackageSettings.instance(package=package)
-        if pkg_settings.package_dependencies:
-            combined_package_dependencies.extend(pkg_settings.package_dependencies)
+
+        # Build path-dependency entry with package name and relative directory
+        pkg_dir = project_dirs_map[package]
+        entry = {
+            "name": pkg_settings.package_name or package.split(".")[-1],
+            "path": pkg_dir,
+        }
+        main_package_entries.append(entry)
+
+        # Collect test deps (concatenated without dep-tree resolution)
         if pkg_settings.package_test_dependencies:
             combined_test_dependencies.extend(pkg_settings.package_test_dependencies)
 
     result = ProjectTemplateParams(
         package_dirs=package_dirs,
-        combined_package_dependencies=combined_package_dependencies,
-        combined_test_dependencies=combined_test_dependencies,
+        main_package_entries=main_package_entries,
+        combined_test_dependencies=combined_test_dependencies if combined_test_dependencies else None,
     )
     return result
 
@@ -86,6 +97,15 @@ def init_project(force: bool = False) -> None:
         output_dir=ProjectLayout.get_project_root(),
         data=params,
         force=force,
+    )
+
+    # Run update_requirements to resolve the full dependency tree (uv/poetry/pip-compile)
+    # and generate the unified requirements.txt at project root
+    update_requirements_script = str(Path(__file__).parent / "update_requirements.py")
+    project_root = ProjectUtil.get_project_root()
+    subprocess.run(
+        [sys.executable, update_requirements_script, "--project-root", project_root],
+        check=True,
     )
 
 

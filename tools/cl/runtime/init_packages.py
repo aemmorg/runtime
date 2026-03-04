@@ -128,16 +128,7 @@ def build_template_params(
     sections.extend(entry["known_section"] for entry in isort_known_stubs)
     sections.extend(["FIRSTPARTY", "LOCALFOLDER"])
 
-    # Combine dependencies from all included packages in order, do not remove duplicates across packages
-    combined_package_dependencies = []
-    combined_test_dependencies = []
-    for package in included_main_packages:
-        pkg_settings = PackageSettings.instance(package=package)
-        if pkg_settings.package_dependencies:
-            combined_package_dependencies.extend(pkg_settings.package_dependencies)
-        if pkg_settings.package_test_dependencies:
-            combined_test_dependencies.extend(pkg_settings.package_test_dependencies)
-
+    # Use only this package's own dependencies from its settings.yaml (not cumulative)
     params = PackageTemplateParams(
         package_name=package_settings.package_name,
         package_namespace=package_namespace,
@@ -150,8 +141,7 @@ def build_template_params(
         package_classifiers=package_settings.package_classifiers,
         package_urls=package_settings.package_urls,
         package_dependencies=package_settings.package_dependencies,
-        combined_package_dependencies=combined_package_dependencies,
-        combined_test_dependencies=combined_test_dependencies,
+        package_test_dependencies=package_settings.package_test_dependencies,
         package_has_shared_data=package_settings.package_has_shared_data,
         package_has_mypy=package_settings.package_has_mypy,
         main_packages=included_main_packages,
