@@ -28,7 +28,7 @@ def test_single_sheet_workbook(work_dir_fixture):
     """Test single-sheet xlsx produces single CSV with correct content."""
 
     input_filename = "SingleSheetWorkbook.xlsx"
-    expected_output_filename = input_filename.replace(".xlsx", ".csv")
+    expected_output_filename = "SingleSheetWorkbook.SingleSheet.csv"
     output_filenames = []
     try:
         output_filenames = ExcelReader._convert_file(input_filename)
