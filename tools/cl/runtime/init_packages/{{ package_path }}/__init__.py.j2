@@ -1,1 +1,4 @@
+{% for line in package_copyright.split('\n') %}{% if line %}# {{ line }}
+{% else %}#
+{% endif %}{% endfor %}
 __version__ = "{{ package_version }}"
