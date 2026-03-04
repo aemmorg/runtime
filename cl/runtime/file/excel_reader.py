@@ -83,17 +83,16 @@ class ExcelReader(Reader):
         dir_path = os.path.dirname(xlsx_path)
         base_name = os.path.splitext(os.path.basename(xlsx_path))[0]
 
-        # For multiple sheets, normalize names and check for collisions
-        if len(sheet_names) > 1:
-            normalized = {}
-            for name in sheet_names:
-                norm_name = cls._normalize_sheet_name(name)
-                if norm_name in normalized:
-                    raise RuntimeError(
-                        f"Sheet name collision in '{xlsx_path}': sheets '{normalized[norm_name]}' and '{name}' "
-                        f"both normalize to '{norm_name}'."
-                    )
-                normalized[norm_name] = name
+        # Normalize names and check for collisions
+        normalized = {}
+        for name in sheet_names:
+            norm_name = cls._normalize_sheet_name(name)
+            if norm_name in normalized:
+                raise RuntimeError(
+                    f"Sheet name collision in '{xlsx_path}': sheets '{normalized[norm_name]}' and '{name}' "
+                    f"both normalize to '{norm_name}'."
+                )
+            normalized[norm_name] = name
 
         # Get record type and temporal field types from schema
         record_type = FileUtil.get_type_from_filename(xlsx_path, raise_on_fail=False)
@@ -119,12 +118,9 @@ class ExcelReader(Reader):
                 if field_name in temporal_fields:
                     column_types[i] = temporal_fields[field_name]
 
-            # Determine CSV filename
-            if len(sheet_names) == 1:
-                csv_path = f"{stem}.csv"
-            else:
-                norm_name = cls._normalize_sheet_name(sheet_name)
-                csv_path = os.path.join(dir_path, f"{base_name}.{norm_name}.csv")
+            # Create CSV filenames
+            norm_name = cls._normalize_sheet_name(sheet_name)
+            csv_path = os.path.join(dir_path, f"{base_name}.{norm_name}.csv")
 
             # Write CSV with consistent settings
             with open(csv_path, "w", newline="", encoding="utf-8") as f:
@@ -132,7 +128,7 @@ class ExcelReader(Reader):
                     f,
                     delimiter=",",
                     quotechar='"',
-                    quoting=csv.QUOTE_MINIMAL,
+                    quoting=csv.QUOTE_MINIMAL,  # noqa Expects a literal
                     lineterminator="\n",
                 )
                 writer.writerow(headers)

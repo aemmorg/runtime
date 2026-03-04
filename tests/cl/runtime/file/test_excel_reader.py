@@ -27,7 +27,7 @@ _STUBS_DIR = os.path.normpath(
 def test_single_sheet_workbook(work_dir_fixture):
     """Test single-sheet xlsx produces single CSV with correct content."""
 
-    input_filename = "StubDataclass.SingleSheetWorkbook.xlsx"
+    input_filename = "SingleSheetWorkbook.xlsx"
     expected_output_filename = input_filename.replace(".xlsx", ".csv")
     output_filenames = []
     try:
@@ -52,10 +52,10 @@ def test_single_sheet_workbook(work_dir_fixture):
 def test_multi_sheet_workbook(work_dir_fixture):
     """Test multi-sheet xlsx produces separate CSVs with normalized sheet names."""
 
-    input_filename = "StubDataclass.MultiSheetWorkbook.xlsx"
+    input_filename = "MultiSheetWorkbook.xlsx"
     expected_output_filenames = [
-        "StubDataclass.MultiSheetWorkbook.SheetOne.csv",
-        "StubDataclass.MultiSheetWorkbook.SheetTwo.csv"
+        "MultiSheetWorkbook.SheetOne.csv",
+        "MultiSheetWorkbook.SheetTwo.csv"
     ]
     output_filenames = []
     try:
@@ -93,7 +93,7 @@ def test_sheet_name_normalization():
 def test_sheet_name_collision_detection(work_dir_fixture):
     """Test that normalized sheet name collision raises RuntimeError."""
 
-    input_filename = "StubDataclass.SheetNameCollision.xlsx"
+    input_filename = "SheetNameCollision.xlsx"
     with pytest.raises(RuntimeError, match="Sheet name collision"):
         ExcelReader._convert_file(input_filename)
 
