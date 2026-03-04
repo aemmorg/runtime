@@ -29,6 +29,7 @@ class SourceUtil:
         package: str | None = None,
         file_include_patterns: Sequence[str] | None = None,
         file_exclude_patterns: Sequence[str] | None = None,
+        skip_empty_files: bool = True
     ) -> tuple[str, ...]:
         """Get list of source file paths across all packages or a single package.
 
@@ -36,6 +37,7 @@ class SourceUtil:
             package: Optional dot-delimited package name to filter by (e.g., 'cl.runtime')
             file_include_patterns: Optional list of filename glob patterns to include (default: ['*.py'])
             file_exclude_patterns: Optional list of filename glob patterns to exclude (default: ['__init__.py'])
+            skip_empty_files: If True, exclude files that are empty (0 bytes) from the results (default: True)
 
         Returns:
             List of absolute file paths for all matched source files.
@@ -43,8 +45,11 @@ class SourceUtil:
 
         if file_include_patterns is None:
             file_include_patterns = ["*.py"]
+
+        # Exclude __init__.py files only when processing empty files is requested.
+        # Otherwise, non-empty __init__.py files should be processed as well as other source files.
         if file_exclude_patterns is None:
-            file_exclude_patterns = ["__init__.py"]
+            file_exclude_patterns = [] if skip_empty_files else ["__init__.py"]
 
         all_packages = ProjectSettings.instance().get_packages()
         if package is not None:
@@ -80,6 +85,8 @@ class SourceUtil:
                     filenames = [x for x in filenames if not any(fnmatch(x, y) for y in file_exclude_patterns)]
                     for filename in filenames:
                         file_path = os.path.join(dir_path, filename)
+                        if skip_empty_files and os.path.getsize(file_path) == 0:
+                            continue
                         result.append(str(file_path))
 
         return tuple(result)
