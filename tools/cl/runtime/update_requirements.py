@@ -180,9 +180,9 @@ def _resolve_with_poetry(poetry: str, project_root: str) -> str:
     """
     print("Resolving dependency tree with Poetry...")
 
-    # poetry lock (try --no-update first for speed)
+    # poetry lock (try --no-update first for speed, then --regenerate if that fails for any reason)
     lock_result = None
-    for extra_args in (["--no-update"], []):
+    for extra_args in ([], ["--regenerate"]):
         lock_result = subprocess.run(
             [poetry, "lock", *extra_args],
             cwd=project_root,
