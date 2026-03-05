@@ -26,7 +26,7 @@ description = "Project root for dependency resolution"
 package-mode = false
 
 [tool.poetry.dependencies]
-python = ">=3.11"
+python = ">=3.11, <4"
 {% for entry in main_package_entries %}{{ entry.name }} = { path = "{{ entry.path }}", develop = true }
 {% endfor %}
 
