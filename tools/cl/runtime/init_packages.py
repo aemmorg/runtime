@@ -18,8 +18,6 @@ from typing import Sequence
 # This code block must remain at the top before any other imports
 import locate
 
-from cl.runtime.settings.project_settings import ProjectSettings
-
 locate.append_sys_path("../..")
 locate.append_sys_path("../../../../runtime")
 import cl.runtime.bootstrap
@@ -35,6 +33,7 @@ from cl.runtime.prebuild.version_util import VersionUtil
 from cl.runtime.project.package_template_params import PackageTemplateParams
 from cl.runtime.project.project_layout import ProjectLayout
 from cl.runtime.settings.package_settings import PackageSettings
+from cl.runtime.settings.project_settings import ProjectSettings
 from cl.runtime.templates.jinja_template_engine import JinjaTemplateEngine
 from cl.runtime.templates.template_engine import transform_part
 
