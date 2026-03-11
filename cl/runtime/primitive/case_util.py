@@ -14,7 +14,6 @@
 
 import re
 from typing import Pattern
-from memoization import cached
 from cl.runtime.primitive.char_util import CharUtil
 
 _ALPHANUMERIC_RE: Pattern = re.compile(r"[^a-zA-Z0-9 .]")
@@ -23,46 +22,84 @@ _ALPHANUMERIC_RE: Pattern = re.compile(r"[^a-zA-Z0-9 .]")
 _ALPHANUMERIC_OR_UNDERSCORE_RE: Pattern = re.compile(r"[^a-zA-Z0-9 ._]")
 """Match sequences where all characters are either letters or digits or an underscore, also allowing dot and space."""
 
-_DIGIT_UNDERSCORE_VIOLATIONS_RE: Pattern = re.compile(r"(?<=\d)_(?=\d)|(?<![_\d])\d")
-"""Digit without preceding underscore or underscore between digits pattern"""
+_PASCAL_TO_SNAKE_RE: Pattern = re.compile(r"([a-z])([A-Z\d])")
+"""Insert underscore after a lowercase letter followed by an uppercase letter or digit."""
+
+_DIGIT_UNDERSCORE_VIOLATIONS_RE: Pattern = re.compile(r"(?<=\d)_")
+"""No underscore after a digit (digits glue forward onto following letters)."""
 
 _DIGIT_WITHOUT_SPACE_RE: Pattern = re.compile(r"(?<! )\d")
 """Digit without space pattern"""
 
-_SNAKE_TO_PASCAL_DICT: dict[str, str] = {"type_": "Type"}
-"""Mapping from snake_case to PascalCase, initialized with hardcoded entries and expanded from DB on demand."""
-
-_PASCAL_TO_SNAKE_DICT: dict[str, str] = {v: k for k, v in _SNAKE_TO_PASCAL_DICT.items()}
-"""Mapping from PascalCase to snake_case, initialized with hardcoded entries and expanded from DB on demand."""
-
-_CONVERSION_RULES_LOADED: bool = False
-"""Flag indicating whether CaseConversionRule records have been loaded from DB."""
-
 
 class CaseUtil:
-    """
-    Utilities for case conversion between PascalCase, snake_case, UPPER_CASE, and Title Case.
+    """Utilities for case conversion between PascalCase, snake_case, UPPER_CASE, and Title Case.
 
-    PascalCase to snake_case:
-        Split at the boundary where a lowercase letter is followed by an uppercase letter
-        or digit, concatenate with underscores, and lowercase everything.
+    Conversion Rules:
 
-        ``AbcDef``    -> ``abc_def``
-        ``Abc2``      -> ``abc_2``
-        ``Abc2DEF``   -> ``abc_2def``
+        PascalCase to snake_case (forward rule):
+            Insert _ after every lowercase letter followed by an uppercase letter or digit,
+            then lowercase the result. Regex: re.sub(r'([a-z])([A-Z\\d])', r'\\1_\\2', s).lower()
 
-    snake_case to PascalCase:
-        Split on underscores. In segments containing digits, uppercase all letters.
-        In other segments, capitalize the first letter. Concatenate without underscores.
+            Examples:
+                AbcDef -> abc_def          (lowercase-uppercase boundary)
+                Abc2D -> abc_2d            (lowercase-digit boundary)
+                ABC2D -> abc2d             (no lowercase, no _ inserted)
+                AbcT0 -> abc_t0            (lowercase-uppercase boundary)
+                Abc123DEF -> abc_123def    (lowercase-digit boundary, digits glue forward)
 
-        ``abc_def``   -> ``AbcDef``
-        ``abc_2``     -> ``Abc2``
-        ``abc_2def``  -> ``Abc2DEF``
+        snake_case to PascalCase (reverse rule):
+            Split by _ into segments, pascalize each segment:
+            - If the segment contains any digit, uppercase all letters
+            - Otherwise, capitalize the first letter only (standard capitalize)
 
-    UPPER_CASE and Title Case conversions go through snake_case as an intermediate form.
+            Examples:
+                abc_def -> AbcDef          (no digits: capitalize)
+                abc_2d -> Abc2D            (segment 2d has digit: all uppercase)
+                abc2d -> ABC2D             (single segment has digit: all uppercase)
+                abc_t0 -> AbcT0            (segment t0 has digit: all uppercase)
+                abc_123def -> Abc123DEF    (segment 123def has digit: all uppercase)
 
-    Both ``pascal_to_snake_case`` and ``snake_to_pascal_case`` verify the round-trip
-    and raise an error if it does not match.
+        Digit separator rule (No digit_):
+            Digits glue forward onto following letters. No underscore may appear
+            immediately after a digit: 2d not 2_d, 2abc not 2_abc.
+
+        UPPER_CASE is snake_case uppercased, so the same digit separator rule applies.
+
+        Title Case uses spaces instead of underscores, with the same pascalization per word.
+
+        Invalid PascalCase (rejected by check_pascal_case):
+            A segment is a maximal substring where no lowercase letter is
+            immediately followed by an uppercase letter or digit (i.e. the
+            forward rule inserts no _ within it). Each segment must satisfy:
+            - Segment without digits: only the first letter may be uppercase
+            - Segment with digits: all letters must be uppercase
+
+            Segment examples:
+                AbcDef    = Abc | Def       (split at c->D, lowercase-uppercase)
+                Abc2DEF   = Abc | 2DEF      (split at c->2, lowercase-digit)
+                ABC2DEF   = ABC2DEF         (single segment, no lowercase-to-upper/digit)
+
+            Invalid examples (-> shows round-trip result):
+                ABC -> Abc               (one segment, no digits, multiple uppercase)
+                ABCDef -> Abcdef          (one segment, no digits, multiple uppercase)
+                ABC2Def -> ABC2DEF        (one segment, has digits, lowercase 'ef')
+                A2a -> A2A               (one segment, has digits, lowercase 'a')
+
+        Invalid snake_case (rejected by check_snake_case):
+            A segment with both digits and letters must be the last segment
+            within its dot-delimited token. The all-uppercase pascalization
+            of such a segment merges with the following segment, losing the
+            underscore boundary.
+
+            Invalid examples (-> shows round-trip result):
+                abc_2d_ef -> abc_2def     (digit segment '2d' merges with 'ef')
+                abc_2d_3 -> abc_2d3       (digit segment '2d' merges with '3')
+                another_valid_3dcase_2 -> another_valid_3dcase2
+                    (digit segment '3dcase' merges with '2')
+
+        Invalid UPPER_CASE (rejected by check_upper_case):
+            Same rules as invalid snake_case applied to the lowercased value.
     """
 
     @classmethod
@@ -72,38 +109,16 @@ class CaseUtil:
         return value is None or value == ""
 
     @classmethod
-    @cached
     def pascal_to_snake_case(cls, value: str | None) -> str | None:
-        """Convert PascalCase to snake_case, error if round-trip does not match."""
+        """Convert PascalCase to snake_case using a custom rule for separators in front of digits."""
         if cls.is_empty(value):
             return value
         cls.check_pascal_case(value)
-
-        # Check in-memory dict (has hardcoded entries before DB load)
-        if value in _PASCAL_TO_SNAKE_DICT:
-            return _PASCAL_TO_SNAKE_DICT[value]
-
-        # Perform conversion, check roundtrip
-        result = cls._pascal_to_snake_unchecked(value)
-        back = cls._snake_to_pascal_unchecked(result)
-        if back != value:
-            # Load conversion rules from DB on demand, then retry lookup
-            cls._ensure_conversion_rules_loaded()
-            if value in _PASCAL_TO_SNAKE_DICT:
-                return _PASCAL_TO_SNAKE_DICT[value]
-            raise RuntimeError(
-                f"String '{value}' cannot be converted to snake_case because the round-trip conversion\n"
-                f"produces '{back}' instead of the original '{value}'."
-                f"Please either:\n"
-                f"(a) Change PascalCase name from '{value}' to '{back}' to allow lossless\n"
-                f"    PascalCase to snake_case roundtrip or\n"
-                f"(b) Add the intended snake_case and PascalCase pair to case_conversion_rules in settings.\n"
-            )
-        return result
+        return cls._pascal_to_snake_unchecked(value)
 
     @classmethod
     def upper_to_snake_case(cls, value: str | None) -> str | None:
-        """Convert UPPER_CASE to snake_case by lowercasing."""
+        """Convert UPPER_CASE to snake_case using a custom rule for separators in front of digits."""
         if cls.is_empty(value):
             return value
         cls.check_upper_case(value)
@@ -111,45 +126,23 @@ class CaseUtil:
 
     @classmethod
     def snake_to_upper_case(cls, value: str | None) -> str | None:
-        """Convert snake_case to UPPER_CASE by uppercasing."""
+        """Convert snake_case to UPPER_CASE using a custom rule for separators in front of digits."""
         if cls.is_empty(value):
             return value
         cls.check_snake_case(value)
         return value.upper()
 
     @classmethod
-    @cached
     def snake_to_pascal_case(cls, value: str | None) -> str | None:
-        """Convert snake_case to PascalCase, error if round-trip does not match."""
+        """Convert snake_case to PascalCase using a custom rule for separators in front of digits."""
         if cls.is_empty(value):
             return value
         cls.check_snake_case(value)
-
-        # Check in-memory dict (has hardcoded entries before DB load)
-        if value in _SNAKE_TO_PASCAL_DICT:
-            return _SNAKE_TO_PASCAL_DICT[value]
-
-        # Perform conversion, check roundtrip
-        result = cls._snake_to_pascal_unchecked(value)
-        back = cls._pascal_to_snake_unchecked(result)
-        if back != value:
-            # Load conversion rules from DB on demand, then retry lookup
-            cls._ensure_conversion_rules_loaded()
-            if value in _SNAKE_TO_PASCAL_DICT:
-                return _SNAKE_TO_PASCAL_DICT[value]
-            raise RuntimeError(
-                f"String '{value}' cannot be converted to PascalCase because the round-trip conversion\n"
-                f"produces '{back}' instead of the original '{value}'."
-                f"Please either:\n"
-                f"(a) Change snake_case string from '{value}' to '{back}' to allow lossless\n"
-                f"    snake_case to PascalCase roundtrip or\n"
-                f"(b) Add the intended snake_case and PascalCase pair to case_conversion_rules in settings.\n"
-            )
-        return result
+        return cls._snake_to_pascal_unchecked(value)
 
     @classmethod
     def upper_to_pascal_case(cls, value: str | None) -> str | None:
-        """Convert UPPER_CASE to PascalCase. Convert to snake_case, then to PascalCase."""
+        """Convert UPPER_CASE to PascalCase using a custom rule for separators in front of digits."""
         if cls.is_empty(value):
             return value
         cls.check_upper_case(value)
@@ -157,7 +150,7 @@ class CaseUtil:
 
     @classmethod
     def pascal_to_upper_case(cls, value: str | None) -> str | None:
-        """Convert PascalCase to UPPER_CASE. Convert to snake_case, then uppercase."""
+        """Convert PascalCase to UPPER_CASE using a custom rule for separators in front of digits."""
         if cls.is_empty(value):
             return value
         cls.check_pascal_case(value)
@@ -166,17 +159,19 @@ class CaseUtil:
 
     @classmethod
     def pascal_to_title_case(cls, value: str | None) -> str | None:
-        """Convert PascalCase to Title Case. Convert to snake_case, then pascalize segments with spaces."""
+        """Convert PascalCase to Title Case using a custom rule for separators in front of digits."""
         if cls.is_empty(value):
             return value
         cls.check_pascal_case(value)
         snake_case_value = cls.pascal_to_snake_case(value)
 
-        return " ".join(cls.__pascalize_segment(segment) for segment in snake_case_value.split("_"))
+        # Apply the processing (i.e. `_pascalize_segment()`) function to each segment and join
+        # them into Title Case.
+        return " ".join(cls._pascalize_segment(segment) for segment in snake_case_value.split("_"))
 
     @classmethod
     def snake_to_title_case(cls, value: str | None) -> str | None:
-        """Convert snake_case to Title Case. Convert to PascalCase, then to Title Case."""
+        """Convert snake_case to Title Case using a custom rule for separators in front of digits."""
         if cls.is_empty(value):
             return value
         cls.check_snake_case(value)
@@ -216,10 +211,11 @@ class CaseUtil:
         cls._check_no_upper(value, "snake_case")
         cls._check_double_underscore(value, "snake_case")
         cls._check_snake_case_digit_separator(value)
+        cls._check_round_trip(value, "snake_case")
 
     @classmethod
     def check_pascal_case(cls, value: str | None) -> None:
-        """Error message if arg is not PascalCase."""
+        """Error message if arg is not PascalCase or does not follow the custom rule for separators in front of digits."""
         if cls.is_empty(value):
             # Consider None or empty string compliant with the format
             return
@@ -227,6 +223,7 @@ class CaseUtil:
         cls._check_no_space(value, "PascalCase")
         cls._check_no_underscore(value, "PascalCase")
         cls._check_first_letter_capitalized(value, "PascalCase")
+        cls._check_round_trip(value, "PascalCase")
 
     @classmethod
     def check_title_case(cls, value: str | None) -> None:
@@ -249,22 +246,20 @@ class CaseUtil:
         cls._check_no_space(value, "UPPER_CASE")
         cls._check_no_lower(value, "UPPER_CASE")
         cls._check_upper_case_digit_separator(value)
+        cls._check_round_trip(value, "UPPER_CASE")
 
     @classmethod
     def is_pascal_case(cls, value: str) -> bool:
-        """Check if the string is in PascalCase by basic format check."""
-        if cls.is_empty(value):
+        """Check if the string is in PascalCase."""
+        try:
+            cls.check_pascal_case(value)
             return True
-        # Only alphanumeric and dots, no spaces or underscores, first letter capitalized
-        if _ALPHANUMERIC_RE.search(value) or " " in value or "_" in value or not value[0].isupper():
+        except RuntimeError:
             return False
-        return True
 
     @classmethod
     def is_snake_case(cls, value: str) -> bool:
-        """Check if the string is in snake_case, including the digit-separator rule."""
-        if cls.is_empty(value):
-            return True
+        """Check if the string is in snake_case."""
         try:
             cls.check_snake_case(value)
             return True
@@ -273,23 +268,21 @@ class CaseUtil:
 
     @classmethod
     def is_title_case(cls, value: str) -> bool:
-        """Check if the string is in Title Case by basic format check."""
-        if cls.is_empty(value):
+        """Check if the string is in Title Case."""
+        try:
+            cls.check_title_case(value)
             return True
-        # Only alphanumeric, dots, and spaces, no underscores, first letter capitalized
-        if _ALPHANUMERIC_RE.search(value) or "_" in value or not value[0].isupper():
+        except RuntimeError:
             return False
-        return True
 
     @classmethod
     def is_upper_case(cls, value: str) -> bool:
-        """Check if the string is in UPPER_CASE by basic format check."""
-        if cls.is_empty(value):
+        """Check if the string is in UPPER_CASE."""
+        try:
+            cls.check_upper_case(value)
             return True
-        # Only uppercase, digits, underscores, and dots, no spaces or lowercase
-        if _ALPHANUMERIC_OR_UNDERSCORE_RE.search(value) or " " in value or any(c.islower() for c in value):
+        except RuntimeError:
             return False
-        return True
 
     @classmethod
     def _check_non_alphanumeric(cls, value: str, format_: str, allow_underscore: bool) -> None:
@@ -346,6 +339,8 @@ class CaseUtil:
     @classmethod
     def _check_snake_case_digit_separator(cls, value: str) -> None:
         """Error message stating string does not follow the custom rule for digit separators"""
+        # snake_case must have an underscore in front of digits
+        # snake_case forbids underscore between digits
         if _DIGIT_UNDERSCORE_VIOLATIONS_RE.search(value):
             raise RuntimeError(
                 f"String {value} is not snake_case because it does not follow the rule "
@@ -355,6 +350,7 @@ class CaseUtil:
     @classmethod
     def _check_title_case_digit_separator(cls, value: str) -> None:
         """Error message stating string does not follow the custom rule for separators in front of digits"""
+        # Title Case must have a space in front of digits
         if _DIGIT_WITHOUT_SPACE_RE.search(value):
             raise RuntimeError(
                 f"String {value} is not Title Case because it does not follow the rule "
@@ -362,8 +358,27 @@ class CaseUtil:
             )
 
     @classmethod
+    def _check_round_trip(cls, value: str, format_: str) -> None:
+        """Error message if the value does not survive a lossless round-trip conversion."""
+        if format_ == "PascalCase":
+            back = cls._snake_to_pascal_unchecked(cls._pascal_to_snake_unchecked(value))
+        elif format_ == "snake_case":
+            back = cls._pascal_to_snake_unchecked(cls._snake_to_pascal_unchecked(value))
+        elif format_ == "UPPER_CASE":
+            back = cls._pascal_to_snake_unchecked(cls._snake_to_pascal_unchecked(value.lower())).upper()
+        else:
+            return
+        if back != value:
+            raise RuntimeError(
+                f"String {value} is not {format_} because it does not round-trip "
+                f"losslessly (converts to {back}).",
+            )
+
+    @classmethod
     def _check_upper_case_digit_separator(cls, value: str) -> None:
         """Error message stating string does not follow the custom rule for digit separators"""
+        # Make a round trip from snake_case to PascalCase and back to snake_case to check
+        # if the value stays the same
         if _DIGIT_UNDERSCORE_VIOLATIONS_RE.search(value):
             raise RuntimeError(
                 f"String {value} is not UPPER_CASE because it does not follow the rule "
@@ -372,59 +387,28 @@ class CaseUtil:
 
     @classmethod
     def _pascal_to_snake_unchecked(cls, value: str) -> str:
-        """Convert PascalCase to snake_case without validation."""
-        result = re.sub(r"([a-z])([A-Z0-9])", r"\1_\2", value)
-        return result.lower()
+        """Apply the forward rule without validation (used by round-trip checks)."""
+        return _PASCAL_TO_SNAKE_RE.sub(r"\1_\2", value).lower()
 
     @classmethod
     def _snake_to_pascal_unchecked(cls, value: str) -> str:
-        """Convert snake_case to PascalCase without validation."""
-        input_tokens = value.split(".")
+        """Apply the reverse rule without validation (used by round-trip checks)."""
         return ".".join(
-            ["".join(cls.__pascalize_segment(segment) for segment in token.split("_")) for token in input_tokens]
+            "".join(cls._pascalize_segment(segment) for segment in token.split("_"))
+            for token in value.split(".")
         )
 
     @classmethod
-    def __pascalize_segment(cls, segment: str) -> str:
+    def _pascalize_segment(cls, segment: str) -> str:
         """
-        Pascalize a segment (substring between 2 underscores) from snake_case.
-        If the segment contains any digit, all letters become uppercase.
-        Otherwise, capitalize the first letter of the segment.
+        Pascalize a segment (substring between 2 underscores) from snake_case
+        using a custom rule for separators in front of digits.
+
+        If the segment contains any digit, all letters are uppercased.
+        Otherwise, only the first letter is uppercased (standard capitalize).
         """
-        if any(char.isdigit() for char in segment):
+        if not segment:
+            return segment
+        if any(c.isdigit() for c in segment):
             return segment.upper()
         return segment.capitalize()
-
-    @classmethod
-    def _ensure_conversion_rules_loaded(cls) -> None:
-        """Load case conversion rules from CaseSettings into the in-memory dicts. No-op if already loaded."""
-        global _CONVERSION_RULES_LOADED
-        if _CONVERSION_RULES_LOADED:
-            return
-
-        try:
-            # Deferred import to avoid circular dependency: case_util -> case_settings -> project_settings -> dynaconf_loader -> qa_util -> case_util
-            from cl.runtime.settings.case_settings import CaseSettings
-            snake_to_pascal, pascal_to_snake = CaseSettings.get_combined_conversion_rules()
-        except Exception:
-            # Settings may not be available during early bootstrap
-            return
-
-        for snake, pascal in snake_to_pascal.items():
-            # Check for conflicts with hardcoded entries
-            if snake in _SNAKE_TO_PASCAL_DICT and _SNAKE_TO_PASCAL_DICT[snake] != pascal:
-                raise RuntimeError(
-                    f"Conflicting case conversion for snake_case value '{snake}': "
-                    f"existing mapping '{snake}' -> '{_SNAKE_TO_PASCAL_DICT[snake]}' "
-                    f"conflicts with settings entry '{snake}' -> '{pascal}'."
-                )
-            if pascal in _PASCAL_TO_SNAKE_DICT and _PASCAL_TO_SNAKE_DICT[pascal] != snake:
-                raise RuntimeError(
-                    f"Conflicting case conversion for PascalCase value '{pascal}': "
-                    f"existing mapping '{pascal}' -> '{_PASCAL_TO_SNAKE_DICT[pascal]}' "
-                    f"conflicts with settings entry '{pascal}' -> '{snake}'."
-                )
-            _SNAKE_TO_PASCAL_DICT[snake] = pascal
-            _PASCAL_TO_SNAKE_DICT[pascal] = snake
-
-        _CONVERSION_RULES_LOADED = True
