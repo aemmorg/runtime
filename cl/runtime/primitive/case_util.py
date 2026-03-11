@@ -59,7 +59,7 @@ class CaseUtil:
             Insert _ after every lowercase letter followed by an uppercase letter or digit,
             then lowercase the result. Regex: re.sub(r'([a-z])([A-Z\\d])', r'\\1_\\2', s).lower()
 
-            Examples:
+    Examples:
                 AbcDef -> abc_def          (lowercase-uppercase boundary)
                 Abc2D -> abc_2d            (lowercase-digit boundary)
                 ABC2D -> abc2d             (no lowercase, no _ inserted)
@@ -71,7 +71,7 @@ class CaseUtil:
             - If the segment contains any digit, uppercase all letters
             - Otherwise, capitalize the first letter only (standard capitalize)
 
-            Examples:
+    Examples:
                 abc_def -> AbcDef          (no digits: capitalize)
                 abc_2d -> Abc2D            (segment 2d has digit: all uppercase)
                 abc2d -> ABC2D             (single segment has digit: all uppercase)
