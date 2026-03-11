@@ -212,8 +212,8 @@ class CsvReader(Reader):
         # Normalize chars and set None for empty strings
         row_dict = {CharUtil.normalize(k): CharUtil.normalize_or_none(v) for k, v in row_dict.items()}
 
-        # Convert PascalCase column headers to snake_case field names
-        row_dict = {CaseUtil.pascal_to_snake_case(k) if not k.startswith("_") else k: v for k, v in row_dict.items()}
+        # Convert column headers to snake_case field names
+        row_dict = {CaseUtil.any_to_snake_case(k) if not k.startswith("_") else k: v for k, v in row_dict.items()}
 
         # Normalize Excel-modified formats (thousand separators in numbers, locale-specific dates, times and datetimes)
         row_dict = {

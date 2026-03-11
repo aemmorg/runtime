@@ -119,5 +119,27 @@ def test_performance(default_db_fixture, tmp_path):
             f.write(f"{row_count},{elapsed:.6f}\n")
 
 
+def test_load_column_formats(default_db_fixture):
+    """Test that CsvReader handles column headers in various case formats.
+
+    Each fixture CSV file has the same two columns (Id, DerivedStrField) but
+    with headers written in a different convention:
+    PascalCase, snake_case, UPPER_CASE, Title Case, camelCase, kebab-case.
+    """
+
+    env_dir = QaUtil.get_test_dir_from_call_stack()
+    csv_reader = CsvReader().build()
+
+    format_names = ["PascalCase", "snake_case", "UPPER_CASE", "Title Case", "camelCase", "kebab-case"]
+    for i, fmt in enumerate(format_names, start=1):
+        records = csv_reader.load_all(
+            dirs=[env_dir], ext="csv", file_include_patterns=[f"StubDataclassDerived.{fmt}.*"],
+        )
+        assert len(records) == 1, f"Expected 1 record for {fmt} format, got {len(records)}"
+
+        expected = StubDataclassDerived(id=f"col_fmt_{i}", derived_str_field=f"value_{i}").build()
+        assert records[0] == expected, f"Record mismatch for {fmt} column format"
+
+
 if __name__ == "__main__":
     pytest.main([__file__])
