@@ -37,32 +37,30 @@ def _create_task(queue: TaskQueueKey) -> TaskKey:
     return task.get_key()
 
 
-@pytest.mark.skip("Celery tasks lock sqlite db file.")  # TODO (Roman): resolve conflict
-def test_method(celery_queue_fixture):
+def test_method(default_db_fixture, celery_queue_fixture, event_broker_fixture):
     """Test calling 'CeleryQueue.run_task' method in-process."""
 
     # Create queue
     queue_id = f"test_celery_queue.test_method"
-    queue = CeleryQueue(queue_id=queue_id)
+    queue = CeleryQueue(queue_id=queue_id).build()
     active(DataSource).replace_one(queue, commit=True)
 
     # Create task
     task_key = _create_task(queue.get_key())
 
     # Delegates to 'CeleryQueue.run_task' method, invoked in-process
-    context_snapshot_data = ContextSnapshot.to_json()
+    context_snapshot_data = ContextSnapshot.capture_active().to_json()
     celery_run_task(
         task_key.task_id,
         context_snapshot_data,
     )
 
 
-@pytest.mark.skip("Celery tasks lock sqlite db file.")  # TODO (Roman): resolve conflict
-def test_api(celery_queue_fixture):
+def test_api(default_db_fixture, celery_queue_fixture, event_broker_fixture):
     """Test submitting task for execution out of process."""
     # Create queue
     queue_id = f"test_celery_queue.test_api"
-    queue = CeleryQueue(queue_id=queue_id)
+    queue = CeleryQueue(queue_id=queue_id).build()
     active(DataSource).replace_one(queue, commit=True)
 
     # Create task

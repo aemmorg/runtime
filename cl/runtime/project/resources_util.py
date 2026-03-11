@@ -32,3 +32,9 @@ class ResourcesUtil:
         """Contains resources used for type system initialization."""
         resources_root = cls.get_resources_root()
         return posixpath.normpath(posixpath.join(resources_root, "bootstrap"))
+
+    @classmethod
+    def get_celery_root(cls) -> str:
+        """Contains celery broker database files."""
+        resources_root = cls.get_resources_root()
+        return posixpath.normpath(posixpath.join(resources_root, "celery"))

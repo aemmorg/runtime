@@ -15,7 +15,8 @@
 import os
 from dataclasses import dataclass
 from typing_extensions import final
-from cl.runtime.settings.db_settings import DbSettings
+from cl.runtime.project.resources_util import ResourcesUtil
+from cl.runtime.settings.env_settings import EnvSettings
 from cl.runtime.settings.settings import Settings
 
 
@@ -72,10 +73,11 @@ class CelerySettings(Settings):
             raise RuntimeError("Celery broker is not specified in settings.")
 
         if self.celery_broker == "sqlite":
-            databases_dir = DbSettings.get_db_dir()
-            celery_file = os.path.join(databases_dir, f"celery.sqlite")
+            celery_root = ResourcesUtil.get_celery_root()
+            env_id = EnvSettings.instance().env_id
+            celery_file = os.path.join(celery_root, f"celery.{env_id.lower()}.sqlite")
 
-            self._ensure_databases_dir_exists(databases_dir)
+            os.makedirs(celery_root, exist_ok=True)
 
             self.celery_broker_uri = f"sqlalchemy+sqlite:///{celery_file}"
         elif self.celery_broker in ["redis", "rabbitmq", "sqs", "mongodb"]:
@@ -86,9 +88,3 @@ class CelerySettings(Settings):
         else:
             raise RuntimeError(f"Unsupported Celery broker: {self.celery_broker}")
 
-    @classmethod
-    def _ensure_databases_dir_exists(cls, db_dir) -> None:
-        """Checks if a dir for celery exists, and creates it if it does not."""
-
-        if not os.path.exists(db_dir):
-            os.makedirs(db_dir)
