@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 from dataclasses import dataclass
 from typing import Iterable
 from typing import Sequence
@@ -56,9 +57,9 @@ class YamlWriter(Writer):
             if record is None:
                 continue
 
-            # Serialize record to JSON dict and then to YAML string
+            # Serialize record to JSON dict and then to YAML string with OS-specific line endings
             record_dict = _SERIALIZER.serialize(record)
-            record_yaml_str = _ENCODER.encode(record_dict)
+            record_yaml_str = _ENCODER.encode(record_dict).replace("\n", os.linesep)
 
             # Build file path from record type and key
             dirname_for_record = FileUtil.get_dirname_for_record(record)

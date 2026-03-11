@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 from collections import defaultdict
 from typing import Iterable
 from typing import Sequence
@@ -53,8 +54,8 @@ class CsvWriter(Writer):
             if records_df.empty:
                 continue
 
-            # Convert DataFrame to CSV string with Windows line endings for platform independence
-            csv_string = records_df.to_csv(index=False, encoding="utf-8", lineterminator="\n")
+            # Convert DataFrame to CSV string with OS-specific line endings
+            csv_string = records_df.to_csv(index=False, encoding="utf-8", lineterminator=os.linesep)
 
             # Convert CSV string to bytes and yield FileData
             file_name = f"{record_type.__name__}.csv"

@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 from collections import defaultdict
 from dataclasses import dataclass
 from typing import Iterable
@@ -65,8 +66,9 @@ class JsonlWriter(Writer):
                 record_dict = _SERIALIZER.serialize(record)
                 lines.append(orjson.dumps(record_dict))
 
-            # Join lines with newlines and add trailing newline per JSONL convention
-            jsonl_bytes = b"\n".join(lines) + b"\n"
+            # Join lines with OS-specific line endings and add trailing newline per JSONL convention
+            eol = os.linesep.encode()
+            jsonl_bytes = eol.join(lines) + eol
 
             # One file per type, named after the record class
             file_name = f"{record_type.__name__}.jsonl"

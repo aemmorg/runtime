@@ -80,7 +80,7 @@ def test_json_writer_save_all():
     # Verify JSON content for each file
     for file_data in file_data_list:
         # Decode bytes to string
-        json_content = file_data.file_bytes.decode("utf-8")
+        json_content = file_data.file_bytes.decode("utf-8").replace("\r\n", "\n")
 
         # Verify it's valid JSON
         json_obj = json.loads(json_content)
@@ -157,7 +157,7 @@ def test_json_writer_save_zip():
 
         # Extract and verify contents of each JSON file
         for file_path in file_list:
-            json_content = zip_archive.read(file_path).decode("utf-8")
+            json_content = zip_archive.read(file_path).decode("utf-8").replace("\r\n", "\n")
 
             # Verify it's valid JSON
             json_obj = json.loads(json_content)
@@ -221,7 +221,7 @@ def test_json_writer_single_record_type():
         guard.write(f"  - {file_data.name}")
 
         # Verify content
-        json_content = file_data.file_bytes.decode("utf-8")
+        json_content = file_data.file_bytes.decode("utf-8").replace("\r\n", "\n")
         json_obj = json.loads(json_content)
 
         # Verify that each JSON has the expected type
@@ -259,7 +259,7 @@ def test_json_writer_file_naming():
         guard.write(f"  - {file_data.name}")
         # Verify it's a valid JSON file
         assert file_data.name.endswith(".json")
-        json_content = file_data.file_bytes.decode("utf-8")
+        json_content = file_data.file_bytes.decode("utf-8").replace("\r\n", "\n")
         json.loads(json_content)  # Verify valid JSON
 
     RegressionGuard().verify_all()
@@ -319,7 +319,7 @@ def test_json_writer_record_content():
     file_data = file_data_list[0]
 
     # Parse JSON content
-    json_content = file_data.file_bytes.decode("utf-8")
+    json_content = file_data.file_bytes.decode("utf-8").replace("\r\n", "\n")
     json_obj = json.loads(json_content)
 
     # Verify content structure

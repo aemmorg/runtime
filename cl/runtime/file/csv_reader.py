@@ -115,7 +115,7 @@ class CsvReader(Reader):
                     delimiter=",",
                     quotechar='"',
                     quoting=csv.QUOTE_MINIMAL,  # noqa
-                    lineterminator="\n",
+                    lineterminator=os.linesep,
                 )
                 writer.writerows(updated_rows)
         return is_valid

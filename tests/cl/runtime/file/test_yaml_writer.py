@@ -79,7 +79,7 @@ def test_yaml_writer_save_all():
     # Verify YAML content for each file
     for file_data in file_data_list:
         # Decode bytes to string
-        yaml_content = file_data.file_bytes.decode("utf-8")
+        yaml_content = file_data.file_bytes.decode("utf-8").replace("\r\n", "\n")
 
         # Write to regression guard with channel name based on the folder and file name
         folder = file_data.relative_path or "root"
@@ -153,7 +153,7 @@ def test_yaml_writer_save_zip():
 
         # Extract and verify contents of each YAML file
         for file_path in file_list:
-            yaml_content = zip_archive.read(file_path).decode("utf-8")
+            yaml_content = zip_archive.read(file_path).decode("utf-8").replace("\r\n", "\n")
 
             # Create channel name from the file path
             channel_name = f"zip_yaml_{file_path.replace('/', '_').replace('.yaml', '')}"
@@ -214,7 +214,7 @@ def test_yaml_writer_single_record_type():
         guard.write(f"  - {file_data.name}")
 
         # Verify content
-        yaml_content = file_data.file_bytes.decode("utf-8")
+        yaml_content = file_data.file_bytes.decode("utf-8").replace("\r\n", "\n")
 
         # Write content to separate channel
         filename_no_ext = file_data.name.replace(".yaml", "")
@@ -247,7 +247,7 @@ def test_yaml_writer_file_naming():
         guard.write(f"  - {file_data.name}")
         # Verify it's a valid YAML file
         assert file_data.name.endswith(".yaml")
-        yaml_content = file_data.file_bytes.decode("utf-8")
+        yaml_content = file_data.file_bytes.decode("utf-8").replace("\r\n", "\n")
 
     RegressionGuard().verify_all()
 
@@ -306,7 +306,7 @@ def test_yaml_writer_record_content():
     file_data = file_data_list[0]
 
     # Parse YAML content
-    yaml_content = file_data.file_bytes.decode("utf-8")
+    yaml_content = file_data.file_bytes.decode("utf-8").replace("\r\n", "\n")
 
     # Verify content structure
     guard = RegressionGuard(prefix="record_content").build()

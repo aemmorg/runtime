@@ -129,7 +129,7 @@ class ExcelReader(Reader):
                     delimiter=",",
                     quotechar='"',
                     quoting=csv.QUOTE_MINIMAL,  # noqa Expects a literal
-                    lineterminator="\n",
+                    lineterminator=os.linesep,
                 )
                 writer.writerow(headers)
                 for row in data_rows:

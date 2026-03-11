@@ -60,7 +60,7 @@ def test_csv_writer_save_all():
 
     for file_data in file_data_list:
         # Decode bytes to string for text comparison
-        csv_content = file_data.file_bytes.decode("utf-8")
+        csv_content = file_data.file_bytes.decode("utf-8").replace("\r\n", "\n")
 
         # Write to regression guard with channel name based on the file name
         channel_name = file_data.name.replace(".csv", "")
@@ -119,7 +119,7 @@ def test_csv_writer_save_zip():
 
         # Extract and verify contents of each CSV file
         for filename in file_list:
-            csv_content = zip_archive.read(filename).decode("utf-8")
+            csv_content = zip_archive.read(filename).decode("utf-8").replace("\r\n", "\n")
             channel_name = f"zip_csv_{filename.replace('.csv', '')}"
             guard_for_csv = RegressionGuard(prefix=channel_name).build()
             guard_for_csv.write(csv_content)
@@ -166,7 +166,7 @@ def test_csv_writer_single_record_type():
 
     # Verify content using RegressionGuard
     guard = RegressionGuard(prefix="single_type").build()
-    csv_content = file_data.file_bytes.decode("utf-8")
+    csv_content = file_data.file_bytes.decode("utf-8").replace("\r\n", "\n")
     guard.write(csv_content)
 
     RegressionGuard().verify_all()
@@ -201,8 +201,8 @@ def test_csv_writer_error_handling():
     assert len(result) == 1  # Should have one CSV file with 2 valid records
 
     # Verify the CSV content has 2 records (header + 2 data rows)
-    csv_content = result[0].file_bytes.decode("utf-8")
-    csv_lines = csv_content.strip().split("\n")
+    csv_content = result[0].file_bytes.decode("utf-8").replace("\r\n", "\n")
+    csv_lines = csv_content.strip().splitlines()
     assert len(csv_lines) == 3  # header + 2 records
 
 

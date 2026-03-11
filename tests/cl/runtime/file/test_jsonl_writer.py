@@ -62,14 +62,14 @@ def test_jsonl_writer_save_all():
     guard = RegressionGuard(prefix="file_structure").build()
     guard.write("JSONL files:")
     for file_data in file_data_list:
-        content = file_data.file_bytes.decode("utf-8")
-        line_count = len([line for line in content.strip().split("\n") if line.strip()])
+        content = file_data.file_bytes.decode("utf-8").replace("\r\n", "\n")
+        line_count = len([line for line in content.strip().splitlines() if line.strip()])
         guard.write(f"  - {file_data.name} ({line_count} records)")
 
     # Verify each file contains valid JSONL
     for file_data in file_data_list:
-        content = file_data.file_bytes.decode("utf-8")
-        lines = [line for line in content.strip().split("\n") if line.strip()]
+        content = file_data.file_bytes.decode("utf-8").replace("\r\n", "\n")
+        lines = [line for line in content.strip().splitlines() if line.strip()]
         for line in lines:
             json.loads(line)  # Verify each line is valid JSON
 
@@ -125,8 +125,8 @@ def test_jsonl_writer_save_zip():
 
         # Verify each JSONL file in ZIP
         for file_path in file_list:
-            content = zip_archive.read(file_path).decode("utf-8")
-            lines = [line for line in content.strip().split("\n") if line.strip()]
+            content = zip_archive.read(file_path).decode("utf-8").replace("\r\n", "\n")
+            lines = [line for line in content.strip().splitlines() if line.strip()]
             for line in lines:
                 json.loads(line)
 
@@ -167,8 +167,8 @@ def test_jsonl_writer_single_record_type():
     assert file_data.name.endswith(".jsonl")
 
     # Verify content
-    content = file_data.file_bytes.decode("utf-8")
-    lines = [line for line in content.strip().split("\n") if line.strip()]
+    content = file_data.file_bytes.decode("utf-8").replace("\r\n", "\n")
+    lines = [line for line in content.strip().splitlines() if line.strip()]
     assert len(lines) == 3
 
     guard = RegressionGuard(prefix="single_type").build()
@@ -195,8 +195,8 @@ def test_jsonl_writer_record_content():
     file_data = file_data_list[0]
 
     # Parse the single JSONL line back to a dict for field-level assertions
-    content = file_data.file_bytes.decode("utf-8")
-    lines = [line for line in content.strip().split("\n") if line.strip()]
+    content = file_data.file_bytes.decode("utf-8").replace("\r\n", "\n")
+    lines = [line for line in content.strip().splitlines() if line.strip()]
     assert len(lines) == 1
 
     json_obj = json.loads(lines[0])
