@@ -99,11 +99,11 @@ def test_roundtrip_with_type_field():
             # Load from JSON
             json_reader = JsonReader().build()
             record_type_pattern = f"{typename(record_type)}.*"
-            records_from_json = json_reader.load_all(
+            records_from_json = list(json_reader.load_all(
                 dirs=[dir_path],
                 ext="json",
                 file_include_patterns=[record_type_pattern],
-            )
+            ).get("\\", ()))
 
             # Verify
             assert BuilderChecks.is_equal(records_from_json, expected_records)
@@ -128,11 +128,11 @@ def test_roundtrip_without_type_field():
             # Load from JSON - should infer type from filename
             json_reader = JsonReader().build()
             record_type_pattern = f"{typename(record_type)}.*"
-            records_from_json = json_reader.load_all(
+            records_from_json = list(json_reader.load_all(
                 dirs=[dir_path],
                 ext="json",
                 file_include_patterns=[record_type_pattern],
-            )
+            ).get("\\", ()))
 
             # Verify
             assert BuilderChecks.is_equal(records_from_json, expected_records)
@@ -156,10 +156,10 @@ def test_roundtrip_single_record():
 
         # Load from JSON - should handle single object
         json_reader = JsonReader().build()
-        records_from_json = json_reader.load_all(
+        records_from_json = list(json_reader.load_all(
             dirs=[dir_path],
             ext="json",
-        )
+        ).get("\\", ()))
 
         # Verify
         assert len(records_from_json) == 1
@@ -187,10 +187,10 @@ def test_roundtrip_mixed_types():
 
         # Load from JSON
         json_reader = JsonReader().build()
-        records_from_json = json_reader.load_all(
+        records_from_json = list(json_reader.load_all(
             dirs=[dir_path],
             ext="json",
-        )
+        ).get("\\", ()))
 
         # Verify all records loaded correctly
         assert len(records_from_json) == len(expected_records)

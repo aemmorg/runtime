@@ -31,7 +31,7 @@ def test_jsonl_preload(default_db_fixture):
 
     # Load all JSONL files from preload directories
     jsonl_reader = JsonlReader().build()
-    records = jsonl_reader.load_all(dirs=dirs, ext="jsonl")
+    records = list(jsonl_reader.load_all(dirs=dirs, ext="jsonl").get("\\", ()))
 
     # Check that StubDataclass.One.jsonl was loaded
     matching = [r for r in records if isinstance(r, StubDataclass) and r.id == "jsonl_one"]

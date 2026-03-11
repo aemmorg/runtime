@@ -14,6 +14,7 @@
 
 from abc import ABC
 from abc import abstractmethod
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Sequence
 from cl.runtime.file.file_util import FileUtil
@@ -55,7 +56,7 @@ class Reader(ReaderKey, RecordMixin, ABC):
         ext: str,
         file_include_patterns: Sequence[str] | None = None,
         file_exclude_patterns: Sequence[str] | None = None,
-    ) -> tuple[RecordMixin]:
+    ) -> Mapping[str, Sequence[RecordMixin]]:
         """
         Load records from files in the specified dirs with the specified extension.
 
@@ -65,7 +66,7 @@ class Reader(ReaderKey, RecordMixin, ABC):
             file_include_patterns: Optional list of filename glob patterns to include
             file_exclude_patterns: Optional list of filename glob patterns to exclude
         Returns:
-            Tuple of loaded records
+            Mapping from dataset to records where single backslash key represents root dataset
         Raises:
             RuntimeError: If an error occurs during file reading or record loading
         """

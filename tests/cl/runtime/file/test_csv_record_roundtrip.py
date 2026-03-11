@@ -99,11 +99,11 @@ def test_roundtrip(default_db_fixture):
             # Load from CSV to DB
             csv_reader = CsvReader().build()
             record_type_pattern = f"{typename(record_type)}.*"
-            records_from_csv = csv_reader.load_all(
+            records_from_csv = list(csv_reader.load_all(
                 dirs=[dir_path],
                 ext="csv",
                 file_include_patterns=[record_type_pattern],
-            )
+            ).get("\\", ()))
             assert BuilderChecks.is_equal(records_from_csv, expected_records)
         finally:
             if os.path.exists(dir_path):

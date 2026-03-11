@@ -32,13 +32,13 @@ def test_load_all(default_db_fixture):
     env_dir = QaUtil.get_test_dir_from_call_stack()
 
     csv_reader = CsvReader().build()
-    records = csv_reader.load_all(dirs=[env_dir], ext="csv", file_include_patterns=["StubDataclassDerived.*"])
+    records = list(csv_reader.load_all(dirs=[env_dir], ext="csv", file_include_patterns=["StubDataclassDerived.*"]).get("\\", ()))
     active(DataSource).insert_many(records, commit=True)
 
-    records = csv_reader.load_all(dirs=[env_dir], ext="csv", file_include_patterns=["StubDataclassNestedFields.*"])
+    records = list(csv_reader.load_all(dirs=[env_dir], ext="csv", file_include_patterns=["StubDataclassNestedFields.*"]).get("\\", ()))
     active(DataSource).insert_many(records, commit=True)
 
-    records = csv_reader.load_all(dirs=[env_dir], ext="csv", file_include_patterns=["StubDataclassComposite.*"])
+    records = list(csv_reader.load_all(dirs=[env_dir], ext="csv", file_include_patterns=["StubDataclassComposite.*"]).get("\\", ()))
     active(DataSource).insert_many(records, commit=True)
 
     # Verify
@@ -102,9 +102,10 @@ def test_performance(default_db_fixture, tmp_path):
 
         csv_reader = CsvReader().build()
         start = time.perf_counter()
-        records = csv_reader.load_all(dirs=[str(tmp_path)], ext="csv")
+        result = csv_reader.load_all(dirs=[str(tmp_path)], ext="csv")
         elapsed = time.perf_counter() - start
 
+        records = result.get("\\", ())
         assert len(records) == row_count
         results.append((row_count, elapsed))
 

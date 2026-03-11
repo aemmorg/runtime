@@ -481,5 +481,131 @@ def test_load_record_from_another_tenant(multi_db_fixture):
     assert active(DataSource).load_one_or_none(records.get_key()) is None
 
 
+def _ds_with_datasets(ds: DataSource, datasets: list[str]) -> DataSource:
+    """Create a new DataSource with different datasets, sharing the same DB and tenant."""
+    return DataSource(db=ds.db, datasets=datasets, tenant=ds.tenant).build()
+
+
+def test_dataset_filtering(default_db_fixture):
+    """Test saving records to specific datasets and loading with dataset filtering."""
+    ds = active(DataSource)
+
+    # Save records to root dataset (default)
+    root_records = [
+        StubDataclass(id="root1").build(),
+        StubDataclass(id="root2").build(),
+    ]
+    ds.insert_many(root_records, commit=True)
+
+    # Save records to a custom dataset
+    ds_custom = _ds_with_datasets(ds, ["\\Custom"])
+    custom_records = [
+        StubDataclass(id="custom1").build(),
+        StubDataclass(id="custom2").build(),
+        StubDataclass(id="custom3").build(),
+    ]
+    ds_custom.insert_many(custom_records, commit=True)
+
+    # Load from root dataset only
+    loaded = ds.load_all(key_type=StubDataclassKey)
+    loaded_ids = sorted(r.id for r in loaded)
+    assert loaded_ids == ["root1", "root2"]
+
+    # Load from custom dataset only
+    loaded = ds_custom.load_all(key_type=StubDataclassKey)
+    loaded_ids = sorted(r.id for r in loaded)
+    assert loaded_ids == ["custom1", "custom2", "custom3"]
+
+    # Load from both datasets
+    ds_both = _ds_with_datasets(ds, ["\\", "\\Custom"])
+    loaded = ds_both.load_all(key_type=StubDataclassKey)
+    loaded_ids = sorted(r.id for r in loaded)
+    assert loaded_ids == ["custom1", "custom2", "custom3", "root1", "root2"]
+
+
+def test_dataset_format_validation(default_db_fixture):
+    """Test that dataset identifiers not starting with backslash are rejected."""
+    ds = active(DataSource)
+
+    # Invalid dataset format (missing backslash prefix) should raise
+    with pytest.raises(RuntimeError, match="must begin with a backslash"):
+        ds_bad = _ds_with_datasets(ds, ["InvalidDataset"])
+        ds_bad.insert_one(StubDataclass(id="bad").build(), commit=True)
+
+    # Forward slash prefix should also be rejected
+    with pytest.raises(RuntimeError, match="must begin with a backslash"):
+        ds_bad = _ds_with_datasets(ds, ["/ForwardSlash"])
+        ds_bad.insert_one(StubDataclass(id="bad").build(), commit=True)
+
+
+def test_same_key_different_datasets(default_db_fixture):
+    """Test that the same key can exist in multiple datasets."""
+    ds = active(DataSource)
+
+    # Save a record with id="shared" to root dataset
+    ds.insert_one(StubDataclass(id="shared").build(), commit=True)
+
+    # Save a record with the same id="shared" to a different dataset
+    ds_other = _ds_with_datasets(ds, ["\\Other"])
+    ds_other.insert_one(StubDataclass(id="shared").build(), commit=True)
+
+    # Load from root - should get one record
+    loaded = ds.load_all(key_type=StubDataclassKey)
+    assert len(loaded) == 1
+    assert loaded[0].id == "shared"
+
+    # Load from Other - should get one record
+    loaded = ds_other.load_all(key_type=StubDataclassKey)
+    assert len(loaded) == 1
+    assert loaded[0].id == "shared"
+
+    # Load from both - should get two records (same key, different datasets)
+    ds_both = _ds_with_datasets(ds, ["\\", "\\Other"])
+    loaded = ds_both.load_all(key_type=StubDataclassKey)
+    assert len(loaded) == 2
+
+
+def test_default_dataset_is_root(default_db_fixture):
+    """Test that records go to root dataset when datasets is the default."""
+    ds = active(DataSource)
+
+    # Default datasets should be root
+    assert list(ds.datasets) == ["\\"]
+
+    # Save without changing datasets
+    ds.insert_one(StubDataclass(id="defaulted").build(), commit=True)
+
+    # Load explicitly from root dataset - same as default
+    loaded = ds.load_all(key_type=StubDataclassKey)
+    loaded_ids = [r.id for r in loaded]
+    assert "defaulted" in loaded_ids
+
+    # Load from a different dataset should not find it
+    ds_other = _ds_with_datasets(ds, ["\\Other"])
+    loaded = ds_other.load_all(key_type=StubDataclassKey)
+    loaded_ids = [r.id for r in loaded]
+    assert "defaulted" not in loaded_ids
+
+
+def test_dataset_sort_order(default_db_fixture):
+    """Test that results are sorted ascending by dataset, then by key."""
+    ds = active(DataSource)
+
+    # Save to dataset \\B
+    ds_b = _ds_with_datasets(ds, ["\\B"])
+    ds_b.insert_many([StubDataclass(id="b2").build(), StubDataclass(id="b1").build()], commit=True)
+
+    # Save to dataset \\A
+    ds_a = _ds_with_datasets(ds, ["\\A"])
+    ds_a.insert_many([StubDataclass(id="a2").build(), StubDataclass(id="a1").build()], commit=True)
+
+    # Load from both datasets with ASC sort
+    ds_both = _ds_with_datasets(ds, ["\\A", "\\B"])
+    loaded = ds_both.load_all(key_type=StubDataclassKey, sort_order=SortOrder.ASC)
+    loaded_ids = [r.id for r in loaded]
+    # Dataset \\A records first (sorted by key ASC), then \\B records (sorted by key ASC)
+    assert loaded_ids == ["a1", "a2", "b1", "b2"]
+
+
 if __name__ == "__main__":
     pytest.main([__file__])

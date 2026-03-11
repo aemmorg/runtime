@@ -25,7 +25,7 @@ def test_yaml_preload(default_db_fixture):
     dirs = preload_settings.preload_dirs
 
     yaml_reader = YamlReader().build()
-    records = yaml_reader.load_all(dirs=dirs, ext="yaml")
+    records = list(yaml_reader.load_all(dirs=dirs, ext="yaml").get("\\", ()))
 
     # Check that StubDataclass;One.yaml was loaded
     matching = [r for r in records if isinstance(r, StubDataclass) and r.id == "yaml_one"]

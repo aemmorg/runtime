@@ -13,9 +13,10 @@
 # limitations under the License.
 
 import csv
-import os
+from collections import defaultdict
 from typing import Any
 from typing import Sequence
+from frozendict import frozendict
 from cl.runtime.file.file_util import FileUtil
 from cl.runtime.file.reader import Reader
 from cl.runtime.primitive.case_util import CaseUtil
@@ -31,44 +32,57 @@ _SERIALIZER = DataSerializers.FOR_CSV
 class CsvReader(Reader):
     """Helper class for working with CSV files."""
 
-    def load_file(self, *, file_path: str) -> tuple[RecordMixin]:
+    def load_all(
+        self,
+        *,
+        dirs: Sequence[str],
+        ext: str,
+        file_include_patterns: Sequence[str] | None = None,
+        file_exclude_patterns: Sequence[str] | None = None,
+    ) -> frozendict[str, tuple[RecordMixin, ...]]:
 
-        try:
-            # Determine record type from filename
-            record_type = FileUtil.get_type_from_filename(file_path)
+        file_paths = FileUtil.enumerate_files(
+            dirs=dirs,
+            ext=ext,
+            file_include_patterns=file_include_patterns,
+            file_exclude_patterns=file_exclude_patterns,
+        )
 
-            with open(file_path, mode="r", encoding="utf-8") as file:
+        # Iterate over files, grouping records by dataset
+        records_by_dataset: dict[str, list[RecordMixin]] = defaultdict(list)
+        for file_path in file_paths:
+            try:
+                # Determine record type from filename
+                record_type = FileUtil.get_type_from_filename(file_path)
 
-                # Skip sep=, sentinel line in generated CSV files
-                first_line = file.readline()
-                if not first_line.rstrip("\r\n") == "sep=,":
-                    file.seek(0)
+                with open(file_path, mode="r", encoding="utf-8") as file:
 
-                # The reader is an iterable of row dicts
-                csv_reader = csv.DictReader(file)
-                row_dicts = [row_dict for row_dict in csv_reader]
+                    # The reader is an iterable of row dicts
+                    csv_reader = csv.DictReader(file)
+                    row_dicts = [row_dict for row_dict in csv_reader]
 
-                invalid_rows = {
-                    index
-                    for index, row_dict in enumerate(row_dicts)
-                    for key in row_dict.keys()
-                    if key is None or key == ""  # TODO: Add other checks for invalid keys
-                }
+                    invalid_rows = {
+                        index
+                        for index, row_dict in enumerate(row_dicts)
+                        for key in row_dict.keys()
+                        if key is None or key == ""  # TODO: Add other checks for invalid keys
+                    }
 
-                if invalid_rows:
-                    rows_str = "".join([f"Row: {invalid_row}\n" for invalid_row in invalid_rows])
-                    raise RuntimeError(
-                        "Misaligned values found in the following rows.\n"
-                        "Check the placement of commas and double quotes.\n" + rows_str
-                    )
+                    if invalid_rows:
+                        rows_str = "".join([f"Row: {invalid_row}\n" for invalid_row in invalid_rows])
+                        raise RuntimeError(
+                            "Misaligned values found in the following rows.\n"
+                            "Check the placement of commas and double quotes.\n" + rows_str
+                        )
 
-                # Deserialize rows into records
-                result = [
-                    self._deserialize_row(record_type=record_type, row_dict=row_dict) for row_dict in row_dicts
-                ]
-                return tuple(result)
-        except Exception as e:
-            raise RuntimeError(f"Failed to load CSV file {file_path}. Error: {e}") from e
+                    # Deserialize rows into records and group by dataset
+                    for row_dict in row_dicts:
+                        record, dataset = self._deserialize_row(record_type=record_type, row_dict=row_dict)
+                        records_by_dataset[dataset or "\\"].append(record)
+            except Exception as e:
+                raise RuntimeError(f"Failed to load CSV file {file_path}. Error: {e}") from e
+
+        return frozendict({k: tuple(v) for k, v in records_by_dataset.items()})
 
     @classmethod
     def check_or_fix_file(cls, file_path: str, *, fix: bool) -> bool:
@@ -82,16 +96,8 @@ class CsvReader(Reader):
         """
 
         is_valid = True
-        has_sep_prefix = False
         updated_rows = []
         with open(file_path, "r", newline="", encoding="utf-8") as input_file:
-            # Check for and skip sep=, sentinel line in generated CSV files
-            first_line = input_file.readline()
-            if first_line.rstrip("\r\n") == "sep=,":
-                has_sep_prefix = True
-            else:
-                input_file.seek(0)
-
             reader = csv.reader(input_file)
             for row in reader:
                 updated_row = []
@@ -104,14 +110,12 @@ class CsvReader(Reader):
 
         if fix and not is_valid:
             with open(file_path, "w", newline="", encoding="utf-8") as output_file:
-                if has_sep_prefix:
-                    output_file.write(f"sep=,{os.linesep}")
                 writer = csv.writer(
                     output_file,
                     delimiter=",",
                     quotechar='"',
                     quoting=csv.QUOTE_MINIMAL,  # noqa
-                    lineterminator=os.linesep,
+                    lineterminator="\n",
                 )
                 writer.writerows(updated_rows)
         return is_valid
@@ -198,13 +202,13 @@ class CsvReader(Reader):
         )
 
     @classmethod
-    def _deserialize_row(cls, *, record_type: type, row_dict: dict[str, Any]) -> RecordMixin:
-        """Deserialize row into a record.
+    def _deserialize_row(cls, *, record_type: type, row_dict: dict[str, Any]) -> tuple[RecordMixin, str | None]:
+        """Deserialize row into a record with optional dataset.
         Args:
             record_type: Type of the record to deserialize into
             row_dict: Dictionary representing a CSV row
         Returns:
-            Deserialized record
+            Tuple of (deserialized record, dataset string or None)
         Raises:
             RuntimeError: If deserialization fails
         """
@@ -227,7 +231,10 @@ class CsvReader(Reader):
             for k, v in row_dict.items()
         }
 
+        # Extract _dataset before deserialization (not a record field)
+        dataset = row_dict.pop("_dataset", None)
+
         row_dict["_type"] = typename(record_type)
 
         result = _SERIALIZER.deserialize(row_dict).build()
-        return result
+        return result, dataset

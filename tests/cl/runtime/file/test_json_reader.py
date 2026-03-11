@@ -65,7 +65,7 @@ def test_json_reader(default_db_fixture):
 
     # Act: read each test input file in the env_dir and load data into the local cache
     json_reader = JsonReader().build()
-    records = json_reader.load_all(dirs=[env_dir], ext="json")
+    records = list(json_reader.load_all(dirs=[env_dir], ext="json").get("\\", ()))
     active(DataSource).insert_many(records, commit=True)
 
     # Assert: verify the data loaded into the local cache

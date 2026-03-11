@@ -96,11 +96,11 @@ def test_roundtrip_with_type_field():
             # Load from JSONL
             jsonl_reader = JsonlReader().build()
             record_type_pattern = f"{typename(record_type)}.*"
-            records_from_jsonl = jsonl_reader.load_all(
+            records_from_jsonl = list(jsonl_reader.load_all(
                 dirs=[dir_path],
                 ext="jsonl",
                 file_include_patterns=[record_type_pattern],
-            )
+            ).get("\\", ()))
 
             # Verify
             assert BuilderChecks.is_equal(records_from_jsonl, expected_records)
@@ -130,11 +130,11 @@ def test_roundtrip_without_type_field():
             # Load from JSONL - should infer type from filename
             jsonl_reader = JsonlReader().build()
             record_type_pattern = f"{typename(record_type)}.*"
-            records_from_jsonl = jsonl_reader.load_all(
+            records_from_jsonl = list(jsonl_reader.load_all(
                 dirs=[dir_path],
                 ext="jsonl",
                 file_include_patterns=[record_type_pattern],
-            )
+            ).get("\\", ()))
 
             # Verify
             assert BuilderChecks.is_equal(records_from_jsonl, expected_records)
@@ -155,7 +155,7 @@ def test_roundtrip_single_record():
         save_records_to_jsonl([expected_record], file_path, include_type=True)
 
         jsonl_reader = JsonlReader().build()
-        records_from_jsonl = jsonl_reader.load_all(dirs=[dir_path], ext="jsonl")
+        records_from_jsonl = list(jsonl_reader.load_all(dirs=[dir_path], ext="jsonl").get("\\", ()))
 
         assert len(records_from_jsonl) == 1
         assert BuilderChecks.is_equal(records_from_jsonl[0], expected_record)
@@ -185,7 +185,7 @@ def test_roundtrip_mixed_types():
         save_records_to_jsonl(expected_records, file_path, include_type=True)
 
         jsonl_reader = JsonlReader().build()
-        records_from_jsonl = jsonl_reader.load_all(dirs=[dir_path], ext="jsonl")
+        records_from_jsonl = list(jsonl_reader.load_all(dirs=[dir_path], ext="jsonl").get("\\", ()))
 
         assert len(records_from_jsonl) == len(expected_records)
         assert BuilderChecks.is_equal(records_from_jsonl, expected_records)

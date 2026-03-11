@@ -12,10 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any
 from typing import Sequence
 import orjson
+from frozendict import frozendict
 from cl.runtime.file.file_util import FileUtil
 from cl.runtime.file.reader import Reader
 from cl.runtime.records.record_mixin import RecordMixin
@@ -30,44 +32,61 @@ _SERIALIZER = DataSerializers.FOR_JSON
 class JsonlReader(Reader):
     """Load records from JSONL (JSON Lines) files into the context database."""
 
-    def load_file(self, *, file_path: str) -> tuple[RecordMixin]:
+    def load_all(
+        self,
+        *,
+        dirs: Sequence[str],
+        ext: str,
+        file_include_patterns: Sequence[str] | None = None,
+        file_exclude_patterns: Sequence[str] | None = None,
+    ) -> frozendict[str, tuple[RecordMixin, ...]]:
 
-        try:
-            record_type = FileUtil.get_type_from_filename(file_path, raise_on_fail=False)
+        file_paths = FileUtil.enumerate_files(
+            dirs=dirs,
+            ext=ext,
+            file_include_patterns=file_include_patterns,
+            file_exclude_patterns=file_exclude_patterns,
+        )
 
-            with open(file_path, mode="rb") as file:
-                data = file.read().strip()
+        # Iterate over files, grouping records by dataset
+        records_by_dataset: dict[str, list[RecordMixin]] = defaultdict(list)
+        for file_path in file_paths:
+            try:
+                record_type = FileUtil.get_type_from_filename(file_path, raise_on_fail=False)
 
-                if not data:
-                    return tuple()
+                with open(file_path, mode="rb") as file:
+                    data = file.read().strip()
 
-                # Parse all lines in a single orjson call by wrapping as a JSON array
-                non_empty_lines = [line for line in data.split(b"\n") if line.strip()]
-                json_bytes = b"[" + b",".join(non_empty_lines) + b"]"
-                object_dicts = orjson.loads(json_bytes)
+                    if not data:
+                        continue
 
-                invalid_objects = {
-                    index
-                    for index, object_dict in enumerate(object_dicts)
-                    for key in object_dict.keys()
-                    if key is None or key == ""
-                }
+                    # Parse all lines in a single orjson call by wrapping as a JSON array
+                    non_empty_lines = [line for line in data.split(b"\n") if line.strip()]
+                    json_bytes = b"[" + b",".join(non_empty_lines) + b"]"
+                    object_dicts = orjson.loads(json_bytes)
 
-                if invalid_objects:
-                    rows_str = "".join([f"Row: {invalid_object}\n" for invalid_object in invalid_objects])
-                    raise RuntimeError(
-                        "Misaligned values found in the following objects.\n"
-                        "Check the placement of commas, brackets and double quotes.\n" + rows_str
-                    )
+                    invalid_objects = {
+                        index
+                        for index, object_dict in enumerate(object_dicts)
+                        for key in object_dict.keys()
+                        if key is None or key == ""
+                    }
 
-                # Deserialize rows into records
-                result = [
-                    self._deserialize_object(record_type=record_type, object_dict=object_dict)
-                    for object_dict in object_dicts
-                ]
-                return tuple(result)
-        except Exception as e:
-            raise RuntimeError(f"Failed to load JSONL file {file_path}.\n" f"Error: {e}") from e
+                    if invalid_objects:
+                        rows_str = "".join([f"Row: {invalid_object}\n" for invalid_object in invalid_objects])
+                        raise RuntimeError(
+                            "Misaligned values found in the following objects.\n"
+                            "Check the placement of commas, brackets and double quotes.\n" + rows_str
+                        )
+
+                    # Deserialize rows into records and group by dataset
+                    for object_dict in object_dicts:
+                        record, dataset = self._deserialize_object(record_type=record_type, object_dict=object_dict)
+                        records_by_dataset[dataset or "\\"].append(record)
+            except Exception as e:
+                raise RuntimeError(f"Failed to load JSONL file {file_path}.\n" f"Error: {e}") from e
+
+        return frozendict({k: tuple(v) for k, v in records_by_dataset.items()})
 
     @classmethod
     def check_or_fix_file(cls, file_path: str, *, fix: bool) -> bool:
@@ -154,13 +173,13 @@ class JsonlReader(Reader):
             print(f"Verified JSONL format in the following files:\n{files_list}")
 
     @classmethod
-    def _deserialize_object(cls, *, record_type: type | None, object_dict: dict[str, Any]) -> RecordMixin:
-        """Deserialize JSON object into a record.
+    def _deserialize_object(cls, *, record_type: type | None, object_dict: dict[str, Any]) -> tuple[RecordMixin, str | None]:
+        """Deserialize JSON object into a record with optional dataset.
         Args:
             record_type: Record type hint derived from filename, or None if not available.
             object_dict: Dictionary representing the JSON object.
         Returns:
-            Deserialized record.
+            Tuple of (deserialized record, dataset string or None).
         Raises:
             RuntimeError: If record type cannot be determined or deserialization fails.
         """
@@ -184,8 +203,11 @@ class JsonlReader(Reader):
                 "JSON '_type' is missing/invalid and filename-derived type not available."
             )
 
+        # Extract _dataset before deserialization (not a record field)
+        dataset = object_dict.pop("_dataset", None)
+
         # Ensure _type is set for deserialization
         object_dict["_type"] = typename(record_type)
 
         result = _SERIALIZER.deserialize(object_dict).build()
-        return result
+        return result, dataset

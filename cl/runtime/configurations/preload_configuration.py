@@ -12,18 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 from collections import defaultdict
 from dataclasses import dataclass
+from itertools import chain
 from typing import Sequence
 from more_itertools import consume
 from typing_extensions import final
 from cl.runtime.configurations.configuration import Configuration
 from cl.runtime.contexts.context_manager import active
 from cl.runtime.db.data_source import DataSource
-from cl.runtime.db.dataset_util import DatasetUtil
 from cl.runtime.file.csv_reader import CsvReader
-from cl.runtime.file.file_util import FileUtil
 from cl.runtime.file.json_reader import JsonReader
 from cl.runtime.file.jsonl_reader import JsonlReader
 from cl.runtime.file.excel_reader import ExcelReader
@@ -84,38 +82,38 @@ class PreloadConfiguration(Configuration):
             "yaml": YamlReader().build(),
         }
 
-        # Collect records grouped by dataset across all preload dirs and file extensions
-        records_by_dataset = defaultdict(list)
-        for preload_dir in dirs:
-            for ext, reader in reader_dict.items():
-                abs_paths = FileUtil.enumerate_files(
-                    dirs=[preload_dir],
-                    ext=ext,
-                    file_include_patterns=self.file_include_patterns,
-                    file_exclude_patterns=self.file_exclude_patterns,
-                )
-                for abs_path in abs_paths:
-                    # Get relative path from preload dir to compute dataset
-                    relative_path = os.path.relpath(abs_path, preload_dir).replace(os.sep, "/")
-                    dir_part = os.path.dirname(relative_path)
-                    # Convert directory part to dataset: empty dir_part maps to root dataset "/"
-                    dataset = DatasetUtil.root() if not dir_part else "/" + dir_part
-                    # Load records from the file
-                    records = reader.load_file(file_path=abs_path)
-                    records_by_dataset[dataset].extend(records)
+        # Load records from preload directories, each reader returns frozendict[str, tuple[RecordMixin, ...]]
+        result_dicts = [
+            reader.load_all(
+                dirs=dirs,
+                ext=ext,
+                file_include_patterns=self.file_include_patterns,
+                file_exclude_patterns=self.file_exclude_patterns,
+            )
+            for ext, reader in reader_dict.items()
+        ]
 
-        # Collect all autorun configurations across all datasets
-        all_autorun_configurations = []
+        # Merge records by dataset across all readers
+        records_by_dataset: dict[str, list] = defaultdict(list)
+        for result_dict in result_dicts:
+            for dataset, records in result_dict.items():
+                records_by_dataset[dataset].extend(records)
 
-        # Insert records for each dataset
-        for dataset, records in records_by_dataset.items():
-            if records:
-                ds.insert_many(records, datasets=[dataset], commit=True)
+        if records_by_dataset:
+            # Validate dataset format and save each group with the appropriate dataset
+            all_records = list(chain.from_iterable(records_by_dataset.values()))
+            for dataset, group_records in records_by_dataset.items():
+                if not dataset.startswith("\\"):
+                    raise RuntimeError(
+                        f"Dataset identifier '{dataset}' must begin with a backslash character."
+                    )
+                temp_ds = DataSource(db=ds.db, datasets=[dataset], tenant=ds.tenant).build()
+                temp_ds.insert_many(group_records, commit=True)
 
-                # Collect autorun configurations
-                all_autorun_configurations.extend(
-                    record for record in records if isinstance(record, Configuration) and record.autorun
-                )
+            # Execute run_configure on all preloaded Configuration records with autorun=True
+            autorun_configurations = [
+                record for record in all_records if isinstance(record, Configuration) and record.autorun
+            ]
 
-        # Execute run_configure on all preloaded Configuration records with autorun=True
-        consume(autorun_configuration.run_configure() for autorun_configuration in all_autorun_configurations)
+            # Execute their run_configure methods
+            consume(autorun_configuration.run_configure() for autorun_configuration in autorun_configurations)
