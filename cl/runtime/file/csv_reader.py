@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import csv
+import os
 from collections import defaultdict
 from typing import Any
 from typing import Sequence
@@ -115,7 +116,7 @@ class CsvReader(Reader):
                     delimiter=",",
                     quotechar='"',
                     quoting=csv.QUOTE_MINIMAL,  # noqa
-                    lineterminator="\n",
+                    lineterminator=os.linesep,
                 )
                 writer.writerows(updated_rows)
         return is_valid
