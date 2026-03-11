@@ -376,5 +376,88 @@ def test_non_alphanumeric():
         CaseUtil._check_non_alphanumeric("\ufeffabc_def", "sample_format")
 
 
+def test_any_to_snake_case():
+    test_cases = (
+        # Already valid snake_case
+        ("abc_def", "abc_def"),
+        ("abc_2d", "abc_2d"),
+        # PascalCase
+        ("AbcDef", "abc_def"),
+        ("Abc2D", "abc_2d"),
+        ("ABC2DEF", "abc2def"),
+        # camelCase
+        ("abcDef", "abc_def"),
+        # UPPER_CASE
+        ("ABC_DEF", "abc_def"),
+        ("ABC_2D", "abc_2d"),
+        # Title Case
+        ("Abc Def", "abc_def"),
+        # kebab-case
+        ("abc-def", "abc_def"),
+        # Mixed formats
+        ("Some_MixedCase", "some_mixed_case"),
+        ("UPPER_mixed_Case", "upper_mixed_case"),
+        # Uppercase acronym runs
+        ("getHTTPResponse", "get_http_response"),
+        ("XMLParser", "xml_parser"),
+        ("ABCDef", "abc_def"),
+        # Invalid inputs (normalized via round-trip)
+        ("abc_2d_ef", "abc_2def"),
+        ("a_b_c", "abc"),
+        ("ABC2Def", "abc2def"),
+        # With dots
+        ("AbcDef.UvwXyz", "abc_def.uvw_xyz"),
+    )
+
+    for input_value, expected in test_cases:
+        result = CaseUtil.any_to_snake_case(input_value)
+        assert result == expected, f"any_to_snake_case({input_value!r}) = {result!r}, expected {expected!r}"
+        CaseUtil.check_snake_case(result)
+
+    assert CaseUtil.any_to_snake_case(None) is None
+    assert CaseUtil.any_to_snake_case("") == ""
+
+
+def test_any_to_pascal_case():
+    test_cases = (
+        # Already valid PascalCase
+        ("AbcDef", "AbcDef"),
+        ("Abc2D", "Abc2D"),
+        ("ABC2DEF", "ABC2DEF"),
+        # snake_case
+        ("abc_def", "AbcDef"),
+        ("abc_2d", "Abc2D"),
+        # camelCase
+        ("abcDef", "AbcDef"),
+        # UPPER_CASE
+        ("ABC_DEF", "AbcDef"),
+        ("ABC_2D", "Abc2D"),
+        # Title Case
+        ("Abc Def", "AbcDef"),
+        # kebab-case
+        ("abc-def", "AbcDef"),
+        # Mixed formats
+        ("Some_MixedCase", "SomeMixedCase"),
+        # Uppercase acronym runs
+        ("getHTTPResponse", "GetHttpResponse"),
+        ("XMLParser", "XmlParser"),
+        ("ABCDef", "AbcDef"),
+        # Invalid inputs (normalized via round-trip)
+        ("abc_2d_ef", "Abc2DEF"),
+        ("ABC2Def", "ABC2DEF"),
+        # With dots
+        ("AbcDef.UvwXyz", "AbcDef.UvwXyz"),
+        ("abc_def.uvw_xyz", "AbcDef.UvwXyz"),
+    )
+
+    for input_value, expected in test_cases:
+        result = CaseUtil.any_to_pascal_case(input_value)
+        assert result == expected, f"any_to_pascal_case({input_value!r}) = {result!r}, expected {expected!r}"
+        CaseUtil.check_pascal_case(result)
+
+    assert CaseUtil.any_to_pascal_case(None) is None
+    assert CaseUtil.any_to_pascal_case("") == ""
+
+
 if __name__ == "__main__":
     pytest.main([__file__])

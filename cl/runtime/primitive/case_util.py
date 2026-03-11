@@ -31,6 +31,15 @@ _DIGIT_UNDERSCORE_VIOLATIONS_RE: Pattern = re.compile(r"(?<=\d)_")
 _DIGIT_WITHOUT_SPACE_RE: Pattern = re.compile(r"(?<! )\d")
 """Digit without space pattern"""
 
+_UPPER_RUN_BOUNDARY_RE: Pattern = re.compile(r"([A-Z]+)([A-Z][a-z])")
+"""Split uppercase runs before an uppercase+lowercase pair (e.g., HTTPResponse -> HTTP_Response)."""
+
+_NON_ALNUM_DOT_RE: Pattern = re.compile(r"[^a-zA-Z0-9.]")
+"""Match any character that is not alphanumeric or dot."""
+
+_MULTI_UNDERSCORE_RE: Pattern = re.compile(r"_+")
+"""Match one or more consecutive underscores."""
+
 
 class CaseUtil:
     """Utilities for case conversion between PascalCase, snake_case, UPPER_CASE, and Title Case.
@@ -177,6 +186,45 @@ class CaseUtil:
         cls.check_snake_case(value)
         pascal_case_value = cls.snake_to_pascal_case(value)
         return cls.pascal_to_title_case(pascal_case_value)
+
+    @classmethod
+    def any_to_snake_case(cls, value: str | None) -> str | None:
+        """Convert any string to valid snake_case on a best-effort basis.
+
+        Handles PascalCase, camelCase, UPPER_CASE, Title Case, kebab-case,
+        and mixed formats. Uppercase acronym runs are split at word boundaries
+        (e.g., HTTPResponse -> http_response). The result is guaranteed to
+        pass check_snake_case.
+        """
+        if cls.is_empty(value):
+            return value
+        # Replace non-alphanumeric characters (except dots) with underscores
+        result = _NON_ALNUM_DOT_RE.sub("_", value)
+        # Split uppercase runs at word boundaries (e.g., HTTPResponse -> HTTP_Response)
+        result = _UPPER_RUN_BOUNDARY_RE.sub(r"\1_\2", result)
+        # Split at lowercase->uppercase/digit boundaries (e.g., camelCase -> camel_Case)
+        result = _PASCAL_TO_SNAKE_RE.sub(r"\1_\2", result)
+        # Lowercase
+        result = result.lower()
+        # Collapse multiple underscores and strip leading/trailing
+        result = _MULTI_UNDERSCORE_RE.sub("_", result).strip("_")
+        # Remove underscores after digits (digit separator rule)
+        result = _DIGIT_UNDERSCORE_VIOLATIONS_RE.sub("", result)
+        # Round-trip normalize to ensure validity
+        result = cls._pascal_to_snake_unchecked(cls._snake_to_pascal_unchecked(result))
+        return result
+
+    @classmethod
+    def any_to_pascal_case(cls, value: str | None) -> str | None:
+        """Convert any string to valid PascalCase on a best-effort basis.
+
+        Handles snake_case, camelCase, UPPER_CASE, Title Case, kebab-case,
+        and mixed formats. The result is guaranteed to pass check_pascal_case.
+        """
+        if cls.is_empty(value):
+            return value
+        snake = cls.any_to_snake_case(value)
+        return cls._snake_to_pascal_unchecked(snake)
 
     @classmethod
     def snake_to_pascal_case_keep_trailing_underscore(cls, value: str | None):
