@@ -120,10 +120,14 @@ class ExcelReader(Reader):
 
             # Create CSV filenames
             norm_name = cls._normalize_sheet_name(sheet_name)
-            csv_path = os.path.join(dir_path, f"{base_name}.{norm_name}.csv")
+            csv_path = os.path.join(dir_path, f"{base_name}.{norm_name}.generated.csv")
 
-            # Write CSV with consistent settings
+            # Check if existing generated file has been manually edited
+            cls._check_generated_csv(csv_path, base_name=base_name, norm_name=norm_name)
+
+            # Write CSV with sep=, sentinel and consistent settings
             with open(csv_path, "w", newline="", encoding="utf-8") as f:
+                f.write(f"sep=,{os.linesep}")
                 writer = csv.writer(
                     f,
                     delimiter=",",
@@ -141,6 +145,21 @@ class ExcelReader(Reader):
 
         wb.close()
         return csv_paths
+
+    @classmethod
+    def _check_generated_csv(cls, csv_path: str, *, base_name: str, norm_name: str) -> None:
+        """Check that an existing generated CSV file has not been manually edited."""
+
+        if not os.path.exists(csv_path):
+            return
+        with open(csv_path, "r", encoding="utf-8") as f:
+            first_line = f.readline().rstrip("\r\n")
+        if first_line != "sep=,":
+            raise RuntimeError(
+                f"The CSV file {base_name}.{norm_name}.generated.csv generated\n"
+                f"from {base_name}.xlsx has been edited. Move the changes to the\n"
+                f"xlsx file and delete the generated file to continue."
+            )
 
     @classmethod
     def _get_temporal_field_types(cls, record_type: type) -> dict[str, type]:

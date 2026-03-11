@@ -55,6 +55,11 @@ class CsvReader(Reader):
 
                 with open(file_path, mode="r", encoding="utf-8") as file:
 
+                    # Skip sep=, sentinel line in generated CSV files
+                    first_line = file.readline()
+                    if not first_line.rstrip("\r\n") == "sep=,":
+                        file.seek(0)
+
                     # The reader is an iterable of row dicts
                     csv_reader = csv.DictReader(file)
                     row_dicts = [row_dict for row_dict in csv_reader]
@@ -96,8 +101,16 @@ class CsvReader(Reader):
         """
 
         is_valid = True
+        has_sep_prefix = False
         updated_rows = []
         with open(file_path, "r", newline="", encoding="utf-8") as input_file:
+            # Check for and skip sep=, sentinel line in generated CSV files
+            first_line = input_file.readline()
+            if first_line.rstrip("\r\n") == "sep=,":
+                has_sep_prefix = True
+            else:
+                input_file.seek(0)
+
             reader = csv.reader(input_file)
             for row in reader:
                 updated_row = []
@@ -110,6 +123,8 @@ class CsvReader(Reader):
 
         if fix and not is_valid:
             with open(file_path, "w", newline="", encoding="utf-8") as output_file:
+                if has_sep_prefix:
+                    output_file.write(f"sep=,{os.linesep}")
                 writer = csv.writer(
                     output_file,
                     delimiter=",",

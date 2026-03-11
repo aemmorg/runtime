@@ -24,11 +24,19 @@ _STUBS_DIR = os.path.normpath(
 )
 
 
+def _read_generated_csv(path):
+    """Read a generated CSV file, skipping the sep=, sentinel line."""
+    with open(path, "r", encoding="utf-8") as f:
+        first_line = f.readline().rstrip("\r\n")
+        assert first_line == "sep=,", f"Expected sep=, sentinel, got: {first_line!r}"
+        return list(csv.DictReader(f))
+
+
 def test_single_sheet_workbook(work_dir_fixture):
     """Test single-sheet xlsx produces single CSV with correct content."""
 
     input_filename = "SingleSheetWorkbook.xlsx"
-    expected_output_filename = "SingleSheetWorkbook.SingleSheet.csv"
+    expected_output_filename = "SingleSheetWorkbook.SingleSheet.generated.csv"
     output_filenames = []
     try:
         output_filenames = ExcelReader._convert_file(input_filename)
@@ -37,8 +45,7 @@ def test_single_sheet_workbook(work_dir_fixture):
         assert os.path.normpath(output_filenames[0]) == expected_output_filename
         assert os.path.exists(expected_output_filename)
 
-        with open(expected_output_filename, "r", encoding="utf-8") as f:
-            rows = list(csv.DictReader(f))
+        rows = _read_generated_csv(expected_output_filename)
 
         assert len(rows) == 2
         assert rows[0]["Id"] == "xlsx_one"
@@ -54,8 +61,8 @@ def test_multi_sheet_workbook(work_dir_fixture):
 
     input_filename = "MultiSheetWorkbook.xlsx"
     expected_output_filenames = [
-        "MultiSheetWorkbook.SheetOne.csv",
-        "MultiSheetWorkbook.SheetTwo.csv"
+        "MultiSheetWorkbook.SheetOne.generated.csv",
+        "MultiSheetWorkbook.SheetTwo.generated.csv"
     ]
     output_filenames = []
     try:
@@ -63,15 +70,13 @@ def test_multi_sheet_workbook(work_dir_fixture):
         assert output_filenames == expected_output_filenames
 
         # Check first sheet content
-        with open(output_filenames[0], "r", encoding="utf-8") as f:
-            rows = list(csv.DictReader(f))
+        rows = _read_generated_csv(output_filenames[0])
         assert len(rows) == 2
         assert rows[0]["Id"] == "xlsx_multi_sheet_one_a"
         assert rows[1]["Id"] == "xlsx_multi_sheet_one_b"
 
         # Check second sheet content
-        with open(output_filenames[1], "r", encoding="utf-8") as f:
-            rows = list(csv.DictReader(f))
+        rows = _read_generated_csv(output_filenames[1])
         assert len(rows) == 1
         assert rows[0]["Id"] == "xlsx_multi_sheet_two_a"
     finally:
@@ -88,6 +93,49 @@ def test_sheet_name_normalization():
     assert ExcelReader._normalize_sheet_name('Test"Name') == "TestName"
     assert ExcelReader._normalize_sheet_name("A/B\\C") == "ABC"
     assert ExcelReader._normalize_sheet_name("NoChange") == "NoChange"
+
+
+def test_generated_edited(work_dir_fixture):
+    """Test that a generated CSV without sep=, sentinel raises RuntimeError."""
+
+    input_filename = "SingleSheetWorkbook.xlsx"
+    generated_filename = "SingleSheetWorkbook.SingleSheet.generated.csv"
+    try:
+        # First convert to create the generated file
+        output_filenames = ExcelReader._convert_file(input_filename)
+
+        # Simulate manual edit by overwriting without sep=, sentinel
+        with open(generated_filename, "w", encoding="utf-8") as f:
+            f.write("Id,DerivedStrField\nmanual_edit,value\n")
+
+        # Re-convert should detect the edit and raise
+        with pytest.raises(RuntimeError, match="has been edited"):
+            ExcelReader._convert_file(input_filename)
+    finally:
+        if os.path.exists(generated_filename):
+            os.remove(generated_filename)
+
+
+def test_generated_unedited(work_dir_fixture):
+    """Test that re-converting xlsx succeeds when generated CSV still has sep=, sentinel which would be lost on edit."""
+
+    input_filename = "SingleSheetWorkbook.xlsx"
+    output_filenames = []
+    try:
+        # First convert
+        output_filenames = ExcelReader._convert_file(input_filename)
+        assert len(output_filenames) == 1
+
+        # Second convert should succeed (sentinel is preserved)
+        output_filenames = ExcelReader._convert_file(input_filename)
+        assert len(output_filenames) == 1
+
+        rows = _read_generated_csv(output_filenames[0])
+        assert len(rows) == 2
+    finally:
+        for filename in output_filenames:
+            if os.path.exists(filename):
+                os.remove(filename)
 
 
 def test_sheet_name_collision_detection(work_dir_fixture):
