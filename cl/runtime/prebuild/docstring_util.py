@@ -103,6 +103,19 @@ class DocstringUtil:
 
         return total_violations, "\n".join(all_stdout), "\n".join(all_stderr)
 
+    @staticmethod
+    def _extract_violation_files(ruff_output: str) -> set[str]:
+        """Extract unique file paths from ruff violation output lines."""
+        files = set()
+        for line in ruff_output.splitlines():
+            if ": D" in line and " [" in line:
+                # Line format: "filepath:line:col: Dxxx message [rule]"
+                prefix = line.split(": D")[0]  # "filepath:line:col"
+                parts = prefix.rsplit(":", 2)  # ["filepath", "line", "col"]
+                if len(parts) >= 3:
+                    files.add(parts[0])
+        return files
+
     @classmethod
     def validate_docstrings(
         cls,
@@ -177,7 +190,7 @@ class DocstringUtil:
             return
 
         # First count existing fixable violations
-        violation_count, _, _ = cls._run_ruff_docstring_check(
+        violation_count, violation_stdout, _ = cls._run_ruff_docstring_check(
             source_files,
             fix=False,
             extra_ignore_rules=extra_ignore_rules,
@@ -192,7 +205,7 @@ class DocstringUtil:
         cls._run_ruff_docstring_check(source_files, fix=True, extra_ignore_rules=extra_ignore_rules)
 
         # Verify fixes were applied
-        remaining, _, _ = cls._run_ruff_docstring_check(
+        remaining, remaining_stdout, _ = cls._run_ruff_docstring_check(
             source_files,
             fix=False,
             extra_ignore_rules=extra_ignore_rules,
@@ -200,6 +213,19 @@ class DocstringUtil:
 
         if verbose:
             fixed_count = violation_count - remaining
+
+            # Extract unique file paths from violations before and after fixing
+            pre_fix_files = cls._extract_violation_files(violation_stdout)
+            post_fix_files = cls._extract_violation_files(remaining_stdout)
+            fixed_files = sorted(pre_fix_files - post_fix_files)
+            partially_fixed_files = sorted(pre_fix_files & post_fix_files)
+
             print(f"Fixed docstring formatting in {fixed_count} location(s).")
+            if fixed_files:
+                for f in fixed_files:
+                    print(f"  {f}")
+            if partially_fixed_files:
+                for f in partially_fixed_files:
+                    print(f"  {f} (some violations remain)")
             if remaining > 0:
                 print(f"Warning: {remaining} violation(s) could not be auto-fixed.")
