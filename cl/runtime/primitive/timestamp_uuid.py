@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import os
-import threading
 from uuid import UUID
 
 from cl.runtime.primitive.datetime_util import DatetimeUtil
@@ -29,18 +28,13 @@ class TimestampUuid:
         Across multiple processes, ordering is guaranteed for values generated more than 1ms apart.
     """
 
-    _lock = threading.Lock()
-    """Lock for thread-safe access to _prev."""
-
-    _prev: UUID | None = None
-    """Value created during the previous call, shared by all threads and async contexts.
-    If generated value is less than _prev, generation is repeated until either a greater
-    value is generated for the same millisecond or a new millisecond begins, ensuring ordering.
-    """
-
     @classmethod
-    def _generate(cls) -> UUID:
-        """Generate a single raw UUIDv7 without ordering guarantee."""
+    def create(cls) -> UUID:
+        """Return a single UUID with v7 layout and 74 fully random bits (no counter).
+        The returned values are time-ordered within the same proces among themselves and also
+        relative to the tuples returned by create_many(). Across multiple processes,
+        ordering is guaranteed for values generated more than 1ms apart.
+        """
         now = DatetimeUtil.now()
         ts_ms = int(now.timestamp()) * 1000 + now.microsecond // 1000
         rand = os.urandom(10)
@@ -55,39 +49,32 @@ class TimestampUuid:
         return UUID(bytes=bytes(ba))
 
     @classmethod
-    def _create_unlocked(cls) -> UUID:
-        """Generate a UUID guaranteed to be greater than _prev_uuid7. Caller must hold _lock."""
-        if cls._prev is not None:
-            while (result := cls._generate()) <= cls._prev:
-                pass
-        else:
-            result = cls._generate()
-        cls._prev = result
-        return result
-
-    @classmethod
-    def create(cls) -> UUID:
-        """Return a single UUID with v7 layout and 74 fully random bits (no counter).
-        The returned values are time-ordered within the same process among themselves and also
-        relative to the tuples returned by create_many(). Across multiple processes,
-        ordering is guaranteed for values generated more than 1ms apart.
-        """
-        with cls._lock:
-            return cls._create_unlocked()
-
-    @classmethod
     def create_many(cls, count: int) -> tuple[UUID, ...]:
         """Return sorted timestamps to millisecond precision with 74 fully random bits (no counter).
         The values returned by this method use the same millisecond for the timestamp bits.
-        The returned values are time-ordered within the same process among themselves and also
+        The returned values are time-ordered within the same proces among themselves and also
         relative to the single values returned by create(). Across multiple processes,
         ordering is guaranteed for values generated more than 1ms apart.
         """
         if count < 1:
             raise ValueError("count must be at least 1")
 
-        with cls._lock:
-            return tuple(cls._create_unlocked() for _ in range(count))
+        now = DatetimeUtil.now()
+        ts_ms = int(now.timestamp()) * 1000 + now.microsecond // 1000
+        prefix = ts_ms.to_bytes(6, "big")
+
+        uuids = []
+        for _ in range(count):
+            rand = os.urandom(10)
+            ba = bytearray(prefix)
+            ba.extend(rand[:2])
+            ba.extend(rand[2:])
+            ba[6] = (ba[6] & 0x0F) | 0x70
+            ba[8] = (ba[8] & 0x3F) | 0x80
+            uuids.append(UUID(bytes=bytes(ba)))
+
+        uuids.sort()
+        return tuple(uuids)
 
     @classmethod
     def to_iso_str(cls, value: UUID) -> str:
