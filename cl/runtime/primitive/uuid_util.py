@@ -16,7 +16,7 @@ from uuid import UUID
 
 
 class UuidUtil:
-    """Helper methods for any UUID versions. Use TimestampUtil for methods specific to UUID version 7."""
+    """Helper methods for any UUID version, use TimestampUuid for time ordered UUID with 74 fully random bits."""
 
     @classmethod
     def to_str(cls, value: UUID) -> str:
