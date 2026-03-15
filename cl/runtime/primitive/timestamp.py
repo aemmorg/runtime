@@ -42,23 +42,58 @@ class Timestamp:
         Across multiple processes, ordering is guaranteed for values generated more than 1ms apart.
     """
 
+    # TODO: Use context vars to prevent a race condition between contexts or threads
+    _prev_uuid7 = TimestampUuid.create()
+    """The last UUIDv7 created during the previous call within the same context."""
+
     @classmethod
     def create(cls) -> str:
         """Return a unique timestamp to millisecond precision with 74 fully random bits (no counter).
-        The returned values are time-ordered within the same process among themselves and also
+        The returned values are time-ordered within the same proces among themselves and also
         relative to the tuples returned by create_many(). Across multiple processes,
         ordering is guaranteed for values generated more than 1ms apart.
         """
-        return cls.from_uuid7(TimestampUuid.create())
+        # TODO: Multiple contexts or threads are not yet supported
+        result = cls.from_uuid7(cls.create_uuid7())
+        return result
 
     @classmethod
     def create_many(cls, count: int) -> tuple[str, ...]:
         """Return sorted UUIDs with v7 layout and 74 fully random bits (no counter).
-        The returned values are time-ordered within the same process among themselves and also
+        The values returned by this method use the same millisecond for the timestamp bits.
+        The returned values are time-ordered within the same proces among themselves and also
         relative to the single values returned by create(). Across multiple processes,
         ordering is guaranteed for values generated more than 1ms apart.
         """
-        return tuple(cls.from_uuid7(x) for x in TimestampUuid.create_many(count))
+        # TODO: Improve performance of create_many by getting many values at the same time and ordering them
+        return tuple(cls.from_uuid7(x) for x in cls.create_many_uuid7(count))
+
+    @classmethod
+    def create_uuid7(cls) -> UUID:
+        """
+        Within the same process, thread and context the returned value is greater than any previous values.
+        In all other cases, the value is unique and greater than values returned in prior milliseconds.
+        """
+
+        # TODO: Multiple contexts or threads are not yet supported
+
+        # Keep getting new uuid7 until it is more than '_prev_uuid7'
+        # At worst this will delay execution by one time tick only
+        while (result := TimestampUuid.create()) <= cls._prev_uuid7:
+            pass
+
+        # Update _prev_uuid7 with the result to ensure strict ordering within the same process thread and context
+        cls._prev_uuid7 = result
+        return result
+
+    @classmethod
+    def create_many_uuid7(cls, count: int) -> tuple[UUID, ...]:
+        """
+        Within the same process, thread and context returned values are ordered and greater than any previous values.
+        In all other cases, the returned values are ordered and greater than values returned in prior milliseconds.
+        """
+        # TODO: Improve performance of create_many by getting many values at the same time and ordering them
+        return tuple(cls.create_uuid7() for _ in range(count))
 
     @classmethod
     def from_uuid7(cls, value: UUID) -> str:
