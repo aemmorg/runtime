@@ -45,14 +45,14 @@ class StubHandlers(StubHandlersKey, RecordMixin):
         """Stub handler."""
         PytestUtil.log_method_info(_logger)
 
-    def run_instance_method_1a_with_int_param(self, int_param: int) -> None:
+    def run_instance_method_with_int_param_1a(self, int_param: int) -> None:
         """Stub handler."""
         PytestUtil.log_method_info(_logger)
 
         if not isinstance(int_param, int):
             raise RuntimeError(f"The type of 'int_param' is '{type(int_param)}' rather than {typename(int)}.")
 
-    def run_instance_method_1a_with_primitive_params(
+    def run_instance_method_with_primitive_params_1a(
         self,
         str_param: str | None = None,
         float_param: float | None = None,
@@ -104,7 +104,7 @@ class StubHandlers(StubHandlersKey, RecordMixin):
         """Stub handler."""
         PytestUtil.log_method_info(_logger)
 
-    def run_instance_method_2a_with_params(self, param_1: str, param_2: str | None = None) -> None:
+    def run_instance_method_with_params_2a(self, param_1: str, param_2: str | None = None) -> None:
         """Stub handler."""
         PytestUtil.log_method_info(_logger)
 
@@ -113,7 +113,7 @@ class StubHandlers(StubHandlersKey, RecordMixin):
         if param_2 is not None and not isinstance(param_2, str):
             raise RuntimeError(f"The type of 'param_2' is '{type(param_2)}' rather than {typename(str)} or None.")
 
-    def run_instance_method_2b_with_params(self, param_1: str, param_2: str | None = None) -> None:
+    def run_instance_method_with_params_2b(self, param_1: str, param_2: str | None = None) -> None:
         """Stub handler."""
         PytestUtil.log_method_info(_logger)
 
@@ -122,7 +122,7 @@ class StubHandlers(StubHandlersKey, RecordMixin):
         if param_2 is not None and not isinstance(param_2, str):
             raise RuntimeError(f"The type of 'param_2' is '{type(param_2)}' rather than {typename(str)} or None.")
 
-    def run_instance_method_3a_with_params(self, *, param_1: str, param_2: str | None = None) -> None:
+    def run_instance_method_with_params_3a(self, *, param_1: str, param_2: str | None = None) -> None:
         """Stub handler."""
         PytestUtil.log_method_info(_logger)
 
@@ -131,7 +131,7 @@ class StubHandlers(StubHandlersKey, RecordMixin):
         if param_2 is not None and not isinstance(param_2, str):
             raise RuntimeError(f"The type of 'param_2' is '{type(param_2)}' rather than {typename(str)} or None.")
 
-    def run_instance_method_3b_with_params(self, *, param_1: str, param_2: str | None = None) -> None:
+    def run_instance_method_with_params_3b(self, *, param_1: str, param_2: str | None = None) -> None:
         """Stub handler."""
         PytestUtil.log_method_info(_logger)
 
@@ -151,7 +151,7 @@ class StubHandlers(StubHandlersKey, RecordMixin):
         PytestUtil.log_method_info(_logger)
 
     @classmethod
-    def run_class_method_2a_with_params(cls, param_1: str, param_2: str) -> None:
+    def run_class_method_with_params_2a(cls, param_1: str, param_2: str) -> None:
         """Stub handler."""
         PytestUtil.log_method_info(_logger)
 
@@ -161,7 +161,7 @@ class StubHandlers(StubHandlersKey, RecordMixin):
             raise RuntimeError(f"The type of 'param_2' is '{type(param_2)}' rather than {typename(str)}.")
 
     @classmethod
-    def run_class_method_2b_with_params(cls, param_1: str, param_2: str | None = None) -> None:
+    def run_class_method_with_params_2b(cls, param_1: str, param_2: str | None = None) -> None:
         """Stub handler."""
         PytestUtil.log_method_info(_logger)
 
@@ -171,7 +171,7 @@ class StubHandlers(StubHandlersKey, RecordMixin):
             raise RuntimeError(f"The type of 'param_2' is '{type(param_2)}' rather than {typename(str)} or None.")
 
     @classmethod
-    def run_class_method_3a_with_params(cls, *, param_1: str, param_2: str | None = None) -> None:
+    def run_class_method_with_params_3a(cls, *, param_1: str, param_2: str | None = None) -> None:
         """Stub handler."""
         PytestUtil.log_method_info(_logger)
 
@@ -181,7 +181,7 @@ class StubHandlers(StubHandlersKey, RecordMixin):
             raise RuntimeError(f"The type of 'param_2' is '{type(param_2)}' rather than {typename(str)} or None.")
 
     @classmethod
-    def run_class_method_3b_with_params(cls, *, param_1: str, param_2: str | None = None) -> None:
+    def run_class_method_with_params_3b(cls, *, param_1: str, param_2: str | None = None) -> None:
         """Stub handler."""
         PytestUtil.log_method_info(_logger)
 
@@ -201,7 +201,7 @@ class StubHandlers(StubHandlersKey, RecordMixin):
         PytestUtil.log_method_info(_logger)
 
     @classmethod
-    def run_static_method_2a_with_params(cls, param_1: str, param_2: str | None = None) -> None:
+    def run_static_method_with_params_2a(cls, param_1: str, param_2: str | None = None) -> None:
         """Stub handler."""
         PytestUtil.log_method_info(_logger)
 
@@ -211,7 +211,7 @@ class StubHandlers(StubHandlersKey, RecordMixin):
             raise RuntimeError(f"The type of 'param_2' is '{type(param_2)}' rather than {typename(str)} or None.")
 
     @classmethod
-    def run_static_method_2b_with_params(cls, param_1: str, param_2: str | None = None) -> None:
+    def run_static_method_with_params_2b(cls, param_1: str, param_2: str | None = None) -> None:
         """Stub handler."""
         PytestUtil.log_method_info(_logger)
 
@@ -221,7 +221,7 @@ class StubHandlers(StubHandlersKey, RecordMixin):
             raise RuntimeError(f"The type of 'param_2' is '{type(param_2)}' rather than {typename(str)} or None.")
 
     @classmethod
-    def run_static_method_3a_with_params(cls, *, param_1: str, param_2: str | None = None) -> None:
+    def run_static_method_with_params_3a(cls, *, param_1: str, param_2: str | None = None) -> None:
         """Stub handler."""
         PytestUtil.log_method_info(_logger)
 
@@ -231,7 +231,7 @@ class StubHandlers(StubHandlersKey, RecordMixin):
             raise RuntimeError(f"The type of 'param_2' is '{type(param_2)}' rather than {typename(str)} or None.")
 
     @classmethod
-    def run_static_method_3b_with_params(cls, *, param_1: str, param_2: str | None = None) -> None:
+    def run_static_method_with_params_3b(cls, *, param_1: str, param_2: str | None = None) -> None:
         """Stub handler."""
         PytestUtil.log_method_info(_logger)
 

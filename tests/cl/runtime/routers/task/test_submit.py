@@ -30,13 +30,13 @@ def get_simple_requests(key_str: str):
     return [
         {
             "type": "StubHandlers",
-            "method": "RunInstanceMethod1a",
+            "method": "RunInstanceMethod1A",
             "keys": [key_str],
             "arguments": {},
         },
         {
             "type": "StubHandlers",
-            "method": "RunStaticMethod1a",
+            "method": "RunStaticMethod1A",
             "keys": [],
             "arguments": {},
         },
