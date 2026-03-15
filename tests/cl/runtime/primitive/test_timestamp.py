@@ -26,7 +26,7 @@ def is_ordered(values: Iterable[str]):
     return all(values[i] < values[i + 1] for i in range(len(values) - 1))
 
 
-def test_now():
+def test_create():
     """Test Timestamp.now method."""
 
     result_1 = [Timestamp.create() for _ in range(10)]
@@ -37,7 +37,7 @@ def test_now():
     assert is_ordered(result)
 
 
-def test_many():
+def test_create_many():
     """Test Timestamp.many method."""
 
     result_1 = Timestamp.create_many(10)
