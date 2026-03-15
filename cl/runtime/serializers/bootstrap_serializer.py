@@ -239,9 +239,6 @@ class BootstrapSerializer(Serializer):
                 elif value_format == TimestampFormat.DEFAULT:
                     # Use timestamp-hex UUIDv7 format
                     return Timestamp.from_uuid7(data)
-                elif value_format == TimestampFormat.UUID:
-                    # Use the standard delimited UUID format
-                    return UuidUtil.to_str(data)
                 else:
                     raise ErrorUtil.enum_value_error(value_format, TimestampFormat)
         elif data_type_name == "bytes":

@@ -110,7 +110,7 @@ class PrimitiveSerializers:
         time_format=TimeFormat.DEFAULT,
         datetime_format=DatetimeFormat.DEFAULT,
         uuid_format=UuidFormat.DEFAULT,
-        timestamp_format=TimestampFormat.UUID,  # TODO: Review, should accept DEFAULT
+        timestamp_format=TimestampFormat.DEFAULT,  # TODO: Check frontend support
         bytes_format=BytesFormat.COMPACT,
         type_format=TypeFormat.DEFAULT,
     ).build()
@@ -127,7 +127,7 @@ class PrimitiveSerializers:
         time_format=TimeFormat.COMPACT_STR,
         datetime_format=DatetimeFormat.COMPACT_STR,
         uuid_format=UuidFormat.DEFAULT,
-        timestamp_format=TimestampFormat.UUID,  # TODO: Review, should accept DEFAULT
+        timestamp_format=TimestampFormat.DEFAULT,  # TODO: Check frontend support
         bytes_format=BytesFormat.COMPACT,
         type_format=TypeFormat.DEFAULT,
     ).build()
@@ -144,7 +144,7 @@ class PrimitiveSerializers:
         time_format=TimeFormat.DEFAULT,
         datetime_format=DatetimeFormat.DEFAULT,
         uuid_format=UuidFormat.DEFAULT,
-        timestamp_format=TimestampFormat.UUID,  # TODO: Review, should accept DEFAULT
+        timestamp_format=TimestampFormat.DEFAULT,  # TODO: Check frontend support
         bytes_format=BytesFormat.COMPACT,
         type_format=TypeFormat.DEFAULT,
     ).build()

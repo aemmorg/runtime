@@ -124,7 +124,7 @@ class BootstrapSerializers:
         time_format=TimeFormat.DEFAULT,
         datetime_format=DatetimeFormat.DEFAULT,
         uuid_format=UuidFormat.DEFAULT,
-        timestamp_format=TimestampFormat.UUID,  # TODO: Review, should accept DEFAULT
+        timestamp_format=TimestampFormat.DEFAULT,  # TODO: Check frontend support
         bytes_format=BytesFormat.COMPACT,
         enum_format=EnumFormat.DEFAULT,
         key_format=KeyFormat.DEFAULT,
