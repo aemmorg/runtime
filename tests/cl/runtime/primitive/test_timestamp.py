@@ -83,6 +83,10 @@ def test_validate():
         Timestamp.validate("2024-09-25T23:00:29.307Z-7030856bcce0da7fdbdf")
     except Exception as e:
         guard.write(e)
+    try:
+        Timestamp.validate("2024-09-25-23-00-29-307-7030856bcce0da7fdbdf")
+    except Exception as e:
+        guard.write(e)
     RegressionGuard.verify(guard)
 
 

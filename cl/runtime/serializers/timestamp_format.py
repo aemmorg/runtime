@@ -20,10 +20,7 @@ class TimestampFormat(IntEnum):
     """Format used to serialize and deserialize UUIDv7 unique timestamp."""
 
     PASSTHROUGH = auto()
-    """Do not apply any transformation during serialization or deserialization."""
+    """Do not apply any transformation during serialization or deserialization, serialized value is UUID object."""
 
     DEFAULT = auto()
-    """ISO 8601 datetime to millisecond precision followed by hex[20]: "2023-05-01T10:15:30.000Z-1a1a1a1a1a1a1a1a1a1a"""
-
-    UUID = auto()
-    """Lowercase string with the standard delimiter placement for UUID (8-4-4-4-12), same as UUID default."""
+    """Compact datetime to 1ms with 74 Crockford-encoded random bits, e.g. "20230421-111000000-E60G4MACXNR1KYYF"""
