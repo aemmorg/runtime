@@ -16,6 +16,7 @@ from abc import ABC
 from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Sequence
+from cl.runtime.file.file_util import FileUtil
 from cl.runtime.file.reader_key import ReaderKey
 from cl.runtime.primitive.timestamp import Timestamp
 from cl.runtime.records.record_mixin import RecordMixin
@@ -35,6 +36,18 @@ class Reader(ReaderKey, RecordMixin, ABC):
             self.reader_id = Timestamp.create()
 
     @abstractmethod
+    def load_file(self, *, file_path: str) -> tuple[RecordMixin]:
+        """
+        Load one or multiple records from a single file.
+
+        Args:
+            file_path: Absolute path to the file to load
+        Returns:
+            Tuple of loaded records
+        Raises:
+            RuntimeError: If an error occurs during file reading or record loading
+        """
+
     def load_all(
         self,
         *,
@@ -56,3 +69,15 @@ class Reader(ReaderKey, RecordMixin, ABC):
         Raises:
             RuntimeError: If an error occurs during file reading or record loading
         """
+
+        file_paths = FileUtil.enumerate_files(
+            dirs=dirs,
+            ext=ext,
+            file_include_patterns=file_include_patterns,
+            file_exclude_patterns=file_exclude_patterns,
+        )
+
+        result = []
+        for file_path in file_paths:
+            result.extend(self.load_file(file_path=file_path))
+        return tuple(result)

@@ -36,14 +36,7 @@ _INVALID_SHEET_NAME_RE = re.compile(r'[/\\<>:"|?*\x00\n]')
 class ExcelReader(Reader):
     """Read records from XLSX files by converting to CSV files on disk."""
 
-    def load_all(
-        self,
-        *,
-        dirs: Sequence[str],
-        ext: str,
-        file_include_patterns: Sequence[str] | None = None,
-        file_exclude_patterns: Sequence[str] | None = None,
-    ) -> tuple[RecordMixin]:
+    def load_file(self, *, file_path: str) -> tuple[RecordMixin]:
         # Conversion is done separately via convert_to_csv, records are loaded by CsvReader
         return tuple()
 
