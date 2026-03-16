@@ -377,6 +377,75 @@ def test_round_trip_conversions():
         assert CaseUtil.upper_to_pascal_case(upper_case_value) == pascal_case_value
 
 
+def test_leading_trailing_underscores():
+    """Test current behavior of CaseUtil with leading and trailing underscores."""
+
+    # check_snake_case accepts single leading or trailing underscore
+    CaseUtil.check_snake_case("_abc")
+    CaseUtil.check_snake_case("abc_")
+    CaseUtil.check_snake_case("_abc_")
+    CaseUtil.check_snake_case("_abc_def")
+    CaseUtil.check_snake_case("abc_def_")
+
+    # check_snake_case rejects double leading or trailing underscore
+    with pytest.raises(RuntimeError, match="doubled underscore"):
+        CaseUtil.check_snake_case("__abc")
+    with pytest.raises(RuntimeError, match="doubled underscore"):
+        CaseUtil.check_snake_case("abc__")
+
+    # check_pascal_case rejects any underscore
+    with pytest.raises(RuntimeError, match="non-alphanumeric"):
+        CaseUtil.check_pascal_case("_AbcDef")
+    with pytest.raises(RuntimeError, match="non-alphanumeric"):
+        CaseUtil.check_pascal_case("AbcDef_")
+
+    # snake_to_pascal_case silently strips leading and trailing underscores
+    # because split("_") produces empty strings which pascalize to ""
+    assert CaseUtil.snake_to_pascal_case("_abc_def") == "AbcDef"
+    assert CaseUtil.snake_to_pascal_case("abc_def_") == "AbcDef"
+    assert CaseUtil.snake_to_pascal_case("_abc_def_") == "AbcDef"
+
+    # pascal_to_snake_case rejects underscores (PascalCase validation)
+    with pytest.raises(RuntimeError, match="non-alphanumeric"):
+        CaseUtil.pascal_to_snake_case("_AbcDef")
+    with pytest.raises(RuntimeError, match="non-alphanumeric"):
+        CaseUtil.pascal_to_snake_case("AbcDef_")
+
+    # keep_trailing_underscore variants
+    assert CaseUtil.snake_to_pascal_case_keep_trailing_underscore("abc_def_") == "AbcDef_"
+    assert CaseUtil.snake_to_pascal_case_keep_trailing_underscore("abc_def") == "AbcDef"
+    assert CaseUtil.pascale_to_snake_case_keep_trailing_underscore("AbcDef_") == "abc_def_"
+    assert CaseUtil.pascale_to_snake_case_keep_trailing_underscore("AbcDef") == "abc_def"
+
+
+def test_snake_to_pascal_case_digit_segment_uppercase():
+    """Test new rule: snake_to_pascal should make all letters in a segment with a number uppercase.
+
+    Only includes cases where the new rule produces a different result from current behavior.
+    Current behavior capitalizes only the first letter after the first leading digit.
+    New rule: if a segment contains any digit, ALL letters in that segment are uppercase.
+
+    Segments where the result changes are those with a digit AND 2+ letters, e.g.:
+        "2def" -> "2DEF" (was "2Def")
+        "2cd"  -> "2CD"  (was "2Cd")
+        "23def" -> "23DEF" (was "23def")
+    """
+    test_cases = (
+        # Single digit + multiple letters: "2def" -> "2DEF" (was "2Def")
+        ("abc_2def", "Abc2DEF"),
+        # Multiple digit groups with letters: "2def" -> "2DEF", "3ghi" -> "3GHI"
+        ("abc_2def_3", "Abc2DEF3"),
+        ("abc_2def_3ghi", "Abc2DEF3GHI"),
+        # Multi-digit prefix + letters: "23def" -> "23DEF" (was "23def")
+        ("abc_23def", "Abc23DEF"),
+        # Multiple segments each with single digit + multiple letters
+        ("ab_2cd_3ef", "Ab2CD3EF"),
+    )
+
+    for input_value, expected in test_cases:
+        assert CaseUtil.snake_to_pascal_case(input_value) == expected
+
+
 def test_non_alphanumeric():
     """Test CaseUtil._check_non_alphanumeric."""
 
