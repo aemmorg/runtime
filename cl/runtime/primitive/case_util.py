@@ -45,7 +45,53 @@ _DIGIT_WITHOUT_SPACE_RE: Pattern = re.compile(r"(?<! )\d")
 
 
 class CaseUtil:
-    """Utilities for case conversion and other operations on string."""
+    """
+    Utilities for case conversion and other operations on string.
+
+    This class converts between PascalCase, snake_case, UPPER_CASE, and Title Case
+    using a custom rule for digit separators that ensures lossless round-trip conversion.
+
+    Digit separator rules:
+        - In snake_case and UPPER_CASE, every group of digits must be preceded by an underscore.
+          For example, ``case2`` is invalid and must be written as ``case_2``.
+        - No underscore is allowed between consecutive digits. For example, ``case_1_2`` is
+          invalid and must be written as ``case_12``.
+
+    PascalCase to snake_case digit behavior:
+        - A lowercase-to-digit boundary inserts an underscore: ``Abc2`` -> ``abc_2``
+        - An uppercase-to-digit boundary inserts an underscore: ``AB2`` -> ``a_b_2``
+        - Multi-digit sequences stay together: ``Abc12`` -> ``abc_12``
+        - Digits followed by lowercase letters form a single snake_case segment, so the
+          underscore is placed before the digit group, not between the digits and the
+          letters that follow: ``Abc2Def`` -> ``abc_2def`` (not ``abc_2_def``)
+        - An uppercase letter followed by digits followed by a new word
+          (uppercase + lowercase) inserts an underscore after the digit group:
+          ``AbcT0Key`` -> ``abc_t0_key``
+
+    snake_case to PascalCase digit behavior:
+        - Each underscore-delimited segment is pascalized independently.
+        - A digit-leading segment keeps its leading digits and capitalizes the remaining
+          letters: ``2def`` -> ``2Def``, ``2d`` -> ``2D``, ``2`` -> ``2``
+        - A letter-leading segment capitalizes its first letter: ``abc`` -> ``Abc``
+
+    Round-trip examples (PascalCase <-> snake_case):
+        ``A2``        <-> ``a_2``          Single uppercase + single digit
+        ``A23``       <-> ``a_23``         Single uppercase + multi-digit
+        ``Abc2``      <-> ``abc_2``        Word + single digit
+        ``Abc12``     <-> ``abc_12``       Word + multi-digit
+        ``Abc2D``     <-> ``abc_2d``       Word + digit + single uppercase
+        ``Abc2Def``   <-> ``abc_2def``     Word + digit group with following letters
+        ``A2B3``      <-> ``a_2b_3``       Multiple single-letter + digit groups
+        ``Abc2Def3``  <-> ``abc_2def_3``   Multiple word + digit groups
+
+    Known one-directional cases (PascalCase -> snake_case only, no round-trip):
+        ``AbcT0Key``  -> ``abc_t0_key``    Uppercase + digit mid-word: the resulting
+            snake_case ``t0`` has a digit not preceded by underscore, which fails
+            check_snake_case validation, so the reverse conversion is not possible.
+        ``Abc23Def``  -> ``abc_23def``     Multi-digit + word: __pascalize_segment
+            only skips one leading digit, so ``abc_23def`` -> ``Abc23def`` (lowercase
+            ``d``) rather than ``Abc23Def``.
+    """
 
     @classmethod
     def is_empty(cls, value: str | None) -> bool:

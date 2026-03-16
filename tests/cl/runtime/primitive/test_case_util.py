@@ -33,6 +33,22 @@ def test_pascal_to_snake_case():
         ("Abc2D", "abc_2d"),
         ("Abc2Def", "abc_2def"),
         ("AbcT0Key", "abc_t0_key"),
+        # Single uppercase + multi-digit
+        ("A23", "a_23"),
+        # Word + multi-digit
+        ("Abc12", "abc_12"),
+        ("Abc123", "abc_123"),
+        # Multiple single-letter + digit groups
+        ("A2B3", "a_2b_3"),
+        # Multiple word + digit groups
+        ("Abc2Def3", "abc_2def_3"),
+        ("Abc2Def3Ghi", "abc_2def_3ghi"),
+        # Word + multi-digit + word
+        ("Abc23Def", "abc_23def"),
+        # Lowercase-to-digit boundary in multi-segment words
+        ("Ab2Cd3Ef", "ab_2cd_3ef"),
+        # Digit-only trailing group
+        ("Abc2D3", "abc_2d_3"),
         # From PascalCase without dot delimiter
         ("AbcDef", "abc_def"),
         # From PascalCase with dot delimiter
@@ -55,6 +71,26 @@ def test_snake_to_pascal_case():
         ("abc_2", "Abc2"),
         ("abc_2d", "Abc2D"),
         ("abc_2def", "Abc2Def"),
+        # Single letter + multi-digit
+        ("a_23", "A23"),
+        # Word + multi-digit
+        ("abc_12", "Abc12"),
+        ("abc_123", "Abc123"),
+        # Multiple single-letter + digit groups
+        ("a_2b_3", "A2B3"),
+        # Multiple word + digit groups
+        ("abc_2def_3", "Abc2Def3"),
+        ("abc_2def_3ghi", "Abc2Def3Ghi"),
+        # Word + multi-digit + word (only first leading digit is skipped by pascalize,
+        # so letters after multi-digit prefix are not capitalized)
+        ("abc_23def", "Abc23def"),
+        # Lowercase-to-digit in multi-segment words (single leading digit, capitalizes correctly)
+        ("ab_2cd_3ef", "Ab2Cd3Ef"),
+        # Digit-only trailing group
+        ("abc_2d_3", "Abc2D3"),
+        # Digit-only segment (no following letters)
+        ("abc_2", "Abc2"),
+        ("abc_23", "Abc23"),
         # From snake_case without dot delimiter
         ("abc_def", "AbcDef"),
         # From snake_case with dot delimiter
@@ -239,6 +275,25 @@ def test_round_trip_conversions():
         ("Abc2D", "abc_2d"),
         ("Abc2Def", "abc_2def"),
         ("Abc12", "abc_12"),
+        # Single uppercase + multi-digit
+        ("A23", "a_23"),
+        # Word + multi-digit
+        ("Abc123", "abc_123"),
+        # Multiple single-letter + digit groups
+        ("A2B3", "a_2b_3"),
+        # Multiple word + digit groups
+        ("Abc2Def3", "abc_2def_3"),
+        ("Abc2Def3Ghi", "abc_2def_3ghi"),
+        # Word + multi-digit + word (does NOT round-trip due to __pascalize_segment
+        # only skipping one leading digit, so "abc_23def" -> "Abc23def" not "Abc23Def")
+        # ("Abc23Def", "abc_23def"),  # excluded: does not round-trip
+        # Lowercase-to-digit in multi-segment words
+        ("Ab2Cd3Ef", "ab_2cd_3ef"),
+        # Digit-only trailing group
+        ("Abc2D3", "abc_2d_3"),
+        # Uppercase + digit mid-word boundary (does NOT round-trip because "abc_t0_key"
+        # fails check_snake_case: digit 0 is not preceded by underscore in "t0")
+        # ("AbcT0Key", "abc_t0_key"),  # excluded: snake_case form fails validation
         # From PascalCase without dot delimiter
         ("AbcDef", "abc_def"),
         # From PascalCase with dot delimiter
@@ -255,6 +310,19 @@ def test_round_trip_conversions():
         ("abc_2", "ABC_2"),
         ("abc_2d", "ABC_2D"),
         ("abc_2def", "ABC_2DEF"),
+        # Single letter + multi-digit
+        ("a_23", "A_23"),
+        # Word + multi-digit
+        ("abc_12", "ABC_12"),
+        ("abc_123", "ABC_123"),
+        # Multiple digit groups
+        ("a_2b_3", "A_2B_3"),
+        ("abc_2def_3", "ABC_2DEF_3"),
+        ("abc_2def_3ghi", "ABC_2DEF_3GHI"),
+        # Word + multi-digit + word
+        ("abc_23def", "ABC_23DEF"),
+        # Digit-only trailing group
+        ("abc_2d_3", "ABC_2D_3"),
         # From snake_case without dot delimiter
         ("abc_def", "ABC_DEF"),
         # From snake_case with dot delimiter
@@ -271,6 +339,23 @@ def test_round_trip_conversions():
         ("Abc2", "ABC_2"),
         ("Abc2D", "ABC_2D"),
         ("Abc2Def", "ABC_2DEF"),
+        # Single uppercase + multi-digit
+        ("A23", "A_23"),
+        # Word + multi-digit
+        ("Abc12", "ABC_12"),
+        ("Abc123", "ABC_123"),
+        # Multiple digit groups
+        ("A2B3", "A_2B_3"),
+        ("Abc2Def3", "ABC_2DEF_3"),
+        ("Abc2Def3Ghi", "ABC_2DEF_3GHI"),
+        # Word + multi-digit + word (does NOT round-trip due to __pascalize_segment
+        # only skipping one leading digit, so upper_to_pascal("ABC_23DEF") -> "Abc23def")
+        # ("Abc23Def", "ABC_23DEF"),  # excluded: does not round-trip
+        # Digit-only trailing group
+        ("Abc2D3", "ABC_2D_3"),
+        # Uppercase + digit mid-word boundary (does NOT round-trip: snake_case form
+        # "abc_t0_key" fails validation since digit 0 not preceded by underscore in "t0")
+        # ("AbcT0Key", "ABC_T0_KEY"),  # excluded: snake_case form fails validation
         # From PascalCase without dot delimiter
         ("AbcDef", "ABC_DEF"),
         # From PascalCase with dot delimiter
