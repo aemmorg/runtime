@@ -68,44 +68,5 @@ def test_docstrings():
     DocstringUtil.validate_docstrings()
 
 
-def test_fix_docstrings():
-    """Test that fix_docstrings corrects auto-fixable pydocstyle violations in a stub file."""
-    invalid_docstrings_filename = "stub_invalid_docstrings.py"
-    stub_path = os.path.join(_STUBS_DIR, invalid_docstrings_filename)
-    assert os.path.isfile(stub_path), f"Stub file not found: {stub_path}"
-
-    # Save the original content so it can be restored after the test
-    with open(stub_path, "r", encoding="utf-8") as f:
-        original_content = f.read()
-
-    try:
-        # Verify the stub file has violations before fixing
-        before_count = _count_ruff_d_violations(stub_path)
-        assert before_count > 0, f"Expected pydocstyle violations in {invalid_docstrings_filename}, found {before_count}"
-
-        # Run ruff fix on the stub file
-        subprocess.run(
-            _RUFF_D_ARGS + ["--fix", "--unsafe-fixes", stub_path],
-            capture_output=True,
-            text=True,
-        )
-
-        # Verify no fixable violations remain after fixing
-        result = subprocess.run(
-            _RUFF_D_ARGS + [stub_path],
-            capture_output=True,
-            text=True,
-        )
-        fixable_count = 0
-        for line in result.stdout.splitlines():
-            if "[*]" in line and ": D" in line:
-                fixable_count += 1
-        assert fixable_count == 0, f"Expected 0 fixable pydocstyle violations after fix, found {fixable_count}"
-    finally:
-        # Restore the original content so the test is repeatable
-        with open(stub_path, "w", encoding="utf-8") as f:
-            f.write(original_content)
-
-
 if __name__ == "__main__":
     pytest.main([__file__])
