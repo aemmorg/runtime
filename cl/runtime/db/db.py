@@ -303,9 +303,9 @@ class Db(DbKey, RecordMixin, ABC):
                 raise RuntimeError("Dataset identifier cannot be an empty string.")
             elif not isinstance(dataset, str):
                 raise RuntimeError("Dataset identifier must be a string.")
-            elif not dataset.startswith("\\"):
+            elif not dataset.startswith("/"):
                 raise RuntimeError(
-                    f"Dataset identifier '{dataset}' must begin with a backslash character."
+                    f"Dataset identifier '{dataset}' must begin with a slash character."
                 )
 
     @classmethod

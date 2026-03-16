@@ -27,4 +27,4 @@ class Dataset(DatasetKey, RecordMixin):
 
     @classmethod
     def get_root(cls) -> Self:
-        return Dataset(dataset_id="\\").build()
+        return Dataset(dataset_id="/").build()

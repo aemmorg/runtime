@@ -24,11 +24,11 @@ class DatasetUtil:
     """
     Utility class for dataset validation and transformation.
 
-    Dataset can be a list of levels, a backslash-delimited string starting from backslash, or None.
+    Dataset can be a list of levels, a slash-delimited string starting from slash, or None.
     """
 
-    _sep = "\\"
-    _two_sep = "\\\\"
+    _sep = "/"
+    _two_sep = "//"
 
     @classmethod
     def root(cls) -> str:
@@ -85,7 +85,7 @@ class DatasetUtil:
         Combine one or more datasets with validation, where each argument may contain more than one level.
 
         Notes:
-            - The arguments may optionally begin from dataset separator (backslash)
+            - The arguments may optionally begin from dataset separator (slash)
             - Arguments that are None are disregarded
         """
 
@@ -107,7 +107,7 @@ class DatasetUtil:
     def _normalize_str(cls, dataset: str) -> str:
         """
         Normalize a dataset provided in string format by converting URL quoted unicode characters.
-        Validates that the dataset consists of backslash delimited levels with leading backslash.
+        Validates that the dataset consists of slash delimited levels with leading slash.
         """
 
         if not isinstance(dataset, str):
@@ -117,11 +117,11 @@ class DatasetUtil:
         dataset = unquote(dataset)
 
         if not dataset.startswith(cls._sep):
-            raise Exception(f"Dataset '{dataset}' does not start with a backslash separator.")
+            raise Exception(f"Dataset '{dataset}' does not start with a slash separator.")
         if dataset.endswith(cls._sep):
-            raise Exception(f"Dataset '{dataset}' must not end with a backslash separator.")
+            raise Exception(f"Dataset '{dataset}' must not end with a slash separator.")
         if cls._two_sep in dataset:
-            raise Exception(f"Dataset '{dataset}' contains two backslash separators in a row.")
+            raise Exception(f"Dataset '{dataset}' contains two slash separators in a row.")
         if dataset.startswith(" "):
             raise Exception(f"Dataset '{dataset}' has a leading space.")
         if dataset.endswith(" "):
@@ -142,8 +142,8 @@ class DatasetUtil:
                 raise Exception(f"A dataset level is an empty string.")
             if cls._sep in dataset_level:
                 raise Exception(
-                    f"Dataset level '{dataset_level}' includes backslash. This is not allowed "
-                    f"because backslash also serves as a level separator."
+                    f"Dataset level '{dataset_level}' includes slash. This is not allowed "
+                    f"because slash also serves as a level separator."
                 )
             if dataset_level.startswith(" "):
                 raise Exception(f"Dataset level '{dataset_level}' has a leading space.")

@@ -20,9 +20,9 @@ def test_to_levels():
     """Test conversion of dataset string to levels."""
 
     assert DatasetUtil.to_levels(None) == []
-    assert DatasetUtil.to_levels("\\") == []
-    assert DatasetUtil.to_levels("\\abc") == ["abc"]
-    assert DatasetUtil.to_levels("\\abc\\def") == ["abc", "def"]
+    assert DatasetUtil.to_levels("/") == []
+    assert DatasetUtil.to_levels("/abc") == ["abc"]
+    assert DatasetUtil.to_levels("/abc/def") == ["abc", "def"]
 
     with pytest.raises(Exception):
         assert DatasetUtil.to_levels(" ")
@@ -31,43 +31,43 @@ def test_to_levels():
     with pytest.raises(Exception):
         assert DatasetUtil.to_levels("abc ")
     with pytest.raises(Exception):
-        assert DatasetUtil.to_levels(" abc\\def")
+        assert DatasetUtil.to_levels(" abc/def")
     with pytest.raises(Exception):
-        assert DatasetUtil.to_levels("\\abc\\def ")
+        assert DatasetUtil.to_levels("/abc/def ")
     with pytest.raises(Exception):
-        assert DatasetUtil.to_levels("\\abc \\def")
+        assert DatasetUtil.to_levels("/abc /def")
     with pytest.raises(Exception):
-        assert DatasetUtil.to_levels("\\abc\\ def")
+        assert DatasetUtil.to_levels("/abc/ def")
     with pytest.raises(Exception):
-        DatasetUtil.to_levels("\\abc\\")
+        DatasetUtil.to_levels("/abc/")
     with pytest.raises(Exception):
-        DatasetUtil.to_levels("\\abc\\")
+        DatasetUtil.to_levels("/abc/")
     with pytest.raises(Exception):
-        DatasetUtil.to_levels("\\ abc")
+        DatasetUtil.to_levels("/ abc")
     with pytest.raises(Exception):
-        DatasetUtil.to_levels("\\abc \\def")
+        DatasetUtil.to_levels("/abc /def")
 
 
 def test_combine():
     """Test DatasetUtil.combine."""
 
-    assert DatasetUtil.combine(None) == "\\"
-    assert DatasetUtil.combine("\\") == "\\"
-    assert DatasetUtil.combine(None, None) == "\\"
-    assert DatasetUtil.combine("\\", None) == "\\"
-    assert DatasetUtil.combine(None, "\\abc") == "\\abc"
-    assert DatasetUtil.combine("\\abc", None) == "\\abc"
-    assert DatasetUtil.combine("abc") == "\\abc"
-    assert DatasetUtil.combine("abc", "def") == "\\abc\\def"
-    assert DatasetUtil.combine(None, "abc", "def") == "\\abc\\def"
-    assert DatasetUtil.combine("abc", None, "def") == "\\abc\\def"
-    assert DatasetUtil.combine("\\abc") == "\\abc"
-    assert DatasetUtil.combine("\\abc\\def") == "\\abc\\def"
-    assert DatasetUtil.combine("\\abc", "\\def") == "\\abc\\def"
-    assert DatasetUtil.combine(None, "abc", "def") == "\\abc\\def"
+    assert DatasetUtil.combine(None) == "/"
+    assert DatasetUtil.combine("/") == "/"
+    assert DatasetUtil.combine(None, None) == "/"
+    assert DatasetUtil.combine("/", None) == "/"
+    assert DatasetUtil.combine(None, "/abc") == "/abc"
+    assert DatasetUtil.combine("/abc", None) == "/abc"
+    assert DatasetUtil.combine("abc") == "/abc"
+    assert DatasetUtil.combine("abc", "def") == "/abc/def"
+    assert DatasetUtil.combine(None, "abc", "def") == "/abc/def"
+    assert DatasetUtil.combine("abc", None, "def") == "/abc/def"
+    assert DatasetUtil.combine("/abc") == "/abc"
+    assert DatasetUtil.combine("/abc/def") == "/abc/def"
+    assert DatasetUtil.combine("/abc", "/def") == "/abc/def"
+    assert DatasetUtil.combine(None, "abc", "def") == "/abc/def"
 
     with pytest.raises(Exception):
-        DatasetUtil.combine("\\\\")
+        DatasetUtil.combine("//")
     with pytest.raises(Exception):
         DatasetUtil.combine(" ")
     with pytest.raises(Exception):
@@ -75,18 +75,18 @@ def test_combine():
     with pytest.raises(Exception):
         DatasetUtil.combine("abc ")
     with pytest.raises(Exception):
-        DatasetUtil.combine("abc", "def\\")
+        DatasetUtil.combine("abc", "def/")
     with pytest.raises(Exception):
-        DatasetUtil.combine("abc\\", "def")
+        DatasetUtil.combine("abc/", "def")
 
 
 def test_lookup_list():
     """Test DatasetUtil.to_lookup_list."""
 
-    assert DatasetUtil.to_lookup_list(None) == ["\\"]
-    assert DatasetUtil.to_lookup_list("\\") == ["\\"]
-    assert DatasetUtil.to_lookup_list("\\abc") == ["\\abc", "\\"]
-    assert DatasetUtil.to_lookup_list("\\abc\\def") == ["\\abc\\def", "\\abc", "\\"]
+    assert DatasetUtil.to_lookup_list(None) == ["/"]
+    assert DatasetUtil.to_lookup_list("/") == ["/"]
+    assert DatasetUtil.to_lookup_list("/abc") == ["/abc", "/"]
+    assert DatasetUtil.to_lookup_list("/abc/def") == ["/abc/def", "/abc", "/"]
 
 
 if __name__ == "__main__":
