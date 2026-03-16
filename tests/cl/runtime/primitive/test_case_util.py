@@ -70,7 +70,7 @@ def test_snake_to_pascal_case():
         ("a_b_2d_ef", "AB2DEf"),
         ("abc_2", "Abc2"),
         ("abc_2d", "Abc2D"),
-        ("abc_2def", "Abc2Def"),
+        ("abc_2def", "Abc2DEF"),
         # Single letter + multi-digit
         ("a_23", "A23"),
         # Word + multi-digit
@@ -79,13 +79,12 @@ def test_snake_to_pascal_case():
         # Multiple single-letter + digit groups
         ("a_2b_3", "A2B3"),
         # Multiple word + digit groups
-        ("abc_2def_3", "Abc2Def3"),
-        ("abc_2def_3ghi", "Abc2Def3Ghi"),
-        # Word + multi-digit + word (only first leading digit is skipped by pascalize,
-        # so letters after multi-digit prefix are not capitalized)
-        ("abc_23def", "Abc23def"),
-        # Lowercase-to-digit in multi-segment words (single leading digit, capitalizes correctly)
-        ("ab_2cd_3ef", "Ab2Cd3Ef"),
+        ("abc_2def_3", "Abc2DEF3"),
+        ("abc_2def_3ghi", "Abc2DEF3GHI"),
+        # Word + multi-digit + word (all letters in digit segment are uppercase)
+        ("abc_23def", "Abc23DEF"),
+        # Lowercase-to-digit in multi-segment words (all letters in digit segment are uppercase)
+        ("ab_2cd_3ef", "Ab2CD3EF"),
         # Digit-only trailing group
         ("abc_2d_3", "Abc2D3"),
         # Digit-only segment (no following letters)
@@ -112,7 +111,7 @@ def test_pascal_to_title_case():
         ("AB2DEf", "A B 2D Ef"),
         ("Abc2", "Abc 2"),
         ("Abc2D", "Abc 2D"),
-        ("Abc2Def", "Abc 2Def"),
+        ("Abc2Def", "Abc 2DEF"),
     )
 
     for input_value, expected in test_cases:
@@ -273,7 +272,7 @@ def test_round_trip_conversions():
         ("AB2DEf", "a_b_2d_ef"),
         ("Abc2", "abc_2"),
         ("Abc2D", "abc_2d"),
-        ("Abc2Def", "abc_2def"),
+        ("Abc2DEF", "abc_2def"),
         ("Abc12", "abc_12"),
         # Single uppercase + multi-digit
         ("A23", "a_23"),
@@ -282,13 +281,12 @@ def test_round_trip_conversions():
         # Multiple single-letter + digit groups
         ("A2B3", "a_2b_3"),
         # Multiple word + digit groups
-        ("Abc2Def3", "abc_2def_3"),
-        ("Abc2Def3Ghi", "abc_2def_3ghi"),
-        # Word + multi-digit + word (does NOT round-trip due to __pascalize_segment
-        # only skipping one leading digit, so "abc_23def" -> "Abc23def" not "Abc23Def")
-        # ("Abc23Def", "abc_23def"),  # excluded: does not round-trip
+        ("Abc2DEF3", "abc_2def_3"),
+        ("Abc2DEF3GHI", "abc_2def_3ghi"),
+        # Word + multi-digit + word
+        ("Abc23DEF", "abc_23def"),
         # Lowercase-to-digit in multi-segment words
-        ("Ab2Cd3Ef", "ab_2cd_3ef"),
+        ("Ab2CD3EF", "ab_2cd_3ef"),
         # Digit-only trailing group
         ("Abc2D3", "abc_2d_3"),
         # Uppercase + digit mid-word boundary (does NOT round-trip because "abc_t0_key"
@@ -338,7 +336,7 @@ def test_round_trip_conversions():
         ("AB2DEf", "A_B_2D_EF"),
         ("Abc2", "ABC_2"),
         ("Abc2D", "ABC_2D"),
-        ("Abc2Def", "ABC_2DEF"),
+        ("Abc2DEF", "ABC_2DEF"),
         # Single uppercase + multi-digit
         ("A23", "A_23"),
         # Word + multi-digit
@@ -346,13 +344,14 @@ def test_round_trip_conversions():
         ("Abc123", "ABC_123"),
         # Multiple digit groups
         ("A2B3", "A_2B_3"),
-        ("Abc2Def3", "ABC_2DEF_3"),
-        ("Abc2Def3Ghi", "ABC_2DEF_3GHI"),
-        # Word + multi-digit + word (does NOT round-trip due to __pascalize_segment
-        # only skipping one leading digit, so upper_to_pascal("ABC_23DEF") -> "Abc23def")
-        # ("Abc23Def", "ABC_23DEF"),  # excluded: does not round-trip
+        ("Abc2DEF3", "ABC_2DEF_3"),
+        ("Abc2DEF3GHI", "ABC_2DEF_3GHI"),
+        # Word + multi-digit + word
+        ("Abc23DEF", "ABC_23DEF"),
         # Digit-only trailing group
         ("Abc2D3", "ABC_2D_3"),
+        # Lowercase-to-digit in multi-segment words
+        ("Ab2CD3EF", "AB_2CD_3EF"),
         # Uppercase + digit mid-word boundary (does NOT round-trip: snake_case form
         # "abc_t0_key" fails validation since digit 0 not preceded by underscore in "t0")
         # ("AbcT0Key", "ABC_T0_KEY"),  # excluded: snake_case form fails validation

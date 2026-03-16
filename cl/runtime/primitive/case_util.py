@@ -40,6 +40,9 @@ _CONSECUTIVE_CAP_RE: Pattern = re.compile(r"([A-Z])([A-Z])")
 _DIGIT_UNDERSCORE_VIOLATIONS_RE: Pattern = re.compile(r"(?<=\d)_(?=\d)|(?<![_\d])\d")
 """Digit without preceding underscore or underscore between digits pattern"""
 
+_DIGIT_UPPER_NORMALIZE_RE: Pattern = re.compile(r"(\d)([A-Z]+)(?=[A-Z][a-z]|\d|$)")
+"""Normalize new-format digit segments by lowercasing uppercase letters following a digit (e.g., "2DEF" -> "2def")."""
+
 _DIGIT_WITHOUT_SPACE_RE: Pattern = re.compile(r"(?<! )\d")
 """Digit without space pattern"""
 
@@ -105,8 +108,11 @@ class CaseUtil:
         if cls.is_empty(value):
             return value
         cls.check_pascal_case(value)
+        # Normalize digit segments: lowercase uppercase letters that follow a digit and belong
+        # to the same segment (e.g., "Abc2DEF" -> "Abc2def") so the pipeline below handles them
+        result = _DIGIT_UPPER_NORMALIZE_RE.sub(lambda m: m.group(1) + m.group(2).lower(), value)
         # Add underscores between consecutive uppercase letters
-        result = _CONSECUTIVE_CAP_RE.sub(r"\1_\2", value)
+        result = _CONSECUTIVE_CAP_RE.sub(r"\1_\2", result)
         # Handle lowercase to uppercase transitions
         result = _ALL_CAP_RE.sub(r"\1_\2", result)
         # Insert underscore between lowercase letter and digit
@@ -383,8 +389,8 @@ class CaseUtil:
         Pascalize a segment (substring between 2 underscores) from snake_case
         using a custom rule for separators in front of digits.
         """
-        # If the segment starts with a digit, capitalize only the first character after the digit
-        if segment and segment[0].isdigit():
-            return segment[0] + segment[1:].capitalize()
+        # If the segment contains any digit, all letters become uppercase
+        if any(char.isdigit() for char in segment):
+            return segment.upper()
         # Otherwise, capitalize the first letter of the segment
         return segment.capitalize()
