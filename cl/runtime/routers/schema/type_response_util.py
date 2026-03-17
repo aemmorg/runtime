@@ -74,7 +74,7 @@ class TypeResponseUtil:
         # Add synthetic Dataset and Database elements if the parent chain has multiple values
         ds = active_or_none(DataSource)
         if record_type_result is not None and ds is not None:
-            include_dataset = DataSourceUtil.has_multiple_datasets(ds)
+            include_dataset = DataSourceUtil.has_multiple_datasets(ds, record_type=record_type)
             include_database = DataSourceUtil.has_multiple_databases(ds)
         else:
             include_dataset = False

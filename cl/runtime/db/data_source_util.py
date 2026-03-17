@@ -14,6 +14,10 @@
 
 from typing import cast
 from cl.runtime.db.data_source import DataSource
+from cl.runtime.records.record_mixin import RecordMixin
+from cl.runtime.records.record_type_presence import RecordTypePresence
+from cl.runtime.records.typename import typename
+from cl.runtime.schema.type_info import TypeInfo
 
 
 class DataSourceUtil:
@@ -52,15 +56,20 @@ class DataSourceUtil:
         return chain
 
     @classmethod
-    def has_multiple_datasets(cls, data_source: DataSource) -> bool:
+    def has_multiple_datasets(cls, data_source: DataSource, *, record_type: type[RecordMixin]) -> bool:
         """
-        Return True if the parent chain has more than one unique dataset.
+        Return True if the database contains records of the specified type in more than one dataset.
+
+        Uses RecordTypePresence records to determine distinct datasets without querying actual data tables.
 
         Args:
             data_source: The active DataSource instance.
+            record_type: Record type to check (uses this type and its subtypes).
         """
-        chain = cls.get_parent_chain(data_source)
-        return len({d for ds in chain for d in ds.datasets}) > 1
+        presences = data_source.load_by_type(RecordTypePresence)
+        matching_type_names = set(TypeInfo.get_child_and_self_type_names(record_type))
+        distinct_datasets = {p.dataset for p in presences if typename(p.record_type) in matching_type_names}
+        return len(distinct_datasets) > 1
 
     @classmethod
     def has_multiple_databases(cls, data_source: DataSource) -> bool:

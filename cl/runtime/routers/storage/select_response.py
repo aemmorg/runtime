@@ -81,8 +81,8 @@ class SelectResponse(RecordsWithSchemaResponse):
         # Check if the table is polymorphic (has descendant types in DB)
         include_datatype = TypeResponseUtil.has_descendant_types(common_base_record_type)
 
-        # Check if the parent chain has multiple datasets or databases
-        include_dataset = DataSourceUtil.has_multiple_datasets(ds)
+        # Check if the DB has multiple datasets or databases
+        include_dataset = DataSourceUtil.has_multiple_datasets(ds, record_type=common_base_record_type)
         include_database = DataSourceUtil.has_multiple_databases(ds)
 
         # Serialize records for table.
@@ -92,7 +92,7 @@ class SelectResponse(RecordsWithSchemaResponse):
                 include_datatype=include_datatype,
                 include_dataset=include_dataset,
                 include_database=include_database,
-                dataset_value=";".join(ds.datasets) if include_dataset else "",
+                dataset_value="" if include_dataset else "",
                 database_value=ds.db.db_id if include_database else "",
             )
             for record in records

@@ -25,6 +25,9 @@ class RecordTypePresenceKey(DataclassMixin, KeyMixin):
     record_type: type = required()
     """Stored record type."""
 
+    dataset: str = required()
+    """Dataset where the record type is present."""
+
     @classmethod
     def get_key_type(cls) -> type[KeyMixin]:
         return RecordTypePresenceKey

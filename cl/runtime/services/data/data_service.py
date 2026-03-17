@@ -102,15 +102,15 @@ class DataService(PydanticMixin):
         # Check if the table is polymorphic (has descendant types in DB)
         include_datatype = TypeResponseUtil.has_descendant_types(common_base_record_type)
 
-        # Check if the parent chain has multiple datasets or databases
-        include_dataset = DataSourceUtil.has_multiple_datasets(ds)
+        # Check if the DB has multiple datasets or databases
+        include_dataset = DataSourceUtil.has_multiple_datasets(ds, record_type=common_base_record_type)
         include_database = DataSourceUtil.has_multiple_databases(ds)
 
         # Serialize records in UI format and add '_key' attribute (and 'Datatype' if polymorphic)
         data = [
             {
                 **({"Datatype": typename(type(x))} if include_datatype else {}),
-                **({"Dataset": ";".join(ds.datasets)} if include_dataset else {}),
+                **({"Dataset": ""} if include_dataset else {}),
                 **({"Database": ds.db.db_id} if include_database else {}),
                 **_UI_SERIALIZER.serialize(x),
                 "_key": _KEY_SERIALIZER.serialize(x.get_key()),
@@ -143,15 +143,15 @@ class DataService(PydanticMixin):
         # Check if the table is polymorphic (has descendant types in DB)
         include_datatype = TypeResponseUtil.has_descendant_types(type_)
 
-        # Check if the parent chain has multiple datasets or databases
-        include_dataset = DataSourceUtil.has_multiple_datasets(ds)
+        # Check if the DB has multiple datasets or databases
+        include_dataset = DataSourceUtil.has_multiple_datasets(ds, record_type=type_)
         include_database = DataSourceUtil.has_multiple_databases(ds)
 
         # Serialize records in UI format and add '_key' attribute (and 'Datatype' if polymorphic)
         data = [
             {
                 **({"Datatype": typename(type(x))} if include_datatype else {}),
-                **({"Dataset": ";".join(ds.datasets)} if include_dataset else {}),
+                **({"Dataset": ""} if include_dataset else {}),
                 **({"Database": ds.db.db_id} if include_database else {}),
                 **_UI_SERIALIZER.serialize(x),
                 "_key": _KEY_SERIALIZER.serialize(x.get_key()),

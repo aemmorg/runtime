@@ -30,7 +30,7 @@ class RecordTypePresence(RecordTypePresenceKey, RecordMixin):
     """Use to query for record types stored in the table for this key type."""
 
     def get_key(self) -> RecordTypePresenceKey:
-        return RecordTypePresenceKey(record_type=self.record_type).build()
+        return RecordTypePresenceKey(record_type=self.record_type, dataset=self.dataset).build()
 
     def __init(self) -> None:
         """Use instead of __init__ in the builder pattern, invoked by the build method in base to derived order."""

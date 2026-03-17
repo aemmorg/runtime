@@ -95,9 +95,14 @@ class RunResponseUtil:
             serialized = _ui_serializer.serialize(result)
             include_datatype = is_data_key_or_record_type(type(result)) and TypeResponseUtil.has_descendant_types(type(result))
 
-            # Check if the parent chain has multiple datasets or databases
+            # Check if the DB has multiple datasets or databases
             ds = active(DataSource)
-            include_dataset = DataSourceUtil.has_multiple_datasets(ds)
+            result_type = type(result) if is_data_key_or_record_type(type(result)) else None
+            include_dataset = (
+                DataSourceUtil.has_multiple_datasets(ds, record_type=result_type)
+                if result_type is not None
+                else False
+            )
             include_database = DataSourceUtil.has_multiple_databases(ds)
 
             if isinstance(serialized, dict) and (include_datatype or include_dataset or include_database):
@@ -105,7 +110,7 @@ class RunResponseUtil:
                 if include_datatype:
                     result_dict["Datatype"] = serialized.get("_t", "")
                 if include_dataset:
-                    result_dict["Dataset"] = ";".join(ds.datasets)
+                    result_dict["Dataset"] = ""
                 if include_database:
                     result_dict["Database"] = ds.db.db_id
                 result_dict.update(serialized)
@@ -118,7 +123,7 @@ class RunResponseUtil:
                         if include_datatype and "_t" in item:
                             result_dict["Datatype"] = item["_t"]
                         if include_dataset:
-                            result_dict["Dataset"] = ";".join(ds.datasets)
+                            result_dict["Dataset"] = ""
                         if include_database:
                             result_dict["Database"] = ds.db.db_id
                         if result_dict:

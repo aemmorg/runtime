@@ -69,9 +69,9 @@ class LoadResponse(RecordsWithSchemaResponse):
             # Check if the table is polymorphic (has descendant types in DB)
             include_datatype = TypeResponseUtil.has_descendant_types(common_base)
 
-            # Check if the parent chain has multiple datasets or databases
+            # Check if the DB has multiple datasets or databases
             ds = active(DataSource)
-            include_dataset = DataSourceUtil.has_multiple_datasets(ds)
+            include_dataset = DataSourceUtil.has_multiple_datasets(ds, record_type=common_base)
             include_database = DataSourceUtil.has_multiple_databases(ds)
 
             # At least one of the records is not None
@@ -83,7 +83,7 @@ class LoadResponse(RecordsWithSchemaResponse):
                     if include_datatype:
                         result_dict["Datatype"] = serialized.get("_t", "")
                     if include_dataset:
-                        result_dict["Dataset"] = ";".join(ds.datasets)
+                        result_dict["Dataset"] = ""
                     if include_database:
                         result_dict["Database"] = ds.db.db_id
                     result_dict.update(serialized)

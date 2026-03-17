@@ -23,7 +23,7 @@ from more_itertools import consume
 from cl.runtime.contexts.context_manager import active
 from cl.runtime.contexts.context_manager import active_or_default
 from cl.runtime.db.data_source_key import DataSourceKey
-from cl.runtime.db.dataset import Dataset
+from cl.runtime.db.dataset_util import DatasetUtil
 from cl.runtime.db.db import Db
 from cl.runtime.db.db_key import DbKey
 from cl.runtime.db.filter import Filter
@@ -67,9 +67,6 @@ class DataSource(DataSourceKey, RecordMixin):
     db: DbKey = required()
     """Database where lookup is performed (initialized to DB from the current context if not specified)."""
 
-    datasets: list[str] = required()
-    """Datasets within the database (initialized to the root dataset if not specified)."""
-
     tenant: TenantKey = required()
     """Tenant within the database (initialized to the common tenant if not specified)."""
 
@@ -85,14 +82,14 @@ class DataSource(DataSourceKey, RecordMixin):
     designated: list[ResourceKey] | None = None
     """Lookup these resources only here, not in any child or parent (optional)."""
 
-    _pending_deletions: list[KeyMixin] | None = None
-    """Keys that will be deleted on commit."""
+    _pending_deletions: list[tuple[KeyMixin, tuple[str, ...] | None]] | None = None
+    """Keys and their datasets that will be deleted on commit."""
 
-    _pending_insertions: list[RecordMixin] | None = None
-    """Records that will be inserted on commit."""
+    _pending_insertions: list[tuple[RecordMixin, tuple[str, ...] | None]] | None = None
+    """Records and their datasets that will be inserted on commit."""
 
-    _pending_replacements: list[RecordMixin] | None = None
-    """Records that will be replaced on commit."""
+    _pending_replacements: list[tuple[RecordMixin, tuple[str, ...] | None]] | None = None
+    """Records and their datasets that will be replaced on commit."""
 
     _backup: Db | None = None
     """Optional backup Db (CsvDb) for durable file storage."""
@@ -118,10 +115,6 @@ class DataSource(DataSourceKey, RecordMixin):
             self.db = Db.create()  # TODO: Move initialization code here?
         elif is_key_type(type(self.db)):
             self.db = self.load_one(self.db)
-
-        # Use root dataset if not specified
-        if self.datasets is None:
-            self.datasets = [Dataset.get_root().dataset_id]
 
         # Use common tenant if not specified
         if self.tenant is None:
@@ -208,6 +201,7 @@ class DataSource(DataSourceKey, RecordMixin):
         self,
         key_or_record: KeyMixin,
         *,
+        datasets: Sequence[str] | None = None,
         cast_to: type[TRecord] | None = None,
         project_to: type[TRecord] | None = None,
     ) -> TRecord:
@@ -217,12 +211,14 @@ class DataSource(DataSourceKey, RecordMixin):
 
         Args:
             key_or_record: If a record, it will be returned without DB lookup
+            datasets: Sequence of dataset identifiers (None means all datasets)
             cast_to: Perform runtime checked cast to this class if specified, error if not a subtype
             project_to: Use some or all fields from the stored record to create and return instances of this type
         """
         if key_or_record is not None:
             result = self.load_one_or_none(
                 key_or_record,
+                datasets=datasets,
                 cast_to=cast_to,
                 project_to=project_to,
             )
@@ -250,6 +246,7 @@ class DataSource(DataSourceKey, RecordMixin):
         self,
         key_or_record: KeyMixin | None,
         *,
+        datasets: Sequence[str] | None = None,
         cast_to: type[TRecord] | None = None,
         project_to: type[TRecord] | None = None,
     ) -> TRecord | None:
@@ -259,11 +256,13 @@ class DataSource(DataSourceKey, RecordMixin):
 
         Args:
             key_or_record: If a record, it will be returned without DB lookup
+            datasets: Sequence of dataset identifiers (None means all datasets)
             cast_to: Perform runtime checked cast to this class if specified, error if not a subtype
             project_to: Use some or all fields from the stored record to create and return instances of this type
         """
         result = self.load_many_or_none(
             [key_or_record],
+            datasets=datasets,
             cast_to=cast_to,
             project_to=project_to,
         )
@@ -276,6 +275,7 @@ class DataSource(DataSourceKey, RecordMixin):
         self,
         records_or_keys: Sequence[TRecord | KeyMixin],
         *,
+        datasets: Sequence[str] | None = None,
         cast_to: type[TRecord] | None = None,
         project_to: type[TRecord] | None = None,
         sort_order: SortOrder = SortOrder.INPUT,
@@ -289,6 +289,7 @@ class DataSource(DataSourceKey, RecordMixin):
 
         Args:
             records_or_keys: Records (returned without lookup) or keys in object, tuple or string format
+            datasets: Sequence of dataset identifiers (None means all datasets)
             cast_to: Perform runtime checked cast to this class if specified, error if not a subtype
             project_to: Use some or all fields from the stored record to create and return instances of this type
             sort_order: Sort by key fields in the specified order, reversing for fields marked as DESC
@@ -299,6 +300,7 @@ class DataSource(DataSourceKey, RecordMixin):
         # Delegate to load_many_or_none method
         result = self.load_many_or_none(
             records_or_keys,
+            datasets=datasets,
             cast_to=cast_to,
             project_to=project_to,
             sort_order=sort_order,
@@ -312,6 +314,7 @@ class DataSource(DataSourceKey, RecordMixin):
         self,
         records_or_keys: Sequence[TRecord | KeyMixin | None] | None,
         *,
+        datasets: Sequence[str] | None = None,
         cast_to: type[TRecord] | None = None,
         project_to: type[TRecord] | None = None,
         sort_order: SortOrder = SortOrder.INPUT,
@@ -325,6 +328,7 @@ class DataSource(DataSourceKey, RecordMixin):
 
         Args:
             records_or_keys: Records (returned without lookup) or keys in object, tuple or string format
+            datasets: Sequence of dataset identifiers (None means all datasets)
             cast_to: Perform runtime checked cast to this class if specified, error if not a subtype
             project_to: Use some or all fields from the stored record to create and return instances of this type
             sort_order: Sort by key fields in the specified order, reversing for fields marked as DESC
@@ -364,7 +368,7 @@ class DataSource(DataSourceKey, RecordMixin):
 
         # Ensure each table is loaded from backup before reading from main DB
         for key_type in keys_to_load_grouped_by_key_type:
-            self._ensure_loaded_from_backup(key_type)
+            self._ensure_loaded_from_backup(key_type, datasets=datasets)
 
         # Select sort order to use for the DB call
         if sort_order == SortOrder.INPUT:
@@ -379,7 +383,7 @@ class DataSource(DataSourceKey, RecordMixin):
             self._get_db().load_many(
                 key_type,
                 keys_for_key_type,
-                datasets=self.datasets,
+                datasets=datasets,
                 tenant=self.tenant.tenant_id,
                 project_to=project_to,
                 sort_order=db_sort_order,
@@ -413,7 +417,7 @@ class DataSource(DataSourceKey, RecordMixin):
         not_none_result = [x for x in result if x]
         if not not_none_result and self.parent:
             return self.parent.load_many_or_none(
-                records_or_keys, cast_to=cast_to, project_to=project_to, sort_order=sort_order
+                records_or_keys, datasets=datasets, cast_to=cast_to, project_to=project_to, sort_order=sort_order
             )
         else:
             return result
@@ -422,6 +426,7 @@ class DataSource(DataSourceKey, RecordMixin):
         self,
         record_type: type[TRecord],
         *,
+        datasets: Sequence[str] | None = None,
         cast_to: type[TRecord] | None = None,
         project_to: type[TRecord] | None = None,
         sort_order: SortOrder = SortOrder.ASC,
@@ -433,6 +438,7 @@ class DataSource(DataSourceKey, RecordMixin):
 
         Args:
             record_type: Load only this type and its subtypes
+            datasets: Sequence of dataset identifiers (None means all datasets)
             cast_to: Cast the result to this type (error if not a subtype)
             project_to: Use some or all fields from the stored record to create and return instances of this type
             sort_order: Sort by key fields in the specified order, reversing for fields marked as DESC
@@ -442,6 +448,7 @@ class DataSource(DataSourceKey, RecordMixin):
         # Delegate to load_all method with 'restrict_to' parameter set to record_type
         return self.load_all(
             record_type.get_key_type(),
+            datasets=datasets,
             cast_to=cast_to,
             restrict_to=record_type,
             project_to=project_to,
@@ -454,6 +461,7 @@ class DataSource(DataSourceKey, RecordMixin):
         self,
         key_type: type[KeyMixin],
         *,
+        datasets: Sequence[str] | None = None,
         cast_to: type[TRecord] | None = None,
         restrict_to: type[TRecord] | None = None,
         project_to: type[TRecord] | None = None,
@@ -466,6 +474,7 @@ class DataSource(DataSourceKey, RecordMixin):
 
         Args:
             key_type: Key type determines the database table
+            datasets: Sequence of dataset identifiers (None means all datasets)
             cast_to: Cast the result to this type (error if not a subtype)
             restrict_to: Include only this type and its subtypes, skip other types
             project_to: Use some or all fields from the stored record to create and return instances of this type
@@ -476,11 +485,11 @@ class DataSource(DataSourceKey, RecordMixin):
         assert TypeCheck.guard_key_type(key_type)
 
         # Ensure table is loaded from backup before reading from main DB
-        self._ensure_loaded_from_backup(key_type)
+        self._ensure_loaded_from_backup(key_type, datasets=datasets)
 
         result = self._get_db().load_all(
             key_type=key_type,
-            datasets=self.datasets,
+            datasets=datasets,
             tenant=self.tenant.tenant_id,
             cast_to=cast_to,
             restrict_to=restrict_to,
@@ -498,6 +507,7 @@ class DataSource(DataSourceKey, RecordMixin):
         if not result and self.parent:
             return self.parent.load_all(
                 key_type,
+                datasets=datasets,
                 cast_to=cast_to,
                 restrict_to=restrict_to,
                 project_to=project_to,
@@ -512,6 +522,7 @@ class DataSource(DataSourceKey, RecordMixin):
         self,
         filter_: Filter,
         *,
+        datasets: Sequence[str] | None = None,
         cast_to: type[TRecord] | None = None,
         restrict_to: type[TRecord] | None = None,
         project_to: type[TRecord] | None = None,
@@ -524,6 +535,7 @@ class DataSource(DataSourceKey, RecordMixin):
 
         Args:
             filter_: Filter used to select the records to load
+            datasets: Sequence of dataset identifiers (None means all datasets)
             cast_to: Cast the result to this type (error if not a subtype)
             restrict_to: Include only this type and its subtypes, skip other types
             project_to: Use some or all fields from the stored record to create and return instances of this type
@@ -538,6 +550,7 @@ class DataSource(DataSourceKey, RecordMixin):
             # Load using the query stored in the filter
             return self.load_by_query(
                 filter_.query,
+                datasets=datasets,
                 cast_to=cast_to,
                 restrict_to=restrict_to,
                 project_to=project_to,
@@ -557,6 +570,7 @@ class DataSource(DataSourceKey, RecordMixin):
             # Load using the type stored in the filter as restrict_to parameter
             return self.load_by_type(
                 record_type=record_type,  # noqa
+                datasets=datasets,
                 cast_to=cast_to,
                 project_to=project_to,
                 sort_order=sort_order,
@@ -576,6 +590,7 @@ class DataSource(DataSourceKey, RecordMixin):
             # Load using the keys stored in the filter
             return self.load_many(
                 filter_.keys,  # noqa
+                datasets=datasets,
                 cast_to=cast_to,
                 project_to=project_to,
                 sort_order=sort_order,
@@ -587,6 +602,7 @@ class DataSource(DataSourceKey, RecordMixin):
         self,
         query: QueryMixin,
         *,
+        datasets: Sequence[str] | None = None,
         cast_to: type[TRecord] | None = None,
         restrict_to: type[TRecord] | None = None,
         project_to: type[TRecord] | None = None,
@@ -599,6 +615,7 @@ class DataSource(DataSourceKey, RecordMixin):
 
         Args:
             query: Contains predicates to match
+            datasets: Sequence of dataset identifiers (None means all datasets)
             cast_to: Cast the result to this type (error if not a subtype)
             restrict_to: Include only this type and its subtypes, skip other types
             project_to: Use some or all fields from the stored record to create and return instances of this type
@@ -608,11 +625,11 @@ class DataSource(DataSourceKey, RecordMixin):
         """
         # Ensure table is loaded from backup before reading from main DB
         key_type = query.get_target_type().get_key_type()
-        self._ensure_loaded_from_backup(key_type)
+        self._ensure_loaded_from_backup(key_type, datasets=datasets)
 
         result = self._get_db().load_by_query(
             query,
-            datasets=self.datasets,
+            datasets=datasets,
             tenant=self.tenant.tenant_id,
             cast_to=cast_to,
             restrict_to=restrict_to,
@@ -630,6 +647,7 @@ class DataSource(DataSourceKey, RecordMixin):
         if not result and self.parent:
             return self.parent.load_by_query(
                 query,
+                datasets=datasets,
                 cast_to=cast_to,
                 restrict_to=restrict_to,
                 project_to=project_to,
@@ -644,6 +662,7 @@ class DataSource(DataSourceKey, RecordMixin):
         self,
         query: QueryMixin,
         *,
+        datasets: Sequence[str] | None = None,
         restrict_to: type | None = None,
     ) -> int:
         """
@@ -651,22 +670,23 @@ class DataSource(DataSourceKey, RecordMixin):
 
         Args:
             query: Contains predicates to match
+            datasets: Sequence of dataset identifiers (None means all datasets)
             restrict_to: Include only this type and its subtypes, skip other types
         """
         # Ensure table is loaded from backup before reading from main DB
         key_type = query.get_target_type().get_key_type()
-        self._ensure_loaded_from_backup(key_type)
+        self._ensure_loaded_from_backup(key_type, datasets=datasets)
 
         result = self._get_db().count_by_query(
             query,
-            datasets=self.datasets,
+            datasets=datasets,
             tenant=self.tenant.tenant_id,
             restrict_to=restrict_to,
         )
 
         # If result is empty return from parent DataSource
         if result == 0 and self.parent:
-            return self.parent.count_by_query()
+            return self.parent.count_by_query(datasets=datasets)
         else:
             return result
 
@@ -674,6 +694,7 @@ class DataSource(DataSourceKey, RecordMixin):
         self,
         record: RecordMixin,
         *,
+        datasets: Sequence[str] | None = None,
         commit: bool,
     ) -> None:
         """
@@ -685,14 +706,16 @@ class DataSource(DataSourceKey, RecordMixin):
 
         Args:
             record: Record to be inserted
+            datasets: Sequence of dataset identifiers (None means all datasets)
             commit: If True, commit() is called immediately after which will also commit other pending saves and deletes
         """
-        self._save_many([record], commit=commit, save_policy=SavePolicy.INSERT)
+        self._save_many([record], datasets=datasets, commit=commit, save_policy=SavePolicy.INSERT)
 
     def insert_many(
         self,
         records: RecordMixin | Sequence[RecordMixin],
         *,
+        datasets: Sequence[str] | None = None,
         commit: bool,
     ) -> None:
         """
@@ -704,14 +727,16 @@ class DataSource(DataSourceKey, RecordMixin):
 
         Args:
             records: A sequence of records which may have different key types
+            datasets: Sequence of dataset identifiers (None means all datasets)
             commit: If True, commit() is called immediately after which will also commit other pending saves and deletes
         """
-        self._save_many(records, commit=commit, save_policy=SavePolicy.INSERT)
+        self._save_many(records, datasets=datasets, commit=commit, save_policy=SavePolicy.INSERT)
 
     def replace_one(
         self,
         record: RecordMixin,
         *,
+        datasets: Sequence[str] | None = None,
         commit: bool,
     ) -> None:
         """
@@ -723,14 +748,16 @@ class DataSource(DataSourceKey, RecordMixin):
 
         Args:
             record: Record to be saved
+            datasets: Sequence of dataset identifiers (None means all datasets)
             commit: If True, commit() is called immediately after which will also commit other pending saves and deletes
         """
-        self._save_many([record], commit=commit, save_policy=SavePolicy.REPLACE)
+        self._save_many([record], datasets=datasets, commit=commit, save_policy=SavePolicy.REPLACE)
 
     def replace_many(
         self,
         records: RecordMixin | Sequence[RecordMixin],
         *,
+        datasets: Sequence[str] | None = None,
         commit: bool,
     ) -> None:
         """
@@ -742,23 +769,26 @@ class DataSource(DataSourceKey, RecordMixin):
 
         Args:
             records: A sequence of records which may have different key types
+            datasets: Sequence of dataset identifiers (None means all datasets)
             commit: If True, commit() is called immediately after which will also commit other pending saves and deletes
         """
-        self._save_many(records, commit=commit, save_policy=SavePolicy.REPLACE)
+        self._save_many(records, datasets=datasets, commit=commit, save_policy=SavePolicy.REPLACE)
 
     def delete_one(
         self,
         key: KeyMixin,
         *,
+        datasets: Sequence[str] | None = None,
         commit: bool,
     ) -> None:
         """Delete record for the specified key in object, tuple or string format (no error if not found)."""
-        return self.delete_many([key], commit=commit)
+        return self.delete_many([key], datasets=datasets, commit=commit)
 
     def delete_many(
         self,
         keys: Sequence[KeyMixin],
         *,
+        datasets: Sequence[str] | None = None,
         commit: bool,
     ) -> None:
         """
@@ -770,6 +800,7 @@ class DataSource(DataSourceKey, RecordMixin):
 
         Args:
             keys: A single key or a sequence of keys which may have different types
+            datasets: Sequence of dataset identifiers (None means all datasets)
             commit: If True, commit() is called immediately after which will also commit other pending saves and deletes
         """
         assert TypeCheck.guard_key_sequence(keys)
@@ -778,8 +809,9 @@ class DataSource(DataSourceKey, RecordMixin):
         if len(keys) == 0:
             return
 
-        # Add to the list of pending deletes
-        self._pending_deletions.extend(keys)
+        # Add to the list of pending deletes with datasets
+        datasets_tuple = tuple(datasets) if datasets is not None else None
+        self._pending_deletions.extend((key, datasets_tuple) for key in keys)
 
         # Commit immediately if commit parameter is True
         if commit:
@@ -789,6 +821,7 @@ class DataSource(DataSourceKey, RecordMixin):
         self,
         query: QueryMixin,
         *,
+        datasets: Sequence[str] | None = None,
         restrict_to: type | None = None,
     ) -> None:
         """
@@ -796,15 +829,16 @@ class DataSource(DataSourceKey, RecordMixin):
 
         Args:
             query: Contains predicates to match
+            datasets: Sequence of dataset identifiers (None means all datasets)
             restrict_to: Delete only records of this type and its subtypes, skip other types
         """
         # Ensure table is loaded from backup before deleting from main DB
         key_type = query.get_target_type().get_key_type()
-        self._ensure_loaded_from_backup(key_type)
+        self._ensure_loaded_from_backup(key_type, datasets=datasets)
 
         self._get_db().delete_by_query(
             query,
-            datasets=self.datasets,
+            datasets=datasets,
             tenant=self.tenant.tenant_id,
             restrict_to=restrict_to,
         )
@@ -818,8 +852,8 @@ class DataSource(DataSourceKey, RecordMixin):
 
         try:
             # Ensure no key collisions within the deletions, insertions and replacements lists
-            pending_keys = self._pending_deletions + [
-                x.get_key() for x in (self._pending_insertions + self._pending_replacements)
+            pending_keys = [k for k, _ in self._pending_deletions] + [
+                r.get_key() for r, _ in (self._pending_insertions + self._pending_replacements)
             ]
             serialized_pending_keys = [
                 KeySerializers.DELIMITED.serialize(x, type_hint=TypeHint.for_type(KeyMixin)) for x in pending_keys
@@ -840,52 +874,61 @@ class DataSource(DataSourceKey, RecordMixin):
                     f"{duplicate_pending_keys_str}"
                 )
 
-            # Records to be inserted or replaced, with duplicates removed
-            record_types = set(typeof(x) for x in (self._pending_insertions + self._pending_replacements))
-            if record_types:
+            # Collect (record_type, dataset) pairs for presence tracking
+            record_type_dataset_pairs = set()
+            for r, ds_tuple in (self._pending_insertions + self._pending_replacements):
+                for ds in (ds_tuple if ds_tuple is not None else (DatasetUtil.root(),)):
+                    record_type_dataset_pairs.add((typeof(r), ds))
+            if record_type_dataset_pairs:
+                # Add RecordTypePresence type itself
+                record_type_dataset_pairs.add((RecordTypePresence, DatasetUtil.root()))
                 # Add presence records without checking if they are already present, as
                 # it is faster to save all records than to check which already exist
-                record_types.add(RecordTypePresence)
                 record_type_presences = tuple(
-                    RecordTypePresence(record_type=x, key_type=x.get_key_type()).build() for x in record_types
+                    RecordTypePresence(
+                        record_type=rt, dataset=ds, key_type=rt.get_key_type(),
+                    ).build()
+                    for rt, ds in record_type_dataset_pairs
                 )
-                self._pending_replacements.extend(record_type_presences)
+                self._pending_replacements.extend((r, None) for r in record_type_presences)
 
-            # Invoke delete_many for all pending deletes
+            # Invoke delete_many for all pending deletes grouped by (key_type, datasets)
             if self._pending_deletions:
-                [
-                    # Delete first
+                delete_groups = defaultdict(list)
+                for key, ds_tuple in self._pending_deletions:
+                    delete_groups[(key.get_key_type(), ds_tuple)].append(key)
+                for (key_type, ds_tuple), keys_for_group in delete_groups.items():
                     self._get_db().delete_many(
                         key_type,
-                        records_for_key_type,
-                        datasets=self.datasets,
+                        keys_for_group,
+                        datasets=ds_tuple,
                         tenant=self.tenant.tenant_id,
                     )
-                    for key_type, records_for_key_type in self._group_inputs_by_key_type(
-                        self._pending_deletions
-                    ).items()
-                ]
 
-            # Invoke insert_many for all pending inserts
+            # Invoke save_many for all pending inserts grouped by (key_type, datasets)
             if self._pending_insertions:
-                for key_type, records_for_key_type in self._group_inputs_by_key_type(self._pending_insertions).items():
-                    # Insert next
+                insert_groups = defaultdict(list)
+                for record, ds_tuple in self._pending_insertions:
+                    insert_groups[(record.get_key_type(), ds_tuple)].append(record)
+                for (key_type, ds_tuple), records_for_group in insert_groups.items():
                     self._get_db().save_many(
                         key_type,
-                        records_for_key_type,
-                        datasets=self.datasets,
+                        records_for_group,
+                        datasets=ds_tuple if ds_tuple is not None else (DatasetUtil.root(),),
                         tenant=self.tenant.tenant_id,
                         save_policy=SavePolicy.INSERT,
                     )
+
+            # Invoke save_many for all pending replacements grouped by (key_type, datasets)
             if self._pending_replacements:
-                for key_type, records_for_key_type in self._group_inputs_by_key_type(
-                    self._pending_replacements
-                ).items():
-                    # Replace last
+                replace_groups = defaultdict(list)
+                for record, ds_tuple in self._pending_replacements:
+                    replace_groups[(record.get_key_type(), ds_tuple)].append(record)
+                for (key_type, ds_tuple), records_for_group in replace_groups.items():
                     self._get_db().save_many(
                         key_type,
-                        records_for_key_type,
-                        datasets=self.datasets,
+                        records_for_group,
+                        datasets=ds_tuple if ds_tuple is not None else (DatasetUtil.root(),),
                         tenant=self.tenant.tenant_id,
                         save_policy=SavePolicy.REPLACE,
                     )
@@ -893,24 +936,26 @@ class DataSource(DataSourceKey, RecordMixin):
             # Sync writes to backup (append-only, no deletes)
             if self._backup is not None:
                 if self._pending_insertions:
-                    for key_type, records_for_key_type in self._group_inputs_by_key_type(
-                        self._pending_insertions
-                    ).items():
+                    insert_groups = defaultdict(list)
+                    for record, ds_tuple in self._pending_insertions:
+                        insert_groups[(record.get_key_type(), ds_tuple)].append(record)
+                    for (key_type, ds_tuple), records_for_group in insert_groups.items():
                         self._backup.save_many(
                             key_type,
-                            records_for_key_type,
-                            datasets=self.datasets,
+                            records_for_group,
+                            datasets=ds_tuple if ds_tuple is not None else (DatasetUtil.root(),),
                             tenant=self.tenant.tenant_id,
                             save_policy=SavePolicy.INSERT,
                         )
                 if self._pending_replacements:
-                    for key_type, records_for_key_type in self._group_inputs_by_key_type(
-                        self._pending_replacements
-                    ).items():
+                    replace_groups = defaultdict(list)
+                    for record, ds_tuple in self._pending_replacements:
+                        replace_groups[(record.get_key_type(), ds_tuple)].append(record)
+                    for (key_type, ds_tuple), records_for_group in replace_groups.items():
                         self._backup.save_many(
                             key_type,
-                            records_for_key_type,
-                            datasets=self.datasets,
+                            records_for_group,
+                            datasets=ds_tuple if ds_tuple is not None else (DatasetUtil.root(),),
                             tenant=self.tenant.tenant_id,
                             save_policy=SavePolicy.REPLACE,
                         )
@@ -947,7 +992,7 @@ class DataSource(DataSourceKey, RecordMixin):
         self._pending_insertions = []
         self._pending_replacements = []
 
-    def _ensure_loaded_from_backup(self, key_type: type[KeyMixin]) -> None:
+    def _ensure_loaded_from_backup(self, key_type: type[KeyMixin], *, datasets: Sequence[str] | None = None) -> None:
         """Load records from backup into the main DB on first access to a table."""
         if self._backup is None:
             return
@@ -957,14 +1002,14 @@ class DataSource(DataSourceKey, RecordMixin):
         # Load all records from backup for this key_type
         records = self._backup.load_all(
             key_type,
-            datasets=self.datasets,
+            datasets=datasets,
             tenant=self.tenant.tenant_id,
         )
         if records:
             self._get_db().save_many(
                 key_type,
                 records,
-                datasets=self.datasets,
+                datasets=datasets if datasets is not None else (DatasetUtil.root(),),
                 tenant=self.tenant.tenant_id,
                 save_policy=SavePolicy.REPLACE,
             )
@@ -1028,6 +1073,7 @@ class DataSource(DataSourceKey, RecordMixin):
         self,
         records: Sequence[RecordMixin],
         *,
+        datasets: Sequence[str] | None = None,
         commit: bool,
         save_policy: SavePolicy,
     ) -> None:
@@ -1040,6 +1086,7 @@ class DataSource(DataSourceKey, RecordMixin):
 
         Args:
             records: A sequence of records which may have different key types
+            datasets: Sequence of dataset identifiers (None means all datasets)
             commit: If True, commit() is called immediately after which will also commit other pending saves and deletes
             save_policy: Insert vs. replace policy, partial update is not included due to design considerations
         """
@@ -1050,12 +1097,15 @@ class DataSource(DataSourceKey, RecordMixin):
         if len(records) == 0:
             return
 
+        # Convert datasets to tuple for immutable storage with pending operations
+        datasets_tuple = tuple(datasets) if datasets is not None else None
+
         if save_policy == SavePolicy.INSERT:
-            # Add to the list of pending inserts
-            self._pending_insertions.extend(records)
+            # Add to the list of pending inserts with datasets
+            self._pending_insertions.extend((record, datasets_tuple) for record in records)
         elif save_policy == SavePolicy.REPLACE:
-            # Add to the list of pending replacements
-            self._pending_replacements.extend(records)
+            # Add to the list of pending replacements with datasets
+            self._pending_replacements.extend((record, datasets_tuple) for record in records)
         else:
             ErrorUtil.enum_value_error(save_policy, SavePolicy)
 

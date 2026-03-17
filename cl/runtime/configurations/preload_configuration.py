@@ -104,26 +104,18 @@ class PreloadConfiguration(Configuration):
                     records = reader.load_file(file_path=abs_path)
                     records_by_dataset[dataset].extend(records)
 
-        # Save original datasets to restore after preloading
-        original_datasets = ds.datasets
-
         # Collect all autorun configurations across all datasets
         all_autorun_configurations = []
 
-        try:
-            # Insert records for each dataset
-            for dataset, records in records_by_dataset.items():
-                if records:
-                    ds.datasets = [dataset]
-                    ds.insert_many(records, commit=True)
+        # Insert records for each dataset
+        for dataset, records in records_by_dataset.items():
+            if records:
+                ds.insert_many(records, datasets=[dataset], commit=True)
 
-                    # Collect autorun configurations
-                    all_autorun_configurations.extend(
-                        record for record in records if isinstance(record, Configuration) and record.autorun
-                    )
-        finally:
-            # Restore original datasets
-            ds.datasets = original_datasets
+                # Collect autorun configurations
+                all_autorun_configurations.extend(
+                    record for record in records if isinstance(record, Configuration) and record.autorun
+                )
 
         # Execute run_configure on all preloaded Configuration records with autorun=True
         consume(autorun_configuration.run_configure() for autorun_configuration in all_autorun_configurations)
