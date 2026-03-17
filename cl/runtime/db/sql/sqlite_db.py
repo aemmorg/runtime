@@ -597,7 +597,7 @@ class SqliteDb(Db):
 
         sql = (
             f"CREATE TABLE IF NOT EXISTS {self._quote_identifier(table_name)} "
-            + f'({", ".join(column_defs)}, PRIMARY KEY (_key, _dataset, _tenant));'
+            + f'({", ".join(column_defs)}, PRIMARY KEY (_key, _tenant));'
         )
 
         conn = self._get_connection()

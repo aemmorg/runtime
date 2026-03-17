@@ -516,10 +516,9 @@ class BasicMongoDb(Db):
             collection_name = key_type_name.removesuffix("Key")
             collection = mongo_db[collection_name]
 
-            # Add a unique index on tenant, dataset and key in ascending order
+            # Add a unique index on tenant and key in ascending order
             key_index = (
                 ("_tenant", pymongo.ASCENDING),
-                ("_dataset", pymongo.ASCENDING),
                 ("_key", pymongo.ASCENDING),
             )
             # TODO: !!!! Add updated_index
