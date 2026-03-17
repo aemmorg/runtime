@@ -14,6 +14,7 @@
 
 import re
 from typing import Pattern
+from memoization import cached
 from cl.runtime.primitive.char_util import CharUtil
 
 _ALPHANUMERIC_RE: Pattern = re.compile(r"[^a-zA-Z0-9 .]")
@@ -62,18 +63,30 @@ class CaseUtil:
         return value is None or value == ""
 
     @classmethod
+    @cached
     def pascal_to_snake_case(cls, value: str | None) -> str | None:
         """Convert PascalCase to snake_case, error if round-trip does not match."""
         if cls.is_empty(value):
             return value
         cls.check_pascal_case(value)
+        # Look up in CaseConversionRule first
+        from cl.runtime.primitive.case_conversion_rule import CaseConversionRule
+        rule_result = CaseConversionRule.get_snake_case(value)
+        if rule_result is not None:
+            return rule_result
+
+        # Perform conversion, error if not a lossless roundtrip
         result = cls._pascal_to_snake_unchecked(value)
         # Verify round-trip
         back = cls._snake_to_pascal_unchecked(result)
         if back != value:
             raise RuntimeError(
-                f"String '{value}' cannot be converted to snake_case because "
-                f"the round-trip conversion produces '{back}' instead of '{value}'."
+                f"String '{value}' cannot be converted to snake_case because the round-trip conversion\n"
+                f"produces '{back}' instead of the original '{value}'."
+                f"Please either:\n"
+                f"(a) Change PascalCase name from '{value}' to '{back}' to allow lossless\n"
+                f"    PascalCase to snake_case roundtrip or\n"
+                f"(b) Add the intended snake_case and PascalCase pair to CaseConversionRule.csv.\n"
             )
         return result
 
@@ -94,18 +107,30 @@ class CaseUtil:
         return value.upper()
 
     @classmethod
+    @cached
     def snake_to_pascal_case(cls, value: str | None) -> str | None:
         """Convert snake_case to PascalCase, error if round-trip does not match."""
         if cls.is_empty(value):
             return value
         cls.check_snake_case(value)
+        # Look up in CaseConversionRule first
+        from cl.runtime.primitive.case_conversion_rule import CaseConversionRule
+        rule_result = CaseConversionRule.get_pascal_case(value)
+        if rule_result is not None:
+            return rule_result
+
+        # Perform conversion, error if not a lossless roundtrip
         result = cls._snake_to_pascal_unchecked(value)
         # Verify round-trip
         back = cls._pascal_to_snake_unchecked(result)
         if back != value:
             raise RuntimeError(
-                f"String '{value}' cannot be converted to PascalCase because "
-                f"the round-trip conversion produces '{back}' instead of '{value}'."
+                f"String '{value}' cannot be converted to PascalCase because the round-trip conversion\n"
+                f"produces '{back}' instead of the original '{value}'."
+                f"Please either:\n"
+                f"(a) Change snake_case string from '{value}' to '{back}' to allow lossless\n"
+                f"    snake_case to PascalCase roundtrip or\n"
+                f"(b) Add the intended snake_case and PascalCase pair to CaseConversionRule.csv.\n"
             )
         return result
 
