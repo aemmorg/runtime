@@ -23,35 +23,29 @@ def check_raises_error(check_function, value, expected_message):
 
 
 def test_pascal_to_snake_case():
+    # Round-trippable cases (canonical PascalCase forms)
     test_cases = (
-        # From PascalCase with digits
-        ("A2", "a_2"),
-        ("AB2", "a_b_2"),
-        ("AB2D", "a_b_2d"),
-        ("AB2DEf", "a_b_2d_ef"),
+        # All-uppercase/digit segments (no lowercase -> no split points within)
+        ("A2", "a2"),
+        ("AB2", "ab2"),
+        ("AB2D", "ab2d"),
+        ("AB2DEF", "ab2def"),
+        ("A23", "a23"),
+        ("A2B3", "a2b3"),
+        # Word + digit boundary
         ("Abc2", "abc_2"),
         ("Abc2D", "abc_2d"),
-        ("Abc2Def", "abc_2def"),
-        ("AbcT0Key", "abc_t0_key"),
-        # Single uppercase + multi-digit
-        ("A23", "a_23"),
-        # Word + multi-digit
+        ("Abc2DEF", "abc_2def"),
         ("Abc12", "abc_12"),
         ("Abc123", "abc_123"),
-        # Multiple single-letter + digit groups
-        ("A2B3", "a_2b_3"),
-        # Multiple word + digit groups
-        ("Abc2Def3", "abc_2def_3"),
-        ("Abc2Def3Ghi", "abc_2def_3ghi"),
-        # Word + multi-digit + word
-        ("Abc23Def", "abc_23def"),
-        # Lowercase-to-digit boundary in multi-segment words
-        ("Ab2Cd3Ef", "ab_2cd_3ef"),
-        # Digit-only trailing group
-        ("Abc2D3", "abc_2d_3"),
-        # From PascalCase without dot delimiter
+        ("Abc2DEF3", "abc_2def3"),
+        ("Abc2DEF3GHI", "abc_2def3ghi"),
+        ("Abc23DEF", "abc_23def"),
+        ("Ab2CD3EF", "ab_2cd3ef"),
+        ("Abc2D3", "abc_2d3"),
+        # Without digits
         ("AbcDef", "abc_def"),
-        # From PascalCase with dot delimiter
+        # With dot delimiter
         ("Abc.Def", "abc.def"),
         ("AbcDef.Xyz", "abc_def.xyz"),
         ("AbcDef.UvwXyz", "abc_def.uvw_xyz"),
@@ -60,58 +54,55 @@ def test_pascal_to_snake_case():
     for input_value, expected in test_cases:
         assert CaseUtil.pascal_to_snake_case(input_value) == expected
 
+    # Non-canonical PascalCase forms that fail round-trip
+    non_roundtrip_cases = ("AB2DEf", "Abc2Def", "AbcT0Key", "Abc2Def3", "Abc2Def3Ghi", "Ab2Cd3Ef")
+    for input_value in non_roundtrip_cases:
+        with pytest.raises(RuntimeError, match="round-trip"):
+            CaseUtil.pascal_to_snake_case(input_value)
+
 
 def test_snake_to_pascal_case():
+    # Round-trippable cases
     test_cases = (
-        # From snake_case with digits
-        ("a_2", "A2"),
-        ("a_b_2", "AB2"),
-        ("a_b_2d", "AB2D"),
-        ("a_b_2d_ef", "AB2DEf"),
+        # Word + digit segments
         ("abc_2", "Abc2"),
         ("abc_2d", "Abc2D"),
         ("abc_2def", "Abc2DEF"),
-        # Single letter + multi-digit
-        ("a_23", "A23"),
-        # Word + multi-digit
         ("abc_12", "Abc12"),
         ("abc_123", "Abc123"),
-        # Multiple single-letter + digit groups
-        ("a_2b_3", "A2B3"),
-        # Multiple word + digit groups
-        ("abc_2def_3", "Abc2DEF3"),
-        ("abc_2def_3ghi", "Abc2DEF3GHI"),
-        # Word + multi-digit + word (all letters in digit segment are uppercase)
-        ("abc_23def", "Abc23DEF"),
-        # Lowercase-to-digit in multi-segment words (all letters in digit segment are uppercase)
-        ("ab_2cd_3ef", "Ab2CD3EF"),
-        # Digit-only trailing group
-        ("abc_2d_3", "Abc2D3"),
-        # Digit-only segment (no following letters)
-        ("abc_2", "Abc2"),
         ("abc_23", "Abc23"),
-        # From snake_case without dot delimiter
+        ("abc_23def", "Abc23DEF"),
+        # Without digits
         ("abc_def", "AbcDef"),
-        # From snake_case with dot delimiter
+        ("node_id", "NodeId"),
+        # With dot delimiter
         ("abc.def", "Abc.Def"),
         ("abc_def.xyz", "AbcDef.Xyz"),
         ("abc_def.uvw_xyz", "AbcDef.UvwXyz"),
-        ("node_id", "NodeId"),
     )
 
     for input_value, expected in test_cases:
         assert CaseUtil.snake_to_pascal_case(input_value) == expected
 
+    # snake_case forms that don't round-trip (pascal form converts back to different snake)
+    non_roundtrip_cases = (
+        "a_2", "a_b_2", "a_b_2d", "a_b_2d_ef", "a_23", "a_2b_3",
+        "abc_2def_3", "abc_2def_3ghi", "ab_2cd_3ef", "abc_2d_3",
+    )
+    for input_value in non_roundtrip_cases:
+        with pytest.raises(RuntimeError, match="round-trip"):
+            CaseUtil.snake_to_pascal_case(input_value)
+
 
 def test_pascal_to_title_case():
     test_cases = (
-        ("A2", "A 2"),
-        ("AB2", "A B 2"),
-        ("AB2D", "A B 2D"),
-        ("AB2DEf", "A B 2D Ef"),
+        ("A2", "A2"),
+        ("AB2", "AB2"),
+        ("AB2D", "AB2D"),
+        ("AB2DEF", "AB2DEF"),
         ("Abc2", "Abc 2"),
         ("Abc2D", "Abc 2D"),
-        ("Abc2Def", "Abc 2DEF"),
+        ("Abc2DEF", "Abc 2DEF"),
     )
 
     for input_value, expected in test_cases:
@@ -264,34 +255,19 @@ def test_check_upper_case():
 
 
 def test_round_trip_conversions():
+    # Only cases where the snake_case form passes check_snake_case validation
+    # (digit preceded by underscore, no underscore between digits) can round-trip.
+    # Cases like "A2" -> "a2" are excluded because "a2" fails check_snake_case.
     pascal_to_snake_case_test_cases = (
         # From PascalCase with digits
-        ("A2", "a_2"),
-        ("AB2", "a_b_2"),
-        ("AB2D", "a_b_2d"),
-        ("AB2DEf", "a_b_2d_ef"),
         ("Abc2", "abc_2"),
         ("Abc2D", "abc_2d"),
         ("Abc2DEF", "abc_2def"),
-        ("Abc12", "abc_12"),
-        # Single uppercase + multi-digit
-        ("A23", "a_23"),
         # Word + multi-digit
+        ("Abc12", "abc_12"),
         ("Abc123", "abc_123"),
-        # Multiple single-letter + digit groups
-        ("A2B3", "a_2b_3"),
-        # Multiple word + digit groups
-        ("Abc2DEF3", "abc_2def_3"),
-        ("Abc2DEF3GHI", "abc_2def_3ghi"),
         # Word + multi-digit + word
         ("Abc23DEF", "abc_23def"),
-        # Lowercase-to-digit in multi-segment words
-        ("Ab2CD3EF", "ab_2cd_3ef"),
-        # Digit-only trailing group
-        ("Abc2D3", "abc_2d_3"),
-        # Uppercase + digit mid-word boundary (does NOT round-trip because "abc_t0_key"
-        # fails check_snake_case: digit 0 is not preceded by underscore in "t0")
-        # ("AbcT0Key", "abc_t0_key"),  # excluded: snake_case form fails validation
         # From PascalCase without dot delimiter
         ("AbcDef", "abc_def"),
         # From PascalCase with dot delimiter
@@ -328,33 +304,17 @@ def test_round_trip_conversions():
         ("abc_def.xyz", "ABC_DEF.XYZ"),
         ("abc_def.uvw_xyz", "ABC_DEF.UVW_XYZ"),
     )
+    # Only cases where the snake_case form passes check_snake_case validation can round-trip.
     pascal_to_upper_case_test_cases = (
         # From PascalCase with digits
-        ("A2", "A_2"),
-        ("AB2", "A_B_2"),
-        ("AB2D", "A_B_2D"),
-        ("AB2DEf", "A_B_2D_EF"),
         ("Abc2", "ABC_2"),
         ("Abc2D", "ABC_2D"),
         ("Abc2DEF", "ABC_2DEF"),
-        # Single uppercase + multi-digit
-        ("A23", "A_23"),
         # Word + multi-digit
         ("Abc12", "ABC_12"),
         ("Abc123", "ABC_123"),
-        # Multiple digit groups
-        ("A2B3", "A_2B_3"),
-        ("Abc2DEF3", "ABC_2DEF_3"),
-        ("Abc2DEF3GHI", "ABC_2DEF_3GHI"),
         # Word + multi-digit + word
         ("Abc23DEF", "ABC_23DEF"),
-        # Digit-only trailing group
-        ("Abc2D3", "ABC_2D_3"),
-        # Lowercase-to-digit in multi-segment words
-        ("Ab2CD3EF", "AB_2CD_3EF"),
-        # Uppercase + digit mid-word boundary (does NOT round-trip: snake_case form
-        # "abc_t0_key" fails validation since digit 0 not preceded by underscore in "t0")
-        # ("AbcT0Key", "ABC_T0_KEY"),  # excluded: snake_case form fails validation
         # From PascalCase without dot delimiter
         ("AbcDef", "ABC_DEF"),
         # From PascalCase with dot delimiter
@@ -398,11 +358,13 @@ def test_leading_trailing_underscores():
     with pytest.raises(RuntimeError, match="non-alphanumeric"):
         CaseUtil.check_pascal_case("AbcDef_")
 
-    # snake_to_pascal_case silently strips leading and trailing underscores
-    # because split("_") produces empty strings which pascalize to ""
-    assert CaseUtil.snake_to_pascal_case("_abc_def") == "AbcDef"
-    assert CaseUtil.snake_to_pascal_case("abc_def_") == "AbcDef"
-    assert CaseUtil.snake_to_pascal_case("_abc_def_") == "AbcDef"
+    # snake_to_pascal_case with leading/trailing underscores fails round-trip
+    with pytest.raises(RuntimeError, match="round-trip"):
+        CaseUtil.snake_to_pascal_case("_abc_def")
+    with pytest.raises(RuntimeError, match="round-trip"):
+        CaseUtil.snake_to_pascal_case("abc_def_")
+    with pytest.raises(RuntimeError, match="round-trip"):
+        CaseUtil.snake_to_pascal_case("_abc_def_")
 
     # pascal_to_snake_case rejects underscores (PascalCase validation)
     with pytest.raises(RuntimeError, match="non-alphanumeric"):
@@ -418,31 +380,21 @@ def test_leading_trailing_underscores():
 
 
 def test_snake_to_pascal_case_digit_segment_uppercase():
-    """Test new rule: snake_to_pascal should make all letters in a segment with a number uppercase.
-
-    Only includes cases where the new rule produces a different result from current behavior.
-    Current behavior capitalizes only the first letter after the first leading digit.
-    New rule: if a segment contains any digit, ALL letters in that segment are uppercase.
-
-    Segments where the result changes are those with a digit AND 2+ letters, e.g.:
-        "2def" -> "2DEF" (was "2Def")
-        "2cd"  -> "2CD"  (was "2Cd")
-        "23def" -> "23DEF" (was "23def")
-    """
+    """Test that snake_to_pascal uppercases all letters in segments containing digits."""
+    # Round-trippable cases
     test_cases = (
-        # Single digit + multiple letters: "2def" -> "2DEF" (was "2Def")
         ("abc_2def", "Abc2DEF"),
-        # Multiple digit groups with letters: "2def" -> "2DEF", "3ghi" -> "3GHI"
-        ("abc_2def_3", "Abc2DEF3"),
-        ("abc_2def_3ghi", "Abc2DEF3GHI"),
-        # Multi-digit prefix + letters: "23def" -> "23DEF" (was "23def")
         ("abc_23def", "Abc23DEF"),
-        # Multiple segments each with single digit + multiple letters
-        ("ab_2cd_3ef", "Ab2CD3EF"),
     )
 
     for input_value, expected in test_cases:
         assert CaseUtil.snake_to_pascal_case(input_value) == expected
+
+    # Non-round-trippable cases (multiple digit segments separated by underscores)
+    non_roundtrip_cases = ("abc_2def_3", "abc_2def_3ghi", "ab_2cd_3ef")
+    for input_value in non_roundtrip_cases:
+        with pytest.raises(RuntimeError, match="round-trip"):
+            CaseUtil.snake_to_pascal_case(input_value)
 
 
 def test_non_alphanumeric():
