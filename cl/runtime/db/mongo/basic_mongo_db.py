@@ -473,6 +473,12 @@ class BasicMongoDb(Db):
         db_name = self._get_db_name()
         client.drop_database(db_name)
 
+        # Clear cached collections and index tracking so they are recreated
+        # when data is saved again after the drop
+        self._mongo_db = None
+        self._mongo_collection_dict = None
+        self._query_types_with_index = None
+
     def close_connection(self) -> None:
         # TODO: Review the use of this method and when it is invoked
         self._get_mongo_client().close()

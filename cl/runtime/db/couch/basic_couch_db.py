@@ -531,6 +531,11 @@ class BasicCouchDb(Db):
         except NotFound:
             pass  # Database doesn't exist, nothing to delete
 
+        # Clear cached database and index tracking so they are recreated
+        # when data is saved again after the drop
+        self._couch_db = None
+        self._query_types_with_index = None
+
     def close_connection(self) -> None:
         # TODO: Review the use of this method and when it is invoked
         # CouchDB connections are stateless, no explicit close needed
