@@ -258,7 +258,7 @@ class BootstrapSerializer(Serializer):
                 return data
             elif value_format == TypeFormat.DEFAULT:
                 # Serialize as name without type in PascalCase
-                return data.__name__  # TODO: Replace by typename(...)
+                return typename(data)
             else:
                 raise ErrorUtil.enum_value_error(value_format, TypeFormat)
         elif isinstance(data, Enum):

@@ -22,6 +22,7 @@ from cl.runtime.file.file_kind import FileKind
 from cl.runtime.file.writer import Writer
 from cl.runtime.primitive.case_util import CaseUtil
 from cl.runtime.records.record_mixin import RecordMixin
+from cl.runtime.records.typename import typename
 from cl.runtime.serializers.data_serializers import DataSerializers
 from cl.runtime.serializers.key_serializers import KeySerializers
 
@@ -58,7 +59,7 @@ class CsvWriter(Writer):
             csv_string = records_df.to_csv(index=False, encoding="utf-8", lineterminator=os.linesep)
 
             # Convert CSV string to bytes and yield FileData
-            file_name = f"{record_type.__name__}.csv"
+            file_name = f"{typename(record_type)}.csv"
             yield FileData(name=file_name, file_bytes=csv_string.encode("utf-8"), file_kind=FileKind.CSV).build()
 
     @classmethod

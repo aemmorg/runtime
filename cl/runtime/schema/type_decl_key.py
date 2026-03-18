@@ -17,6 +17,7 @@ from typing import Self
 from cl.runtime.records.for_dataclasses.dataclass_mixin import DataclassMixin
 from cl.runtime.records.for_dataclasses.extensions import required
 from cl.runtime.records.key_mixin import KeyMixin
+from cl.runtime.records.typename import typename
 from cl.runtime.schema.module_decl_key import ModuleDeclKey
 
 
@@ -37,4 +38,4 @@ class TypeDeclKey(DataclassMixin, KeyMixin):
     @classmethod
     def for_type(cls, type_: type) -> Self:
         """Create primitive type declaration from Python type."""
-        return TypeDeclKey(module=ModuleDeclKey(), name=type_.__name__).build()
+        return TypeDeclKey(module=ModuleDeclKey(), name=typename(type_)).build()

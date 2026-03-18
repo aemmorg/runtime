@@ -22,6 +22,7 @@ from cl.runtime.file.file_data import FileData
 from cl.runtime.file.file_kind import FileKind
 from cl.runtime.file.writer import Writer
 from cl.runtime.records.record_mixin import RecordMixin
+from cl.runtime.records.typename import typename
 from cl.runtime.serializers.data_serializers import DataSerializers
 
 _SERIALIZER = DataSerializers.FOR_JSON
@@ -71,7 +72,7 @@ class JsonlWriter(Writer):
             jsonl_bytes = eol.join(lines) + eol
 
             # One file per type, named after the record class
-            file_name = f"{record_type.__name__}.jsonl"
+            file_name = f"{typename(record_type)}.jsonl"
             yield FileData(
                 name=file_name,
                 file_kind=FileKind.JSONL,
