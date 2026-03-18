@@ -170,9 +170,9 @@ class LocalCache(Db):
 
     def _drop_db_do_not_call_directly(self) -> None:
         """DO NOT CALL DIRECTLY, call drop_db() instead."""
-        # Create a new cache, the objects in the old cache will no longer be accessible.
+        # Clear the cache, the objects in the old cache will no longer be accessible.
         # This relies on the preconditions check above to prevent unintended use
-        __cache = {}
+        self.__cache.clear()
 
     def close_connection(self) -> None:
         """Close database connection to releasing resource locks."""
