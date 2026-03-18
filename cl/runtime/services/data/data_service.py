@@ -176,4 +176,4 @@ class DataService(PydanticMixin):
     @classmethod
     def _get_schema_dict(cls, type_: type | None) -> dict[str, dict]:
         """Create schema dict for type. If 'type_' is None - return empty dict."""
-        return TypeResponseUtil.get_type(TypeRequest(type_name=type_.__name__)) if type_ is not None else dict()
+        return TypeResponseUtil.get_type(TypeRequest(type_name=typename(type_))) if type_ is not None else dict()

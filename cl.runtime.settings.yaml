@@ -103,7 +103,7 @@ default:
 
   # Documented in TypeSettings class
   type_name_rules:
-    "stubs.cl.runtime.settings.stub_type_name_rule.{ClassName}": "{ClassName}Override"
+    "stubs.cl.runtime.settings.stub_dataclass_with_custom_type_name.{class_name}": "{class_name}Override"
 
 # Test environment
 testing:

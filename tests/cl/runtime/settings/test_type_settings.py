@@ -14,27 +14,32 @@
 
 import pytest
 from cl.runtime.settings.type_settings import TypeSettings
-from stubs.cl.runtime.settings.stub_type_name_rule import StubTypeNameRule
+from stubs.cl.runtime.settings.stub_dataclass_with_custom_type_name import StubDataclassWithCustomTypeName
 
 
 def test_type_settings():
     """Test that TypeSettings loads type_name_rules from cl.runtime.settings.yaml and applies them correctly."""
 
     # Qualname of the stub class used to test the rule
-    stub_qual_name = "stubs.cl.runtime.settings.stub_type_name_rule.StubTypeNameRule"
+    stub_qual_name = (
+        "stubs.cl.runtime.settings.stub_dataclass_with_custom_type_name.StubDataclassWithCustomTypeName"
+    )
 
     # Verify the rule defined in cl.runtime.settings.yaml is loaded
     settings = TypeSettings.instance(package="cl.runtime")
     assert settings.type_name_rules is not None
-    assert "stubs.cl.runtime.settings.stub_type_name_rule.{ClassName}" in settings.type_name_rules
+    assert "stubs.cl.runtime.settings.stub_dataclass_with_custom_type_name.{ClassName}" in settings.type_name_rules
 
     # Verify get_type_name_rules includes the rule from cl.runtime
     rules = TypeSettings.get_type_name_rules()
     assert len(rules) > 0
-    assert ("stubs.cl.runtime.settings.stub_type_name_rule.{ClassName}", "{ClassName}Override") in rules
+    assert (
+        "stubs.cl.runtime.settings.stub_dataclass_with_custom_type_name.{ClassName}",
+        "{ClassName}Override",
+    ) in rules
 
     # Verify get_type_name matches the stub qualname and applies the Override suffix
-    assert TypeSettings.get_type_name(stub_qual_name) == StubTypeNameRule.__name__ + "Override"
+    assert TypeSettings.get_type_name(stub_qual_name) == StubDataclassWithCustomTypeName.__name__ + "Override"
 
     # Verify qualname outside all patterns falls back to class name
     assert TypeSettings.get_type_name("some.other.package.MyClass") == "MyClass"

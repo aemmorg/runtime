@@ -66,8 +66,11 @@ def _ensure_type_name_rules_loaded() -> None:
                 )
     except RuntimeError:
         raise
+    except ImportError:
+        # Circular import during module initialization, leave _type_name_rules as None to retry later
+        _type_name_rules = None
     except Exception:
-        # Fall back to no rules if loading fails
+        # Fall back to no rules for other failures
         _type_name_rules = ()
     finally:
         _type_name_rules_loading = False
