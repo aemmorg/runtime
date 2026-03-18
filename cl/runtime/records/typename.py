@@ -16,6 +16,7 @@ from typing import Any
 from typing import get_origin
 from memoization import cached
 from parse import parse
+from cl.runtime.primitive.case_util import CaseUtil
 
 _type_name_rules: tuple[tuple[str, str], ...] | None = None
 """Type name rules loaded from TypeSettings, None before first load attempt."""
@@ -34,7 +35,11 @@ def _apply_type_name_rules(type_: type) -> str:
     for key_pattern, value_pattern in _type_name_rules:
         parsed = parse(key_pattern, qual)
         if parsed is not None:
-            result = value_pattern.format(**parsed.named)
+            pascal_named = {
+                k: CaseUtil.snake_to_pascal_case(v) if CaseUtil.is_snake_case(v) else v
+                for k, v in parsed.named.items()
+            }
+            result = value_pattern.format(**pascal_named)
     return result
 
 

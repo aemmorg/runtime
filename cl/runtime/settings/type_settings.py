@@ -17,6 +17,7 @@ from typing import Mapping
 from memoization import cached
 from parse import parse
 from typing_extensions import final
+from cl.runtime.primitive.case_util import CaseUtil
 from cl.runtime.settings.project_settings import ProjectSettings
 from cl.runtime.settings.settings import Settings
 
@@ -92,6 +93,10 @@ class TypeSettings(Settings):
         for key_pattern, value_pattern in rules:
             parsed = parse(key_pattern, qual_name)
             if parsed is not None:
-                result = value_pattern.format(**parsed.named)
+                pascal_named = {
+                    k: CaseUtil.snake_to_pascal_case(v) if CaseUtil.is_snake_case(v) else v
+                    for k, v in parsed.named.items()
+                }
+                result = value_pattern.format(**pascal_named)
 
         return result
