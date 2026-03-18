@@ -88,6 +88,8 @@ default:
     - uvicorn>=0.18.3
     - websockets>=10.4
     - xmltodict>=0.12.0
+
+
   package_test_dependencies:
     - autoflake>=2.3.1
     - black>=22.6.0
@@ -98,6 +100,10 @@ default:
     - pytest>=8.3.3
     - pytest-asyncio>=0.24.0
     - ruff>=0.15.1
+
+  # Documented in TypeSettings class
+  type_name_rules:
+    "stubs.cl.runtime.settings.stub_type_name_rule.{ClassName}": "{ClassName}Override"
 
 # Test environment
 testing:
