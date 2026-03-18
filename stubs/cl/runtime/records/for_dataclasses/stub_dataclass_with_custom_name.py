@@ -13,17 +13,9 @@
 # limitations under the License.
 
 from dataclasses import dataclass
-from cl.runtime.records.for_dataclasses.dataclass_mixin import DataclassMixin
-from cl.runtime.records.key_mixin import KeyMixin
+from stubs.cl.runtime.records.for_dataclasses.stub_dataclass import StubDataclass
 
 
-@dataclass(slots=True, eq=False)
-class StubDataclassWithCustomTypeNameKey(DataclassMixin, KeyMixin):
-    """Key for the stub record used to test TypeSettings type name rules."""
-
-    id: str = "abc"
-    """Unique identifier."""
-
-    @classmethod
-    def get_key_type(cls) -> type[KeyMixin]:
-        return StubDataclassWithCustomTypeNameKey
+@dataclass(slots=True, kw_only=True)
+class StubDataclassWithCustomName(StubDataclass):
+    """Stub record for testing TypeSettings type name rules (no override, uses default name)."""

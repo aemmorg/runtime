@@ -13,13 +13,9 @@
 # limitations under the License.
 
 from dataclasses import dataclass
-from cl.runtime.records.record_mixin import RecordMixin
-from stubs.cl.runtime.settings.stub_dataclass_with_custom_type_name_key import StubDataclassWithCustomTypeNameKey
+from stubs.cl.runtime.records.for_dataclasses.stub_dataclass import StubDataclass
 
 
 @dataclass(slots=True, kw_only=True)
-class StubDataclassWithCustomTypeName(StubDataclassWithCustomTypeNameKey, RecordMixin):
-    """Stub record for testing TypeSettings type name rules."""
-
-    def get_key(self) -> StubDataclassWithCustomTypeNameKey:
-        return StubDataclassWithCustomTypeNameKey(id=self.id).build()
+class StubDataclassWithCustomName(StubDataclass):
+    """Stub record for testing TypeSettings type name rules (gets overridden name via module-based rule)."""

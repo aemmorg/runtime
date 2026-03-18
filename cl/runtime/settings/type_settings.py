@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import re
 from dataclasses import dataclass
 from typing import Mapping
 from memoization import cached
@@ -20,6 +21,12 @@ from typing_extensions import final
 from cl.runtime.primitive.case_util import CaseUtil
 from cl.runtime.settings.project_settings import ProjectSettings
 from cl.runtime.settings.settings import Settings
+
+_KEY_PATTERN = re.compile(r"^[a-zA-Z0-9.{}_]+$")
+"""Allowed characters for qualname pattern (left side): letters, digits, dots, curly brackets, underscores."""
+
+_VALUE_PATTERN = re.compile(r"^[a-zA-Z0-9{}_]+$")
+"""Allowed characters for type name pattern (right side): letters, digits, curly brackets, underscores (no dots)."""
 
 
 @dataclass(slots=True, kw_only=True)
@@ -35,6 +42,23 @@ class TypeSettings(Settings):
 
     def __init(self) -> None:
         """Use instead of __init__ in the builder pattern, invoked by the build method in base to derived order."""
+
+        if self.type_name_rules is not None:
+            if not isinstance(self.type_name_rules, Mapping):
+                raise RuntimeError(
+                    f"TypeSettings.type_name_rules must be a mapping, got {type(self.type_name_rules).__name__}."
+                )
+            for key, value in self.type_name_rules.items():
+                if not _KEY_PATTERN.match(key):
+                    raise RuntimeError(
+                        f"Invalid type_name_rules key '{key}': "
+                        f"only letters, digits, dots, underscores, and curly brackets are allowed."
+                    )
+                if not _VALUE_PATTERN.match(value):
+                    raise RuntimeError(
+                        f"Invalid type_name_rules value '{value}' for key '{key}': "
+                        f"only letters, digits, underscores, and curly brackets are allowed (no dots)."
+                    )
 
     @classmethod
     @cached
@@ -83,8 +107,20 @@ class TypeSettings(Settings):
             Type name produced by the last matching pattern, or the class name
             (last dot-delimited segment of qual_name) if no pattern matches.
         """
+        return cls.apply_type_name_rules(cls.get_type_name_rules(), qual_name)
 
-        rules = cls.get_type_name_rules()
+    @staticmethod
+    def apply_type_name_rules(rules: tuple[tuple[str, str], ...], qual_name: str) -> str:
+        """Apply type name rules to a qualname, return the matched type name or the class name if no match.
+
+        Args:
+            rules: Ordered tuple of (key_pattern, value_pattern) pairs
+            qual_name: Fully qualified name in module.module.ClassName format
+
+        Returns:
+            Type name produced by the last matching pattern, or the class name
+            (last dot-delimited segment of qual_name) if no pattern matches.
+        """
 
         # Default: class name is the last segment of qual_name
         result = qual_name.rsplit(".", 1)[-1]

@@ -15,54 +15,42 @@
 from typing import Any
 from typing import get_origin
 from memoization import cached
-from parse import parse
-from cl.runtime.primitive.case_util import CaseUtil
 
-_type_name_rules: tuple[tuple[str, str], ...] | None = None
+_TYPE_NAME_RULES: tuple[tuple[str, str], ...] | None = None
 """Type name rules loaded from TypeSettings, None before first load attempt."""
 
-_type_name_rules_loading: bool = False
+_TYPE_NAME_RULES_LOADING: bool = False
 """Flag to prevent re-entrant loading during TypeSettings initialization."""
 
-_types_during_loading: list[type] = []
+_TYPES_DURING_LOADING: list[type] = []
 """Types passed to typename during the loading phase, checked for conflicts after loading completes."""
 
-
-def _apply_type_name_rules(type_: type) -> str:
-    """Apply type name rules to a type, return custom name or __name__ if no rule matches."""
-    qual = f"{type_.__module__}.{type_.__name__}"
-    result = type_.__name__
-    for key_pattern, value_pattern in _type_name_rules:
-        parsed = parse(key_pattern, qual)
-        if parsed is not None:
-            pascal_named = {
-                k: CaseUtil.snake_to_pascal_case(v) if CaseUtil.is_snake_case(v) else v
-                for k, v in parsed.named.items()
-            }
-            result = value_pattern.format(**pascal_named)
-    return result
+_APPLY_RULES = None
+"""Cached reference to TypeSettings.apply_type_name_rules static method."""
 
 
 def _ensure_type_name_rules_loaded() -> None:
     """Load type name rules from TypeSettings on first call."""
-    global _type_name_rules, _type_name_rules_loading
-    if _type_name_rules is not None or _type_name_rules_loading:
+    global _TYPE_NAME_RULES, _TYPE_NAME_RULES_LOADING, _APPLY_RULES
+    if _TYPE_NAME_RULES is not None or _TYPE_NAME_RULES_LOADING:
         return
-    _type_name_rules_loading = True
+    _TYPE_NAME_RULES_LOADING = True
     try:
         from cl.runtime.settings.type_settings import TypeSettings  # noqa: inline import to avoid circular dependency
 
-        _type_name_rules = TypeSettings.get_type_name_rules()
+        _TYPE_NAME_RULES = TypeSettings.get_type_name_rules()
+        _APPLY_RULES = TypeSettings.apply_type_name_rules
         # Clear cached typename results from during loading so they pick up rules
         typename.cache_clear()
 
         # Check that none of the types resolved during loading have custom names
-        if _type_name_rules:
+        if _TYPE_NAME_RULES:
             conflicts = []
-            for type_ in _types_during_loading:
-                custom_name = _apply_type_name_rules(type_)
+            for type_ in _TYPES_DURING_LOADING:
+                qual = f"{type_.__module__}.{type_.__name__}"
+                custom_name = _APPLY_RULES(_TYPE_NAME_RULES, qual)
                 if custom_name != type_.__name__:
-                    conflicts.append(f"  {type_.__module__}.{type_.__name__} -> {custom_name}")
+                    conflicts.append(f"  {qual} -> {custom_name}")
             if conflicts:
                 conflicts_str = "\n".join(conflicts)
                 raise RuntimeError(
@@ -72,14 +60,14 @@ def _ensure_type_name_rules_loaded() -> None:
     except RuntimeError:
         raise
     except ImportError:
-        # Circular import during module initialization, leave _type_name_rules as None to retry later
-        _type_name_rules = None
+        # Circular import during module initialization, leave _TYPE_NAME_RULES as None to retry later
+        _TYPE_NAME_RULES = None
     except Exception:
         # Fall back to no rules for other failures
-        _type_name_rules = ()
+        _TYPE_NAME_RULES = ()
     finally:
-        _type_name_rules_loading = False
-        _types_during_loading.clear()
+        _TYPE_NAME_RULES_LOADING = False
+        _TYPES_DURING_LOADING.clear()
 
 
 def typeof(value: Any) -> type:
@@ -101,12 +89,13 @@ def typename(type_: type) -> str:
 
     if isinstance(type_, type):
         # Collect types resolved during loading for conflict checking
-        if _type_name_rules_loading:
-            _types_during_loading.append(type_)
+        if _TYPE_NAME_RULES_LOADING:
+            _TYPES_DURING_LOADING.append(type_)
 
         # Apply type name rules if loaded
-        if _type_name_rules:
-            return _apply_type_name_rules(type_)
+        if _TYPE_NAME_RULES:
+            qual = f"{type_.__module__}.{type_.__name__}"
+            return _APPLY_RULES(_TYPE_NAME_RULES, qual)
         # Non-generic type, no rules
         return type_.__name__
     elif (type_origin := get_origin(type_)) is not None:
