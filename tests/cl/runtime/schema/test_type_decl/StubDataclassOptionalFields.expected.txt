@@ -74,14 +74,14 @@ elements:
   vector: true
   optional: true
   optional_vector_element: true
-- key_:
+- key:
     module:
       module_name: cl
     name: StubDataclassKey
   name: OptionalKey
   comment: Optional key.
   optional: true
-- key_:
+- key:
     module:
       module_name: cl
     name: StubDataclassKey
@@ -89,7 +89,7 @@ elements:
   comment: Required list of optional key.
   vector: true
   optional_vector_element: true
-- key_:
+- key:
     module:
       module_name: cl
     name: StubDataclassKey

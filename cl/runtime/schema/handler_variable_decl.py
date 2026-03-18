@@ -95,7 +95,7 @@ class HandlerVariableDecl(MemberDecl):
         if is_primitive_type(value_type_):
             result.value = ValueDecl.for_type(value_type_)
         elif value_type_.__name__.endswith("Key"):
-            result.key_ = TypeDecl.for_type(value_type_, skip_handlers=True)
+            result.key = TypeDecl.for_type(value_type_, skip_handlers=True)
         elif is_enum_type(value_type_):
             result.enum = EnumDecl.for_type(value_type_, skip_handlers=True)
         elif inspect.isclass(value_type_):

@@ -82,7 +82,7 @@ class ElementDecl(MemberDecl):  # TODO: Consider renaming to TypeFieldDecl or Fi
             case TypeKind.ENUM:
                 result.enum = field_decl.field_type_decl
             case TypeKind.KEY:
-                result.key_ = field_decl.field_type_decl
+                result.key = field_decl.field_type_decl
             case TypeKind.RECORD | TypeKind.DATA:
                 result.data = field_decl.field_type_decl
             case _:

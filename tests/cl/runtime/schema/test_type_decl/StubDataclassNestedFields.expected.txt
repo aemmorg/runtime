@@ -45,13 +45,13 @@ elements:
   name: PolymorphicDerivedField
   comment: Declared StubDataclassDerivedData but provided an instance of 
     StubDataclassDoubleDerivedData.
-- key_:
+- key:
     module:
       module_name: cl
     name: StubDataclassKey
   name: KeyField
   comment: Stub field.
-- key_:
+- key:
     module:
       module_name: cl
     name: StubDataclassKey

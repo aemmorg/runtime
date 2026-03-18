@@ -10,7 +10,7 @@ inherit:
     module_name: cl
   name: UiAppStateKey
 elements:
-- key_:
+- key:
     module:
       module_name: cl
     name: UserKey

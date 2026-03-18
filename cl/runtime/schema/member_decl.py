@@ -31,7 +31,7 @@ class MemberDecl(DataclassMixin):
     data: TypeDeclKey | None = None
     """Data element declaration."""
 
-    key_: TypeDeclKey | None = None  # TODO: It is no longer necessary to add _ to key field
+    key: TypeDeclKey | None = None  # TODO: It is no longer necessary to add _ to key field
     """Key element declaration."""
 
     query: TypeDeclKey | None = None

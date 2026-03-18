@@ -14,13 +14,13 @@ elements:
     type_: String
   name: Primitive
   comment: String key element.
-- key_:
+- key:
     module:
       module_name: cl
     name: StubDataclassKey
   name: Embedded1
   comment: Embedded key 1.
-- key_:
+- key:
     module:
       module_name: cl
     name: StubDataclassKey

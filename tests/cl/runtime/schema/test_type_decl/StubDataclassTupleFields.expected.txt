@@ -35,7 +35,7 @@ elements:
   name: DataTuple
   comment: Stub field.
   vector: true
-- key_:
+- key:
     module:
       module_name: cl
     name: StubDataclassKey
