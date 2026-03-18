@@ -407,7 +407,7 @@ def test_case_conversion():
     assert "Stub2Bar" in msg
     assert "Stub2BAR" in msg
     assert "Change PascalCase name" in msg
-    assert "CaseConversionRule.csv" in msg
+    assert "case_conversion_rules in settings" in msg
 
     # snake_case to PascalCase: stub_b_2 -> StubB2 -> stub_b2 != stub_b_2
     with pytest.raises(RuntimeError, match="round-trip") as exc_info:
@@ -416,27 +416,30 @@ def test_case_conversion():
     assert "stub_b_2" in msg
     assert "stub_b2" in msg
     assert "Change snake_case" in msg
-    assert "CaseConversionRule.csv" in msg
+    assert "case_conversion_rules in settings" in msg
 
 
 def test_case_conversion_rule():
-    """Test that CaseConversionRule.csv overrides algorithmic conversion."""
+    """Test that case_conversion_rules from CaseSettings override algorithmic conversion."""
 
-    # Plain entries (no leading/trailing underscores) - would fail roundtrip without CSV
-    assert CaseUtil.snake_to_pascal_case("stub_2def") == "Stub2Def"
+    # pascal_to_snake_case for non-canonical PascalCase fails roundtrip, which triggers
+    # on-demand loading of case_conversion_rules from CaseSettings into the in-memory dicts
     assert CaseUtil.pascal_to_snake_case("Stub2Def") == "stub_2def"
-    assert CaseUtil.snake_to_pascal_case("stub_2xyz") == "Stub2Xyz"
     assert CaseUtil.pascal_to_snake_case("Stub2Xyz") == "stub_2xyz"
 
-    # Leading underscore entry
+    # After settings load, snake_to_pascal_case finds entries in the dict
+    assert CaseUtil.snake_to_pascal_case("stub_2def") == "Stub2Def"
+    assert CaseUtil.snake_to_pascal_case("stub_2xyz") == "Stub2Xyz"
+
+    # Leading underscore - fails roundtrip in both directions
     assert CaseUtil.snake_to_pascal_case("_stub_2jkl") == "Stub2Jkl"
     assert CaseUtil.pascal_to_snake_case("Stub2Jkl") == "_stub_2jkl"
 
-    # Trailing underscore entry
+    # Trailing underscore
     assert CaseUtil.snake_to_pascal_case("stub_2mno_") == "Stub2Mno"
     assert CaseUtil.pascal_to_snake_case("Stub2Mno") == "stub_2mno_"
 
-    # Both leading and trailing underscore entry
+    # Both leading and trailing underscore
     assert CaseUtil.snake_to_pascal_case("_stub_2pqr_") == "Stub2Pqr"
     assert CaseUtil.pascal_to_snake_case("Stub2Pqr") == "_stub_2pqr_"
 

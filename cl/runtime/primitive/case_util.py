@@ -29,6 +29,15 @@ _DIGIT_UNDERSCORE_VIOLATIONS_RE: Pattern = re.compile(r"(?<=\d)_(?=\d)|(?<![_\d]
 _DIGIT_WITHOUT_SPACE_RE: Pattern = re.compile(r"(?<! )\d")
 """Digit without space pattern"""
 
+_SNAKE_TO_PASCAL_DICT: dict[str, str] = {"type_": "Type"}
+"""Mapping from snake_case to PascalCase, initialized with hardcoded entries and expanded from DB on demand."""
+
+_PASCAL_TO_SNAKE_DICT: dict[str, str] = {v: k for k, v in _SNAKE_TO_PASCAL_DICT.items()}
+"""Mapping from PascalCase to snake_case, initialized with hardcoded entries and expanded from DB on demand."""
+
+_CONVERSION_RULES_LOADED: bool = False
+"""Flag indicating whether CaseConversionRule records have been loaded from DB."""
+
 
 class CaseUtil:
     """
@@ -69,24 +78,26 @@ class CaseUtil:
         if cls.is_empty(value):
             return value
         cls.check_pascal_case(value)
-        # Look up in CaseConversionRule first
-        from cl.runtime.primitive.case_conversion_rule import CaseConversionRule
-        rule_result = CaseConversionRule.get_snake_case(value)
-        if rule_result is not None:
-            return rule_result
 
-        # Perform conversion, error if not a lossless roundtrip
+        # Check in-memory dict (has hardcoded entries before DB load)
+        if value in _PASCAL_TO_SNAKE_DICT:
+            return _PASCAL_TO_SNAKE_DICT[value]
+
+        # Perform conversion, check roundtrip
         result = cls._pascal_to_snake_unchecked(value)
-        # Verify round-trip
         back = cls._snake_to_pascal_unchecked(result)
         if back != value:
+            # Load conversion rules from DB on demand, then retry lookup
+            cls._ensure_conversion_rules_loaded()
+            if value in _PASCAL_TO_SNAKE_DICT:
+                return _PASCAL_TO_SNAKE_DICT[value]
             raise RuntimeError(
                 f"String '{value}' cannot be converted to snake_case because the round-trip conversion\n"
                 f"produces '{back}' instead of the original '{value}'."
                 f"Please either:\n"
                 f"(a) Change PascalCase name from '{value}' to '{back}' to allow lossless\n"
                 f"    PascalCase to snake_case roundtrip or\n"
-                f"(b) Add the intended snake_case and PascalCase pair to CaseConversionRule.csv.\n"
+                f"(b) Add the intended snake_case and PascalCase pair to case_conversion_rules in settings.\n"
             )
         return result
 
@@ -113,24 +124,26 @@ class CaseUtil:
         if cls.is_empty(value):
             return value
         cls.check_snake_case(value)
-        # Look up in CaseConversionRule first
-        from cl.runtime.primitive.case_conversion_rule import CaseConversionRule
-        rule_result = CaseConversionRule.get_pascal_case(value)
-        if rule_result is not None:
-            return rule_result
 
-        # Perform conversion, error if not a lossless roundtrip
+        # Check in-memory dict (has hardcoded entries before DB load)
+        if value in _SNAKE_TO_PASCAL_DICT:
+            return _SNAKE_TO_PASCAL_DICT[value]
+
+        # Perform conversion, check roundtrip
         result = cls._snake_to_pascal_unchecked(value)
-        # Verify round-trip
         back = cls._pascal_to_snake_unchecked(result)
         if back != value:
+            # Load conversion rules from DB on demand, then retry lookup
+            cls._ensure_conversion_rules_loaded()
+            if value in _SNAKE_TO_PASCAL_DICT:
+                return _SNAKE_TO_PASCAL_DICT[value]
             raise RuntimeError(
                 f"String '{value}' cannot be converted to PascalCase because the round-trip conversion\n"
                 f"produces '{back}' instead of the original '{value}'."
                 f"Please either:\n"
                 f"(a) Change snake_case string from '{value}' to '{back}' to allow lossless\n"
                 f"    snake_case to PascalCase roundtrip or\n"
-                f"(b) Add the intended snake_case and PascalCase pair to CaseConversionRule.csv.\n"
+                f"(b) Add the intended snake_case and PascalCase pair to case_conversion_rules in settings.\n"
             )
         return result
 
@@ -380,3 +393,37 @@ class CaseUtil:
         if any(char.isdigit() for char in segment):
             return segment.upper()
         return segment.capitalize()
+
+    @classmethod
+    def _ensure_conversion_rules_loaded(cls) -> None:
+        """Load case conversion rules from CaseSettings into the in-memory dicts. No-op if already loaded."""
+        global _CONVERSION_RULES_LOADED
+        if _CONVERSION_RULES_LOADED:
+            return
+
+        try:
+            # Deferred import to avoid circular dependency: case_util -> case_settings -> project_settings -> dynaconf_loader -> qa_util -> case_util
+            from cl.runtime.settings.case_settings import CaseSettings
+            snake_to_pascal, pascal_to_snake = CaseSettings.get_combined_conversion_rules()
+        except Exception:
+            # Settings may not be available during early bootstrap
+            return
+
+        for snake, pascal in snake_to_pascal.items():
+            # Check for conflicts with hardcoded entries
+            if snake in _SNAKE_TO_PASCAL_DICT and _SNAKE_TO_PASCAL_DICT[snake] != pascal:
+                raise RuntimeError(
+                    f"Conflicting case conversion for snake_case value '{snake}': "
+                    f"existing mapping '{snake}' -> '{_SNAKE_TO_PASCAL_DICT[snake]}' "
+                    f"conflicts with settings entry '{snake}' -> '{pascal}'."
+                )
+            if pascal in _PASCAL_TO_SNAKE_DICT and _PASCAL_TO_SNAKE_DICT[pascal] != snake:
+                raise RuntimeError(
+                    f"Conflicting case conversion for PascalCase value '{pascal}': "
+                    f"existing mapping '{pascal}' -> '{_PASCAL_TO_SNAKE_DICT[pascal]}' "
+                    f"conflicts with settings entry '{pascal}' -> '{snake}'."
+                )
+            _SNAKE_TO_PASCAL_DICT[snake] = pascal
+            _PASCAL_TO_SNAKE_DICT[pascal] = snake
+
+        _CONVERSION_RULES_LOADED = True

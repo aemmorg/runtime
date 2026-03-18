@@ -101,3 +101,11 @@ default:
 
 # Test environment
 testing:
+
+  # Documented in CaseSettings class
+  case_conversion_rules:
+    stub_2def: Stub2Def
+    stub_2xyz: Stub2Xyz
+    _stub_2jkl: Stub2Jkl
+    stub_2mno_: Stub2Mno
+    _stub_2pqr_: Stub2Pqr
