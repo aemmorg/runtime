@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import csv
+import os
 from typing import Any
 from typing import Sequence
 from cl.runtime.file.file_util import FileUtil
