@@ -28,6 +28,9 @@ from cl.runtime.routers.task.run_request import RunRequest
 from cl.runtime.serializers.data_serializers import DataSerializers
 from cl.runtime.tasks.instance_method_task import InstanceMethodTask
 from cl.runtime.tasks.task_util import TaskUtil
+from cl.runtime.ui.control import Control
+from cl.runtime.ui.storage.control_manager import ControlManager
+from cl.runtime.views.control_view import ControlView
 from cl.runtime.views.key_list_view import KeyListView
 from cl.runtime.views.key_view import KeyView
 from cl.runtime.views.record_list_view import RecordListView
@@ -62,7 +65,6 @@ class RunResponseUtil:
 
         # TODO (Roman): Use TypeDecl to determine method type
         if method_task.method_name.startswith("view_"):
-
             if not isinstance(method_task, InstanceMethodTask):
                 raise RuntimeError("Static view methods is not supported.")
 
@@ -174,6 +176,13 @@ class RunResponseUtil:
         elif isinstance(viewer_result, RecordView):
             # Process RecordView by unpacking the 'record' field
             result = cls._process_viewer_result(viewer_result.record, view_for, view_name)
+        elif isinstance(viewer_result, Control):
+            # Process Control by packing load this one and all child controls into ControlView
+            result = ControlView(
+                view_for=view_for,
+                view_name=view_name,
+                controls=ControlManager(root_node=viewer_result.build()).load(),
+            ).build()
         else:
             # Other types return unchanged
             result = viewer_result

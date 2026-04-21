@@ -16,6 +16,8 @@ from typing import Annotated
 from typing import Any
 from fastapi import APIRouter
 from fastapi import Body
+from fastapi import Query
+from cl.runtime.routers.route_util import RouteUtil
 from cl.runtime.routers.task.cancel_request import CancelRequest
 from cl.runtime.routers.task.cancel_response_item import CancelResponseItem
 from cl.runtime.routers.task.result_request import ResultRequest
@@ -35,32 +37,42 @@ router = APIRouter()
 
 @router.post("/run", response_model=Any)
 async def post_run(
-    run_body: Annotated[RunRequestBody, Body(description="Run request body.")],
+    run_body: Annotated[RunRequestBody | None, Body(description="Run request body.")] = None,
+    type_name: Annotated[str | None, Query(description="Type shortname.")] = None,
+    method: Annotated[str | None, Query(description="Method name.")] = None,
 ) -> Any:
     """Route to run Task and return result in Response."""
 
+    type_ = RouteUtil.resolve(type_name, run_body.type if run_body else None, "type_name")
+    method_ = RouteUtil.resolve(method, run_body.method if run_body else None, "method")
+
     return RunResponseUtil.get_response(
         RunRequest(
-            type=run_body.type,
-            method=run_body.method,
-            key=run_body.key,
-            arguments=run_body.arguments,
+            type=type_,
+            method=method_,
+            key=run_body.key if run_body else None,
+            arguments=run_body.arguments if run_body else None,
         )
     )
 
 
 @router.post("/submit", response_model=list[SubmitResponseItem])
 async def post_submit(
-    submit_body: Annotated[SubmitRequestBody, Body(description="Submit request body.")],
+    submit_body: Annotated[SubmitRequestBody | None, Body(description="Submit request body.")] = None,
+    type_name: Annotated[str | None, Query(description="Type shortname.")] = None,
+    method: Annotated[str | None, Query(description="Method name.")] = None,
 ) -> list[SubmitResponseItem]:
     """Route to bulk submit Tasks and return task_run_id's in Response."""
 
+    type_ = RouteUtil.resolve(type_name, submit_body.type if submit_body else None, "type_name")
+    method_ = RouteUtil.resolve(method, submit_body.method if submit_body else None, "method")
+
     return SubmitResponseItem.get_response(
         SubmitRequest(
-            type=submit_body.type,
-            method=submit_body.method,
-            keys=submit_body.keys,
-            arguments=submit_body.arguments,
+            type=type_,
+            method=method_,
+            keys=submit_body.keys if submit_body else None,
+            arguments=submit_body.arguments if submit_body else None,
         )
     )
 
