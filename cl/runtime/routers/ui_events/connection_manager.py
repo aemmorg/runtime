@@ -56,7 +56,6 @@ class ConnectionManager:
             pass
 
         if connections := self.active_connections.get(connection_id):
-
             # Remove the websocket from the list of active connections
             connections.remove(websocket) if websocket in connections else None
 
