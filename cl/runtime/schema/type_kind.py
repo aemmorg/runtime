@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from enum import IntEnum
 from enum import auto
+from enum import IntEnum
 
 
 class TypeKind(IntEnum):
@@ -28,8 +28,14 @@ class TypeKind(IntEnum):
     DATA = auto()
     """Data type (excludes keys and records), is_data returns True."""
 
+    BOOTSTRAP = auto()
+    """Bootstrap data type (same as data, doesn't have strict schema validation protocols), is_bootstrap returns True."""
+
     KEY = auto()
     """Key type (excludes records even if they are derived from key), is_key returns True."""
 
     RECORD = auto()
     """Record type, is_record returns True."""
+
+    CONTAINER = auto()
+    """Container type, is_container returns True."""
