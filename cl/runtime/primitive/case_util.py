@@ -262,13 +262,14 @@ class CaseUtil:
 
     @classmethod
     def is_snake_case(cls, value: str) -> bool:
-        """Check if the string is in snake_case by basic format check."""
+        """Check if the string is in snake_case, including the digit-separator rule."""
         if cls.is_empty(value):
             return True
-        # Only lowercase, digits, underscores, and dots, no spaces or uppercase, no double underscores
-        if _ALPHANUMERIC_OR_UNDERSCORE_RE.search(value) or " " in value or any(c.isupper() for c in value) or "__" in value:
+        try:
+            cls.check_snake_case(value)
+            return True
+        except RuntimeError:
             return False
-        return True
 
     @classmethod
     def is_title_case(cls, value: str) -> bool:

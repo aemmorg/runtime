@@ -576,6 +576,97 @@ class TypeInfo(BootstrapMixin):
             )
 
     @classmethod
+    def _update_children(cls, type_name: str, child_record_type_names: tuple[str, ...] | None) -> None:
+        """Replace child_record_type_names on a type info entry, handling frozen instances."""
+        type_info = cls._type_info_dict.get(type_name)
+        if type_info is None:
+            return
+        if type_info.is_frozen():
+            cls._type_info_dict[type_name] = TypeInfo(
+                type_name=type_info.type_name,
+                type_kind=type_info.type_kind,
+                qual_name=type_info.qual_name,
+                type_=type_info.type_,
+                subtype=type_info.subtype,
+                parent_record_type_names=type_info.parent_record_type_names,
+                child_record_type_names=child_record_type_names,
+            ).build()
+        else:
+            type_info.child_record_type_names = child_record_type_names
+
+    @classmethod
+    def _validate_parents(cls, type_info: Self) -> None:
+        """Raise RuntimeError if any parent type name is not in the type info dict."""
+        parent_names = type_info.parent_record_type_names or []
+        if not parent_names:
+            return
+        missing = [n for n in parent_names if n not in cls._type_info_dict]
+        if missing:
+            raise RuntimeError(
+                f"Type {type_info.type_name} has parent types not found in TypeInfo: "
+                f"{', '.join(missing)}. Check that all required packages are included."
+            )
+
+    @classmethod
+    def _build_all_children(cls, restrict_to: set[str] | None = None) -> None:
+        """Derive child_record_type_names from parent relationships (inverse mapping)."""
+        children_map: dict[str, set[str]] = {}
+        for type_name, type_info in cls._type_info_dict.items():
+            parent_names = type_info.parent_record_type_names or []
+            if not parent_names:
+                continue
+            for parent_name in parent_names:
+                if parent_name not in cls._type_info_dict:
+                    continue
+                if restrict_to is not None and parent_name not in restrict_to:
+                    continue
+                children_map.setdefault(parent_name, set()).add(type_name)
+
+        for parent_name, child_names in children_map.items():
+            cls._update_children(parent_name, tuple(sorted(child_names)))
+
+    @classmethod
+    def _clear_memoization(cls) -> None:
+        """Clear memoization caches on all @cached methods."""
+        cls.is_known_type.cache_clear()
+        cls.is_known_type_name.cache_clear()
+        cls.guard_known_type.cache_clear()
+        cls.guard_known_type_name.cache_clear()
+        cls.get_type_name_info.cache_clear()
+        cls.from_type_name.cache_clear()
+        cls.get_types.cache_clear()
+        cls.get_child_type_names.cache_clear()
+        cls.get_common_base_type.cache_clear()
+        cls._import_type.cache_clear()
+
+    @classmethod
+    def register_type(cls, type_: type) -> None:
+        """
+        Register a type at runtime: add to dict, validate parents, rebuild parent child lists.
+
+        This is a rare operation that clears all memoization caches. Prefer rebuild() for
+        creating TypeInfo.csv with all types from packages. Use this method only when a type
+        must be added dynamically after TypeInfo is already loaded (e.g. in tests).
+        """
+        if cls.is_known_type(type_):
+            return
+
+        cls._add_type(type_)
+
+        type_name = typename(type_)
+        type_info = cls._type_info_dict.get(type_name)
+        if type_info is None:
+            return
+
+        cls._validate_parents(type_info)
+        parent_names = type_info.parent_record_type_names or []
+        if not parent_names:
+            return
+
+        cls._build_all_children(restrict_to=set(parent_names))
+        cls._clear_memoization()
+
+    @classmethod
     def ensure_loaded(cls):
         """Load the data from TypeInfo.csv if not already loaded, do not reload."""
 
