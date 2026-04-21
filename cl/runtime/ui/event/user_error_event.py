@@ -23,3 +23,6 @@ class UserErrorEvent(UiEvent):
 
     error: str = required()
     "Error message represented as a string."
+
+    field: str | None = None
+    "Name of the field that caused the error."
