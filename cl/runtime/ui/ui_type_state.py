@@ -76,5 +76,8 @@ class UiTypeState(UiTypeStateKey, RecordMixin):
     Indicates whether the user guide has been completed.
     """
 
+    active_dataset: str | None = None
+    """Active dataset path for this type (e.g. '\\child', '\\dev\\user1'). None means root dataset."""
+
     def get_key(self) -> UiTypeStateKey:
         return UiTypeStateKey(type_=self.type_, user=self.user).build()

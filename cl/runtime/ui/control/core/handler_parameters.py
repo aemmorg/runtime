@@ -15,6 +15,7 @@
 from dataclasses import dataclass
 from cl.runtime.records.for_dataclasses.dataclass_mixin import DataclassMixin
 from cl.runtime.records.for_dataclasses.extensions import required
+from cl.runtime.records.variant.variant import Variant
 
 
 @dataclass(slots=True, kw_only=True)
@@ -30,5 +31,5 @@ class HandlerParameters(DataclassMixin):
     keys: list[str] | None = None
     """List of keys of the records to call the handler with."""
 
-    arguments: dict[str, str] | None = None
+    arguments: dict[str, Variant] | None = None
     """Dict of arguments to call the handler with."""

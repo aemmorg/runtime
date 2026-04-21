@@ -14,11 +14,21 @@
 
 from dataclasses import dataclass
 from cl.runtime.records.for_dataclasses.dataclass_mixin import DataclassMixin
+from cl.runtime.records.for_dataclasses.extensions import required
 
 
 @dataclass(slots=True, kw_only=True)
-class RowConfig(DataclassMixin):
-    """Per-row configuration for table rendering."""
+class ExtendedData(DataclassMixin):
+    """
+    Auxiliary data item used in table displays.
+    Represents an id/label pair with optional metadata that can be attached to table cell or other UI elements.
+    """
 
-    style: str | None = None
-    """CSS style applied to the row's cells."""
+    id: str = required()
+    """Stable identifier for the data item."""
+
+    label: str | None = None
+    """Human-readable label for display purposes."""
+
+    meta: str | None = None  # TODO: Migrate on alternative of Any after system support
+    """Optional free-form metadata associated with the item."""

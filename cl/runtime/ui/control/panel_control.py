@@ -17,7 +17,7 @@ from cl.runtime.ui.control.control_container import ControlContainer
 from cl.runtime.ui.control.core.size_scale import SizeScale
 
 
-@dataclass(slots=True, kw_only=True, eq=False)
+@dataclass(slots=True, kw_only=True)
 class PanelControl(ControlContainer):
     """Grid-like container where other controls can be placed."""
 

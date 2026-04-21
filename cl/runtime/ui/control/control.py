@@ -29,12 +29,12 @@ from cl.runtime.records.record_mixin import RecordMixin
 from cl.runtime.schema.type_hint import TypeHint
 from cl.runtime.serializers.data_serializers import DataSerializers
 from cl.runtime.ui.control.control_key import ControlKey
-from cl.runtime.ui.event.control_event import ControlEvent
 from cl.runtime.ui.event.partial_value_update_event import PartialValueUpdateEvent
+from cl.runtime.ui.event.ui_event import UiEvent
 from cl.runtime.ui.event.value_update_event import ValueUpdateEvent
 
 
-@dataclass(slots=True, kw_only=True, eq=False)
+@dataclass(slots=True, kw_only=True)
 class Control(ControlKey, RecordMixin, ABC):
     """
     Base class for all UI controls.
@@ -77,7 +77,7 @@ class Control(ControlKey, RecordMixin, ABC):
     def get_key(self) -> ControlKey:
         return ControlKey(view_name=self.view_name, view_for=self.view_for, control_path=self.control_path).build()
 
-    def update_control(self, **kwargs) -> list[ControlEvent]:
+    def update_control(self, **kwargs) -> list[UiEvent]:
         """
         Update many control attribute values.
         The result contains ControlUpdateEvent.
@@ -102,135 +102,145 @@ class Control(ControlKey, RecordMixin, ABC):
         # Build a ControlUpdateEvent
         return [
             ControlUpdateEvent(
-                control_path=self.control_path,
+                key=self.control_path,
                 control=DataSerializers.FOR_UI.serialize(self, type_hint=field_spec.field_type_hint),
             )
         ]
 
-    def update_value(self, key: str, value: Any) -> list[ControlEvent]:
+    def update_value(self, field: str, value: Any) -> list[UiEvent]:
         """
         Update one control attribute value, and run onchange events.
         The result contains ValueUpdateEvent and events from on_change.
 
         Args:
-            key: Name of the attribute to update in snake_case.
+            field: Name of the attribute to update in snake_case.
             value: New value for the attribute.
         """
 
         # Check if the attribute exists on the object
-        if not hasattr(self, key):
+        if not hasattr(self, field):
             raise UserError("Such a key does not exist.")
 
         # Set field value
-        setattr(self, key, value)
+        setattr(self, field, value)
 
         # Persist new value, so it can be used in on_change method
         record = self.clone()
         active(DataSource).replace_one(record.build(), commit=True)
 
         data_type_spec = self.get_type_spec()
-        field_spec = next((field for field in data_type_spec.fields if field.field_name == key), None)
+        field_spec = next((f for f in data_type_spec.fields if f.field_name == field), None)
 
         # Build a ValueUpdateEvent
         result = [
             ValueUpdateEvent(
-                control_path=self.control_path,
-                key=CaseUtil.snake_to_pascal_case(key),
+                key=self.control_path,
+                field=CaseUtil.snake_to_pascal_case(field),
                 value=DataSerializers.FOR_UI.serialize(value, type_hint=field_spec.field_type_hint),
             ),
         ]
 
         # Notify the parent that the field has changed
-        result += self.on_change(self.control_path, key, value)
+        result += self.on_change(self.control_path, field, value)
 
         return result
 
-    def update_partial_value(self, key: str, value: Any, index: str) -> list[ControlEvent]:
+    def update_partial_value(self, field: str, value: Any, index: str) -> list[UiEvent]:
         """
         Update partial one control attribute value.
         The result contains PartialValueUpdateEvent and events from on_change.
 
         Args:
-            key: Name of the attribute to update in snake_case.
+            field: Name of the attribute to update in snake_case.
             value: New value for the attribute.
-            index: Index of the element to update.
+            index: Index of the element to update, supports nested paths separated by dots (e.g. "3.data.0").
         """
 
         # Check if the attribute exists on the object
-        if not hasattr(self, key):
-            raise UserError(f"Attribute '{key}' does not exist on control.")
+        if not hasattr(self, field):
+            raise UserError(f"Attribute '{field}' does not exist on control.")
 
         # Get the attribute value
-        attr = getattr(self, key)
+        attr = getattr(self, field)
         if attr is None:
-            raise UserError(f"Attribute '{key}' is None and cannot be partially updated.")
+            raise UserError(f"Attribute '{field}' is None and cannot be partially updated.")
 
-        # Update the attribute value based on its type
-        # Only mutable maps and mutable ordered sequences are supported
-        if isinstance(attr, Mapping):
-            attr = dict(attr)
+        # Split the index into parts for nested access
+        index_parts = index.split(".")
 
-            attr[index] = value
-        elif isinstance(attr, Sequence):
-            try:
-                int_index = int(index)
-            except (ValueError, TypeError):
-                raise UserError(
-                    f"Index '{index}' cannot be converted to integer for sequence attribute '{key}'.",
-                )
-
-            attr = list(attr)
-
-            if not (0 <= int_index < len(attr)):
-                raise UserError(
-                    f"Index '{index}' is out of bounds for sequence attribute '{key}'.",
-                )
-            attr[int_index] = value
-        else:
-            raise UserError(
-                f"Attribute '{key}' does not support indexed assignment (must be a mutable mapping or sequence).",
-            )
+        # Update the attribute value with nested index support
+        attr = self._set_nested_value(attr, index_parts, value, field)
 
         # Set field value partial updated
-        setattr(self, key, attr)
+        setattr(self, field, attr)
 
         # Persist new value, so it can be used in on_change method
         record = self.clone()
         active(DataSource).replace_one(record.build(), commit=True)
 
         data_type_spec = self.get_type_spec()
-        field_spec = next((field for field in data_type_spec.fields if field.field_name == key), None)
+        field_spec = next((f for f in data_type_spec.fields if f.field_name == field), None)
 
         # Build a PartialValueUpdateEvent
         events = [
             PartialValueUpdateEvent(
-                control_path=self.control_path,
-                key=CaseUtil.snake_to_pascal_case(key),
+                key=self.control_path,
+                field=CaseUtil.snake_to_pascal_case(field),
                 value=DataSerializers.FOR_UI.serialize(
                     value,
-                    type_hint=self.get_partial_value_type_hint(field_spec.field_type_hint, index),
+                    type_hint=self.get_partial_value_type_hint(field_spec.field_type_hint, index, attr),
                 ),
-                index=index,
+                index=CaseUtil.snake_to_pascal_case(index) if CaseUtil.is_snake_case(index) else index,
             ),
         ]
 
         # Notify the parent that the field has changed
-        events += self.on_change(self.control_path, key, attr)
+        events += self.on_change(self.control_path, field, value, index)
 
         return events
 
     @staticmethod
-    def get_partial_value_type_hint(field_type_hint: TypeHint, index: str) -> TypeHint:
+    def get_partial_value_type_hint(field_type_hint: TypeHint, index: str, attr: Any) -> TypeHint:
         """Get type hint for part of control field found by index."""
 
         type_hint = field_type_hint
+        current = attr
 
-        for _ in index.split("."):
-            type_hint = type_hint.remaining
+        for part in index.split("."):
+            if type_hint.remaining is not None:
+                type_hint = type_hint.remaining
+                if current is not None:
+                    current = Control._get_nested_element(current, part, index)
+            else:
+                type_hint, current = Control._resolve_field_type_hint(type_hint, current, part, index)
 
         return type_hint
 
-    def update_layout(self) -> list[ControlEvent]:
+    @staticmethod
+    def _resolve_field_type_hint(
+        type_hint: TypeHint,
+        current: Any,
+        part: str,
+        index: str,
+    ) -> tuple[TypeHint, Any]:
+        """Resolve a field type hint by looking up the field on the concrete runtime type."""
+
+        concrete_type = type(current) if current is not None else type_hint.schema_type
+        if not hasattr(concrete_type, "get_type_spec"):
+            raise UserError(
+                f"Cannot resolve field '{part}' on type '{concrete_type.__name__}' "
+                f"in index path '{index}' (type does not have fields).",
+            )
+        data_spec = concrete_type.get_type_spec()
+        field_spec = next((f for f in data_spec.fields if f.field_name == part), None)
+        if field_spec is None:
+            raise UserError(
+                f"Field '{part}' does not exist on type '{concrete_type.__name__}'.",
+            )
+        next_current = getattr(current, part, None) if current is not None else None
+        return field_spec.field_type_hint, next_current
+
+    def update_layout(self) -> list[UiEvent]:
         """
         Update layout of the container and its children.
         The result contains LayoutUpdateEvent.
@@ -238,18 +248,105 @@ class Control(ControlKey, RecordMixin, ABC):
 
         raise NotImplementedError("update_layout is not supported for this control.")
 
-    def on_change(self, control_path: str, key: str, value: str) -> list[ControlEvent]:
+    @staticmethod
+    def _get_nested_element(container: Any, index_part: str, field: str) -> Any:
+        """Get an element from a container (Mapping or Sequence) by index part."""
+
+        if isinstance(container, Mapping):
+            if index_part not in container:
+                raise UserError(f"Key '{index_part}' does not exist in mapping attribute '{field}'.")
+            return container[index_part]
+        elif isinstance(container, Sequence):
+            try:
+                int_index = int(index_part)
+            except (ValueError, TypeError):
+                raise UserError(
+                    f"Index '{index_part}' cannot be converted to integer for sequence attribute '{field}'.",
+                )
+            if not (0 <= int_index < len(container)):
+                raise UserError(
+                    f"Index '{index_part}' is out of bounds for sequence attribute '{field}'.",
+                )
+            return container[int_index]
+        elif hasattr(container, index_part):
+            return getattr(container, index_part)
+        else:
+            raise UserError(
+                f"Cannot traverse into '{index_part}' on attribute '{field}' "
+                f"(must be a mapping, sequence, or object with attributes).",
+            )
+
+    @staticmethod
+    def _set_element(container: Any, index_part: str, value: Any, field: str) -> Any:
+        """Set an element in a container (Mapping, Sequence, or object) by index part, returning the updated container."""
+
+        if isinstance(container, Mapping):
+            container = dict(container)
+            container[index_part] = value
+            return container
+        elif isinstance(container, Sequence):
+            try:
+                int_index = int(index_part)
+            except (ValueError, TypeError):
+                raise UserError(
+                    f"Index '{index_part}' cannot be converted to integer for sequence attribute '{field}'.",
+                )
+            container = list(container)
+            if not (0 <= int_index < len(container)):
+                raise UserError(
+                    f"Index '{index_part}' is out of bounds for sequence attribute '{field}'.",
+                )
+            container[int_index] = value
+            return container
+        elif hasattr(container, index_part):
+            if hasattr(container, "clone"):
+                container = container.clone()
+            setattr(container, index_part, value)
+            return container
+        else:
+            raise UserError(
+                f"Cannot set value at '{index_part}' on attribute '{field}' "
+                f"(must be a mutable mapping, sequence, or object with attributes).",
+            )
+
+    @staticmethod
+    def _set_nested_value(attr: Any, index_parts: list[str], value: Any, field: str) -> Any:
+        """
+        Navigate into a nested structure using index parts and set the value at the deepest level.
+        Returns the updated top-level attribute with mutable copies at each level.
+        """
+
+        # Collect (parent, index_part) pairs along the path to the deepest container
+        path: list[tuple[Any, str]] = []
+        current = attr
+
+        if len(index_parts) > 1:
+            for part in index_parts[:-1]:
+                path.append((current, part))
+                current = Control._get_nested_element(current, part, field)
+
+        # Set value at the deepest level
+        updated = Control._set_element(current, index_parts[-1], value, field)
+
+        # Propagate updated values back up the path
+        for container, part in reversed(path):
+            updated = Control._set_element(container, part, updated, field)
+
+        return updated
+
+    def on_change(self, key: str, field: str, value: Any, index: str | None = None) -> list[UiEvent]:
         """
         Perform actions when a control attribute value changes.
 
         Args:
-            control_path: Full path to the control that changed.
-            key: Name of the attribute that changed in snake_case.
+            key: Full path to the control that changed.
+            field: Name of the attribute that changed in snake_case.
             value: New value of the attribute.
+            index: Index of the element that changed (set for partial value updates).
         """
 
         if self._parent is not None:
-            return self._parent.on_change(control_path, key, value)
+            return self._parent.on_change(key, field, value, index=index)
         return []
 
     @abstractmethod

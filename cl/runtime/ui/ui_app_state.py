@@ -13,9 +13,11 @@
 # limitations under the License.
 
 from dataclasses import dataclass
+from typing import Self
 from cl.runtime.contexts.context_manager import active
 from cl.runtime.db.data_source import DataSource
 from cl.runtime.records.record_mixin import RecordMixin
+from cl.runtime.schema.data_spec import DataSpec
 from cl.runtime.ui.tab_info import TabInfo
 from cl.runtime.ui.ui_app_state_key import UiAppStateKey
 from cl.runtime.ui.user_key import UserKey
@@ -55,14 +57,17 @@ class UiAppState(UiAppStateKey, RecordMixin):
 
     Notes:
         - This is a list of suggestions, no restriction on entering secrets with other names
-        - The secret names should be in snake_case, for example ["openai_api_key", "anthropic_api_key"] 
+        - The secret names should be in snake_case, for example ["openai_api_key", "anthropic_api_key"]
     """
 
     full_screen_mode: bool | None = None
     """
-    Flag indicating whether the UI is in full-screen mode (e.g., only a single active tab is visible with a 
+    Flag indicating whether the UI is in full-screen mode (e.g., only a single active tab is visible with a
     minimalistic interface).
     """
+
+    handlers_pinned_by_default: bool | None = None
+    """Flag indicating whether handlers should be pinned to the toolbar by default."""
 
     def get_key(self) -> UiAppStateKey:
         return UiAppStateKey(user=self.user).build()
@@ -76,14 +81,28 @@ class UiAppState(UiAppStateKey, RecordMixin):
             )
 
     @classmethod
-    def get_current_user_app_theme(cls) -> str | None:
-        """Get current user app theme."""
+    def get_global_app_state(cls) -> Self | None:
+        """Get the global app state."""
 
         default_app_state_key = UiAppStateKey(
             user=UserKey(username="root")
         ).build()  # TODO: Review the use of root default
 
-        default_app_state = active(DataSource).load_one(default_app_state_key, cast_to=UiAppState)
+        default_app_state = active(DataSource).load_one_or_none(default_app_state_key, cast_to=UiAppState)
+        return default_app_state
+
+    @classmethod
+    def get_current_user_app_theme(cls) -> str | None:
+        """Get the current user's app theme."""
+
+        user_app_state_key = UiAppStateKey(user=UserKey(username=active(DataSource).tenant.tenant_id)).build()
+
+        user_app_state = active(DataSource).load_one_or_none(user_app_state_key, cast_to=UiAppState)
+
+        if user_app_state is not None and user_app_state.application_theme is not None:
+            return user_app_state.application_theme
+
+        default_app_state = cls.get_global_app_state()
         if default_app_state is not None and default_app_state.application_theme is not None:
             return default_app_state.application_theme
 

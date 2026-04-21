@@ -18,6 +18,7 @@ from cl.runtime.records.for_dataclasses.extensions import required
 from cl.runtime.ui.control.control import TControl
 from cl.runtime.ui.control.control_container import ControlContainer
 from cl.runtime.ui.control.panel_control import PanelControl
+from cl.runtime.ui.event.ui_event import UiEvent
 
 
 @dataclass(slots=True, kw_only=True, eq=False)
@@ -33,9 +34,10 @@ class TabControl(ControlContainer):
     selected_tab: int = 0
     """Index of the currently selected tab (zero-based)."""
 
-    def create_new_tab(self, tab_name: str, control: PanelControl) -> None:
+    def create_new_tab(self, tab_name: str, control: PanelControl) -> list[UiEvent]:
         """
         Create a new tab with a provided control.
+        Returns UI events for updating tab headers on the frontend.
 
         Args:
             tab_name: Name of the tab.
@@ -44,8 +46,13 @@ class TabControl(ControlContainer):
         if not isinstance(control, PanelControl):
             raise RuntimeError("To attach a Control to TabControl, it must be an instance of PanelControl.")
         control.control_path = f"tab_{len(self.tab_headers)}"
-        self.tab_headers.append(tab_name)
+        self.tab_headers = list(self.tab_headers) + [tab_name]
         super(TabControl, self).attach_control(control)
+
+        # Return update events only when modifying an existing control (has parent_key)
+        if self.parent_key is not None:
+            return self.update_value("tab_headers", self.tab_headers)
+        return []
 
     def attach_control(self, control: TControl) -> None:
         raise UserError("Use create_new_tab method to attach child to the TabControl.")

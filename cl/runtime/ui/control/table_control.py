@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from typing import Any
 from typing import Generator
 from cl.runtime.records.for_dataclasses.extensions import required
-from cl.runtime.records.variant import Variant
+from cl.runtime.records.variant.variant import Variant
 from cl.runtime.ui.control.core.text_filter import TextFilter
 from cl.runtime.ui.control.grid_control import GridControl
 
@@ -28,7 +28,7 @@ class TableControl(GridControl):
     The data is stored in row-major order.
     """
 
-    data: list[Variant] = required(default_factory=list)
+    data: list[Variant | None] = required(default_factory=list)
     """Table cells stored row by row in a single list."""
 
     cell_styles: dict[str, str] | None = None

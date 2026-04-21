@@ -13,10 +13,11 @@
 # limitations under the License.
 
 from dataclasses import dataclass
-from cl.runtime.records.variant import Variant
+from typing import Any
+from cl.runtime.records.variant.variant_util import VariantUtil
 from cl.runtime.ui.control.control_container import ControlContainer
 from cl.runtime.ui.control.key_value_cell_control import KeyValueCellControl
-from cl.runtime.ui.event.control_event import ControlEvent
+from cl.runtime.ui.event.ui_event import UiEvent
 
 
 @dataclass(slots=True, kw_only=True, eq=False)
@@ -40,18 +41,18 @@ class KeyValueControl(ControlContainer):
         for i, (key, value) in enumerate(data.items()):
             cell = KeyValueCellControl(
                 key=key,
-                value=Variant.create(value),
+                value=VariantUtil.create(value),
                 control_path=f"{i}",
             )
             self.attach_control(cell)
 
-    def on_change(self, control_path: str, key: str, value: str) -> list[ControlEvent]:
+    def on_change(self, key: str, field: str, value: Any, index: str | None = None) -> list[UiEvent]:
         """Handle change event from a child control."""
         result = []
-        if control_path == self.control_path:
-            result += self.update_value(key, value)
+        if key == self.control_path:
+            result += self.update_value(field, value)
         if self._parent is not None:
-            result += self._parent.on_change(control_path, key, value)
+            result += self._parent.on_change(key, field, value, index)
         return result
 
     def get_control_type(self) -> str:

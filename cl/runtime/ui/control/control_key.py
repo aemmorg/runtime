@@ -18,12 +18,12 @@ from cl.runtime.records.for_dataclasses.extensions import required
 from cl.runtime.records.key_mixin import KeyMixin
 
 
-@dataclass(slots=True, kw_only=True, eq=False)
+@dataclass(slots=True, eq=False)
 class ControlKey(DataclassMixin, KeyMixin):
     """Unique key used to persist and load control records."""
 
-    view_for: str = required()
-    """Target type or entity the control is associated with."""
+    view_for: KeyMixin = required()
+    """Key of the record for which the control is displayed."""
 
     view_name: str = required()
     """Name of the view where this control is used."""

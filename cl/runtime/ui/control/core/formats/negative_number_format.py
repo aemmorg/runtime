@@ -12,13 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from dataclasses import dataclass
-from cl.runtime.records.for_dataclasses.dataclass_mixin import DataclassMixin
+from enum import auto
+from enum import IntEnum
 
 
-@dataclass(slots=True, kw_only=True)
-class RowConfig(DataclassMixin):
-    """Per-row configuration for table rendering."""
+class NegativeNumberFormat(IntEnum):
+    """Display format for negative numbers."""
 
-    style: str | None = None
-    """CSS style applied to the row's cells."""
+    MINUS = auto()
+    """Display negative numbers with a minus sign (e.g., -100)."""
+
+    PARENTHESES = auto()
+    """Display negative numbers in parentheses (e.g., (100))."""

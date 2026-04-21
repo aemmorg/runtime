@@ -31,7 +31,7 @@ class PlotlyControl(HtmlControl):
         """Encode Plotly Figure as HTML content."""
         if use_app_theme:
             app_theme = UiAppState.get_current_user_app_theme()
-            pio.templates.default = "plotly_dark" if app_theme == "Dark" else "plotly_white"
+            plot.update_layout(template="plotly_dark" if app_theme == "Dark" else "plotly_white")
 
         fig_content = pio.to_html(plot, full_html=False, include_plotlyjs="cdn")
         return fig_content.encode("utf-8")

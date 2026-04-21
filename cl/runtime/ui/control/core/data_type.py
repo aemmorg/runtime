@@ -12,13 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from dataclasses import dataclass
-from cl.runtime.records.for_dataclasses.dataclass_mixin import DataclassMixin
+from enum import auto
+from enum import IntEnum
 
 
-@dataclass(slots=True, kw_only=True)
-class RowConfig(DataclassMixin):
-    """Per-row configuration for table rendering."""
+class DataType(IntEnum):
+    """Rendering options for boolean values in table cells."""
 
-    style: str | None = None
-    """CSS style applied to the row's cells."""
+    TEXT = auto()
+    """Text type."""
+
+    INTEGER = auto()
+    """Integer type."""
+
+    DECIMAL = auto()
+    """Decimal type."""
+
+    DATE = auto()
+    """Date type."""

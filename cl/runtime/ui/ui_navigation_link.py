@@ -18,7 +18,7 @@ from cl.runtime.records.for_dataclasses.extensions import required
 from cl.runtime.records.key_mixin import KeyMixin
 
 
-@dataclass(slots=True, kw_only=True)
+@dataclass(slots=True)
 class UiNavigationLink(DataclassMixin):
     """
     Represents a reference link for frontend navigation, enabling selection of a specific record and view.

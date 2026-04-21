@@ -25,11 +25,11 @@ from cl.runtime.ui.control import Control
 from cl.runtime.ui.control.control import TControl
 from cl.runtime.ui.control.control_key import ControlKey
 from cl.runtime.ui.control.exceptions.control_exceptions import ChildNotFoundError
-from cl.runtime.ui.event.control_event import ControlEvent
+from cl.runtime.ui.event.ui_event import UiEvent
 from cl.runtime.ui.storage.control_manager import ControlManager
 
 
-@dataclass(slots=True, kw_only=True, eq=False)
+@dataclass(slots=True, kw_only=True)
 class ControlContainer(Control, ABC):
     """Base class for controls that contains child controls."""
 
@@ -50,7 +50,7 @@ class ControlContainer(Control, ABC):
 
         return self._controls or []
 
-    def update_layout(self) -> list[ControlEvent]:
+    def update_layout(self) -> list[UiEvent]:
         """
         Update layout of the container and its children.
         The result contains LayoutUpdateEvent.
@@ -67,7 +67,7 @@ class ControlContainer(Control, ABC):
         # Build a LayoutUpdateEvent
         return [
             LayoutUpdateEvent(
-                control_path=self.control_path,
+                key=self.control_path,
                 removed_controls=self._removed_controls,
                 added_controls=DataSerializers.FOR_UI.serialize(
                     self.list_added_controls(self), type_hint=field_spec.field_type_hint
@@ -120,7 +120,7 @@ class ControlContainer(Control, ABC):
             view_name=self.view_name,
             control_path=full_control_path,
         )
-        control = active(DataSource).load_one_or_none(child_key.build())
+        control = active(DataSource).load_one_or_none(child_key.build(), cast_to=cast_to)
         if control is None:
             raise ChildNotFoundError(f"Control with path '{full_control_path}' not found.")
         return control.clone()

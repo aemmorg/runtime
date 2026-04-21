@@ -34,3 +34,6 @@ class ColumnConfig(DataclassMixin):
 
     style: str | None = None
     """CSS style string to apply to cells in the column."""
+
+    pinned: bool | None = None
+    """If True the column is pinned (frozen) in the UI."""
