@@ -17,51 +17,55 @@ from cl.runtime.ui.control.text_control import TextControl
 from cl.runtime.ui.event.event_manager import EventManager
 from cl.runtime.ui.event.runtime_error_event import RuntimeErrorEvent
 from cl.runtime.ui.event.value_update_event import ValueUpdateEvent
+from cl.runtime.ui.resolver.control_target_resolver import ControlTargetResolver
 from cl.runtime.ui.storage.control_manager import ControlManager
+from stubs.cl.runtime.views.stub_viewers_key import StubViewersKey
+
+_STUB_KEY = StubViewersKey(stub_id="A").build()
 
 
 def test_dispatch_event_success(default_db_fixture):
-    node = TextControl(view_for="A", view_name="V", control_path="Root", value="Start")
+    node = TextControl(view_for=_STUB_KEY, view_name="V", control_path="root", value="Start")
     ControlManager(root_node=node.build()).save()
-    em = EventManager(root_node=node.clone())
-    event = {"ControlPath": "Root", "Key": "Value", "Value": "Changed", "_t": "ValueUpdateEvent"}
+    em = EventManager(resolver=ControlTargetResolver(key=_STUB_KEY, viewer_name="V"))
+    event = {"Key": "root", "Field": "Value", "Value": "Changed", "_t": "ValueUpdateEvent"}
     out_events = em.dispatch(event)
     assert isinstance(out_events[0], ValueUpdateEvent)
-    assert out_events[0].control_path == "Root"
-    assert out_events[0].key == "Value"
+    assert out_events[0].key == "root"
+    assert out_events[0].field == "Value"
     assert out_events[0].value == "Changed"
 
     # Reload and check change
-    loaded = ControlManager(root_node=node.get_key().build()).load()
+    loaded = ControlManager(root_node=node.build()).load()
     assert loaded[0].value == "Changed"
 
 
 def test_not_supported_event(default_db_fixture):
-    node = TextControl(view_for="A", view_name="V", control_path="Root", value="Start")
+    node = TextControl(view_for=_STUB_KEY, view_name="V", control_path="root", value="Start")
     ControlManager(root_node=node.build()).save()
-    em = EventManager(root_node=node.clone())
+    em = EventManager(resolver=ControlTargetResolver(key=_STUB_KEY, viewer_name="V"))
     event = {
-        "ControlPath": "Root",
+        "Key": "root",
         "Control": {"ControlPath": "Root", "ViewFor": "A", "ViewName": "V", "Value": "Changed", "_t": "TextControl"},
         "_t": "ControlUpdateEvent",
     }
     out_events = em.dispatch(event)
     assert isinstance(out_events[0], RuntimeErrorEvent)
-    assert out_events[0].control_path == "Root"
+    assert out_events[0].key == "root"
     assert out_events[0].error == "Unknown event ControlUpdateEvent"
 
 
-def test_event_without_control_path(default_db_fixture):
-    node = TextControl(view_for="A", view_name="V", control_path="Root", value="Start")
+def test_event_without_key(default_db_fixture):
+    node = TextControl(view_for=_STUB_KEY, view_name="V", control_path="root", value="Start")
     ControlManager(root_node=node.build()).save()
-    em = EventManager(root_node=node.clone())
-    event_without_control_path = {
+    em = EventManager(resolver=ControlTargetResolver(key=_STUB_KEY, viewer_name="V"))
+    event_without_key = {
         "Control": {"ControlPath": "Root", "ViewFor": "A", "ViewName": "V", "Value": "Changed", "_t": "TextControl"},
         "_t": "ControlUpdateEvent",
     }
-    out_events_without_path = em.dispatch(event_without_control_path)
+    out_events_without_key = em.dispatch(event_without_key)
 
-    assert out_events_without_path == []
+    assert out_events_without_key == []
 
 
 if __name__ == "__main__":

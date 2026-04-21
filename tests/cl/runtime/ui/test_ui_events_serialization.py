@@ -21,42 +21,44 @@ from cl.runtime.ui.event.partial_value_update_event import PartialValueUpdateEve
 from cl.runtime.ui.event.runtime_error_event import RuntimeErrorEvent
 from cl.runtime.ui.event.user_error_event import UserErrorEvent
 from cl.runtime.ui.event.value_update_event import ValueUpdateEvent
+from stubs.cl.runtime.views.stub_viewers_key import StubViewersKey
 
+_STUB_KEY = StubViewersKey(stub_id="A").build()
 _UI_SERIALIZER = BootstrapSerializers.FOR_UI_EVENTS
 SUPPORTED_EVENTS = [
-    ValueUpdateEvent(control_path="Root", key="Value", value="Value"),
-    PartialValueUpdateEvent(control_path="Root", key="Value", value="Value", index="1"),
+    ValueUpdateEvent(key="Root", field="Value", value="Value"),
+    PartialValueUpdateEvent(key="Root", field="Value", value="Value", index="1"),
     ControlUpdateEvent(
-        control_path="Root", control=TextControl(view_for="A", view_name="V", control_path="Root", value="Start")
+        key="Root", control=TextControl(view_for=_STUB_KEY, view_name="V", control_path="Root", value="Start")
     ),
     LayoutUpdateEvent(
-        control_path="Root",
-        added_controls=[TextControl(view_for="A", view_name="V", control_path="Root", value="Start")],
+        key="Root",
+        added_controls=[TextControl(view_for=_STUB_KEY, view_name="V", control_path="Root", value="Start")],
         removed_controls=["root.test"],
     ),
-    RuntimeErrorEvent(control_path="Root", error="Test error"),
-    UserErrorEvent(control_path="Root", error="Test error"),
+    RuntimeErrorEvent(key="Root", error="Test error"),
+    UserErrorEvent(key="Root", error="Test error"),
 ]
 
 ExpectedResults = [
     {
-        "ControlPath": "Root",
-        "Key": "Value",
+        "Key": "Root",
+        "Field": "Value",
         "Value": "Value",
         "_t": "ValueUpdateEvent",
     },
     {
-        "ControlPath": "Root",
-        "Key": "Value",
+        "Key": "Root",
+        "Field": "Value",
         "Value": "Value",
         "Index": "1",
         "_t": "PartialValueUpdateEvent",
     },
     {
-        "ControlPath": "Root",
+        "Key": "Root",
         "Control": {
             "ControlPath": "Root",
-            "ViewFor": "A",
+            "ViewFor": _STUB_KEY,
             "ViewName": "V",
             "Hidden": False,
             "Label": None,
@@ -72,11 +74,11 @@ ExpectedResults = [
         "_t": "ControlUpdateEvent",
     },
     {
-        "ControlPath": "Root",
+        "Key": "Root",
         "AddedControls": (
             {
                 "ControlPath": "Root",
-                "ViewFor": "A",
+                "ViewFor": _STUB_KEY,
                 "ViewName": "V",
                 "Hidden": False,
                 "Label": None,
@@ -94,12 +96,12 @@ ExpectedResults = [
         "_t": "LayoutUpdateEvent",
     },
     {
-        "ControlPath": "Root",
+        "Key": "Root",
         "Error": "Test error",
         "_t": "RuntimeErrorEvent",
     },
     {
-        "ControlPath": "Root",
+        "Key": "Root",
         "Error": "Test error",
         "_t": "UserErrorEvent",
     },
