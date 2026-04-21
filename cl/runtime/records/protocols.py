@@ -321,6 +321,18 @@ def is_record_type(type_: type) -> bool:
         )
 
 
+def is_interactive_type(type_: type) -> bool:
+    """Returns true if the argument is a descendant of InteractiveMixin."""
+    # Use MRO class name check to avoid a cyclic import of InteractiveMixin
+    if getattr(type_, "__name__", None) is not None:
+        mro = getattr(type_, "__mro__", ())
+        return any(getattr(base, "__name__", None) == "InteractiveMixin" for base in mro)
+    else:
+        raise RuntimeError(
+            f"The argument of is_interactive_type is an instance of type {type(type_).__name__}\nrather than type variable for this type, use type(arg) instead of arg."
+        )
+
+
 def is_predicate_type(type_: type) -> bool:
     """Returns true if the argument is one of the supported query predicate types."""
     # Do not use isinstance(type_, type) to accept GenericAlias classes, including from packages (e.g., numpy)

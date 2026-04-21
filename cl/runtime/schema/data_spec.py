@@ -24,3 +24,6 @@ class DataSpec(TypeSpec):
 
     fields: list[FieldSpec] = required()
     """Fields in class declaration order."""
+
+    interactive: bool | None = None
+    """True if the type is a descendant of InteractiveMixin."""

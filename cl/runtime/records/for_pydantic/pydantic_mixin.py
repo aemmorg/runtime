@@ -20,6 +20,7 @@ from pydantic import ConfigDict
 from pydantic.fields import FieldInfo
 from cl.runtime.primitive.case_util import CaseUtil
 from cl.runtime.records.data_mixin import DataMixin
+from cl.runtime.records.protocols import is_interactive_type
 from cl.runtime.records.typename import typename
 from cl.runtime.schema.data_spec import DataSpec
 from cl.runtime.schema.field_spec import FieldSpec
@@ -61,6 +62,7 @@ class PydanticMixin(BaseModel, DataMixin, ABC):
         return DataSpec(
             type_=cls,
             fields=fields,
+            interactive=True if is_interactive_type(cls) else None,
         ).build()
 
     @classmethod
