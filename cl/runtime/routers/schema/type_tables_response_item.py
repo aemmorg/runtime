@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from cl.runtime.primitive.case_util import CaseUtil
 from cl.runtime.routers.schema.type_request import TypeRequest
 from cl.runtime.schema.type_info import TypeInfo
@@ -28,9 +29,7 @@ class TypeTablesResponseItem(BaseModel):
     label: str | None = None
     """Table label displayed in the UI is humanized class name (may be customized in settings)."""
 
-    class Config:
-        alias_generator = CaseUtil.snake_to_pascal_case
-        populate_by_name = True
+    model_config = ConfigDict(alias_generator=CaseUtil.snake_to_pascal_case, populate_by_name=True)
 
     @classmethod
     def get_type_tables(cls, request: TypeRequest) -> list[TypeTablesResponseItem]:

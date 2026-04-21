@@ -16,7 +16,7 @@ from typing import Annotated
 from fastapi import APIRouter
 from fastapi import Query
 from cl.runtime.routers.schema.type_request import TypeRequest
-from cl.runtime.routers.schema.type_response_util import TypeResponseUtil
+from cl.runtime.routers.schema.type_response import TypeResponse
 from cl.runtime.routers.schema.type_successors_response_item import TypeSuccessorsResponseItem
 from cl.runtime.routers.schema.type_tables_response_item import TypeTablesResponseItem
 from cl.runtime.routers.schema.types_response_item import TypesResponseItem
@@ -30,12 +30,12 @@ async def get_types() -> list[TypesResponseItem]:
     return TypesResponseItem.get_types()
 
 
-@router.get("/type", response_model=dict[str, dict])
+@router.get("/type")
 async def get_type(
     type_name: Annotated[str, Query(description="Type shortname.")],
-) -> dict[str, dict]:
+) -> TypeResponse:
     """Schema for the specified type and its dependencies."""
-    return TypeResponseUtil.get_type(TypeRequest(type_name=type_name))
+    return TypeResponse.get_type(TypeRequest(type_name=type_name))
 
 
 @router.get("/type-successors", response_model=list[TypeSuccessorsResponseItem])

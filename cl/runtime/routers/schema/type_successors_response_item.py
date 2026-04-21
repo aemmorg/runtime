@@ -15,8 +15,10 @@
 from __future__ import annotations
 from inflection import titleize
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from cl.runtime.primitive.case_util import CaseUtil
 from cl.runtime.records.protocols import is_abstract_type
+from cl.runtime.records.protocols import is_mixin_type
 from cl.runtime.records.typename import typename
 from cl.runtime.routers.schema.type_request import TypeRequest
 from cl.runtime.schema.type_info import TypeInfo
@@ -32,9 +34,7 @@ class TypeSuccessorsResponseItem(BaseModel):
     label: str | None
     """Type label displayed in the UI is humanized class name (may be customized in settings)."""
 
-    class Config:
-        alias_generator = CaseUtil.snake_to_pascal_case
-        populate_by_name = True
+    model_config = ConfigDict(alias_generator=CaseUtil.snake_to_pascal_case, populate_by_name=True)
 
     @classmethod
     def get_type_successors(cls, request: TypeRequest) -> list[TypeSuccessorsResponseItem]:
@@ -46,6 +46,6 @@ class TypeSuccessorsResponseItem(BaseModel):
         result = [
             TypeSuccessorsResponseItem(name=typename(record_type), label=titleize(typename(record_type)))
             for record_type in child_record_types
-            if not is_abstract_type(record_type)
+            if not is_abstract_type(record_type) and not is_mixin_type(record_type)
         ]
         return result

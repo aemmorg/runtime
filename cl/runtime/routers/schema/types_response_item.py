@@ -15,6 +15,7 @@
 from __future__ import annotations
 from inflection import titleize
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from cl.runtime.primitive.case_util import CaseUtil
 from cl.runtime.records.protocols import is_abstract_type
 from cl.runtime.records.typename import typename
@@ -34,9 +35,7 @@ class TypesResponseItem(BaseModel):
     kind: str | None = None
     """Flag to indicate type kind."""
 
-    class Config:
-        alias_generator = CaseUtil.snake_to_pascal_case
-        populate_by_name = True
+    model_config = ConfigDict(alias_generator=CaseUtil.snake_to_pascal_case, populate_by_name=True)
 
     @classmethod
     def get_types(cls) -> list[TypesResponseItem]:
