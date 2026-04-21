@@ -21,10 +21,13 @@ from fastapi import WebSocketDisconnect
 from cl.runtime.backend.dependencies.ui_events import get_ui_events_connection_manager
 from cl.runtime.contexts.context_manager import active
 from cl.runtime.db.data_source import DataSource
+from cl.runtime.schema.type_hint import TypeHint
 from cl.runtime.schema.type_info import TypeInfo
 from cl.runtime.serializers.bootstrap_serializers import BootstrapSerializers
-from cl.runtime.ui.control.control_key import ControlKey
+from cl.runtime.serializers.key_serializers import KeySerializers
 from cl.runtime.ui.event.event_manager import EventManager
+from cl.runtime.ui.resolver.control_target_resolver import ControlTargetResolver
+from cl.runtime.ui.resolver.record_target_resolver import RecordTargetResolver
 
 router = APIRouter()
 log = logging.getLogger(__name__)
@@ -32,9 +35,9 @@ _ui_event_serializer = BootstrapSerializers.FOR_UI_EVENTS
 
 
 @router.websocket(
-    path="/control_events/",
+    path="/events/",
 )
-async def dynamic_controls_websocket_endpoint(
+async def ui_events_websocket_endpoint(
     *,
     key: str = "",
     type: str = "",
@@ -43,9 +46,8 @@ async def dynamic_controls_websocket_endpoint(
     manager=Depends(get_ui_events_connection_manager),
 ) -> None:
     """
-    Endpoint used for two-way communication with custom ui components (Ui Builder),
-    allows frontend to update Controls persisted in database, and for the database
-    to send update events to the frontend.
+    Universal WebSocket gateway for two-way communication between frontend and database.
+    Supports Controls (when viewer_name is set) and InteractiveMixin records (when viewer_name is empty).
     """
 
     tenant_id = active(DataSource).tenant.tenant_id
@@ -54,15 +56,18 @@ async def dynamic_controls_websocket_endpoint(
     try:
         await manager.connect(connection_id, websocket)
 
-        # trying to get the short name of the type to check if such a type exists, if not it will throw an error
-        TypeInfo.from_type_name(type)
+        # Deserialize the key string into a KeyMixin object
+        record_type = TypeInfo.from_type_name(type)
+        key_type = record_type.get_key_type()
+        key_obj = KeySerializers.DELIMITED.deserialize(key, TypeHint.for_type(key_type)).build()
 
-        root_control_key = ControlKey(view_for=key, view_name=viewer_name, control_path="root")
-        root_node = active(DataSource).load_one_or_none(root_control_key.build())
-        if root_node is None:
-            raise RuntimeError("Root node is missing")
+        # Use ControlTargetResolver for viewer-based Controls, RecordTargetResolver for InteractiveMixin records
+        if viewer_name:
+            resolver = ControlTargetResolver(key=key_obj, viewer_name=viewer_name)
+        else:
+            resolver = RecordTargetResolver(key=key_obj, type_name=type)
 
-        event_manager = EventManager(root_node=root_node.clone())
+        event_manager = EventManager(resolver=resolver)
 
         while True:
             data = await websocket.receive_text()
