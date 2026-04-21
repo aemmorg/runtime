@@ -69,7 +69,7 @@ class ControlLoader:
             control_key = control.parent_key
 
         # Link parent/child relationships and finalize construction
-        for child, parent in zip(controls, controls[1:]):
+        for child, parent in zip(controls, controls[1:], strict=False):
             child.set_parent(parent)
 
         return controls
