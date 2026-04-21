@@ -14,6 +14,7 @@
 
 from typing import Self
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from cl.runtime.contexts.context_manager import active
 from cl.runtime.db.data_source import DataSource
 from cl.runtime.primitive.case_util import CaseUtil
@@ -27,9 +28,7 @@ from cl.runtime.tasks.task_util import TaskUtil
 class SubmitResponseItem(BaseModel):
     """Response data type for the /tasks/submit route."""
 
-    class Config:
-        alias_generator = CaseUtil.snake_to_pascal_case
-        populate_by_name = True
+    model_config = ConfigDict(alias_generator=CaseUtil.snake_to_pascal_case, populate_by_name=True)
 
     task_run_id: str
     """Task run identifier."""
@@ -51,7 +50,6 @@ class SubmitResponseItem(BaseModel):
         )
 
         for handler_task in tasks:
-
             # Save and submit task
             active(DataSource).replace_one(handler_task, commit=True)
             task_queue.submit_task(handler_task)  # TODO: Rely on query instead

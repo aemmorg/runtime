@@ -13,21 +13,20 @@
 # limitations under the License.
 
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from cl.runtime.primitive.case_util import CaseUtil
 
 
 class BaseRunRequestBody(BaseModel):
     """Base class for Task run route Request Body parameter."""
 
-    class Config:
-        alias_generator = CaseUtil.snake_to_pascal_case
-        populate_by_name = True
+    model_config = ConfigDict(alias_generator=CaseUtil.snake_to_pascal_case, populate_by_name=True)
 
-    type: str
-    """Select type shortname."""
+    type: str | None = None
+    """Select type shortname. Can be provided as query param instead."""
 
-    method: str
-    """Method name."""
+    method: str | None = None
+    """Method name. Can be provided as query param instead."""
 
     arguments: dict | None = None
     """Arguments dict, e.g. {"ArgumentName": 123}."""

@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from cl.runtime.contexts.context_manager import activate
 from cl.runtime.contexts.context_manager import active
 from cl.runtime.db.data_source import DataSource
@@ -26,6 +27,7 @@ from cl.runtime.records.predicates import In
 from cl.runtime.records.typename import typename
 from cl.runtime.records.typename import typenameof
 from cl.runtime.routers.task.cancel_request import CancelRequest
+from cl.runtime.routers.task.status_response_item import LEGACY_TASK_STATUS_NAMES_MAP
 from cl.runtime.serializers.key_serializers import KeySerializers
 from cl.runtime.tasks.class_method_task import ClassMethodTask
 from cl.runtime.tasks.instance_method_task import InstanceMethodTask
@@ -45,9 +47,7 @@ class CancelResponseItem(BaseModel):
     status_code: str
     """Task status after cancel operation."""
 
-    class Config:
-        alias_generator = CaseUtil.snake_to_pascal_case
-        populate_by_name = True
+    model_config = ConfigDict(alias_generator=CaseUtil.snake_to_pascal_case, populate_by_name=True)
 
     @classmethod
     def get_response(cls, request: CancelRequest) -> list[CancelResponseItem]:
@@ -102,7 +102,11 @@ class CancelResponseItem(BaseModel):
     @classmethod
     def _is_cancellable(cls, task: Task) -> bool:
         """Check if task can be cancelled."""
-        cancellable_statuses = (TaskStatus.PENDING, TaskStatus.RUNNING, TaskStatus.AWAITING)
+        cancellable_statuses = (
+            TaskStatus.PENDING,
+            TaskStatus.RUNNING,
+            TaskStatus.AWAITING,
+        )
         return task.status in cancellable_statuses
 
     @classmethod
@@ -146,7 +150,7 @@ class CancelResponseItem(BaseModel):
     def _create_current_status_response(cls, task: Task) -> CancelResponseItem:
         """Create response item with current task status."""
         return CancelResponseItem(
-            status_code=task.status.name,
+            status_code=LEGACY_TASK_STATUS_NAMES_MAP.get(task.status.name, task.status.name),
             task_run_id=str(task.task_id),
         )
 

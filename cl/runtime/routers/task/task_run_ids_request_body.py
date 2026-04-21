@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from cl.runtime.primitive.case_util import CaseUtil
 
 
@@ -20,9 +21,7 @@ from cl.runtime.primitive.case_util import CaseUtil
 class TaskRunIdsRequestBody(BaseModel):
     """Class for bulk request by task run ids."""
 
-    class Config:
-        alias_generator = CaseUtil.snake_to_pascal_case
-        populate_by_name = True
+    model_config = ConfigDict(alias_generator=CaseUtil.snake_to_pascal_case, populate_by_name=True)
 
     task_run_ids: list[str]
     """List of task run ids."""

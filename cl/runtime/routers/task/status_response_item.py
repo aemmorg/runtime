@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from cl.runtime.contexts.context_manager import active
 from cl.runtime.db.data_source import DataSource
 from cl.runtime.primitive.case_util import CaseUtil
@@ -49,9 +50,7 @@ class StatusResponseItem(BaseModel):
     user_message: str | None = None
     """Optional user message."""
 
-    class Config:
-        alias_generator = CaseUtil.snake_to_pascal_case
-        populate_by_name = True
+    model_config = ConfigDict(alias_generator=CaseUtil.snake_to_pascal_case, populate_by_name=True)
 
     @classmethod
     def get_response(cls, request: StatusRequest) -> list[StatusResponseItem]:
@@ -73,7 +72,7 @@ class StatusResponseItem(BaseModel):
 
             response_items.append(
                 StatusResponseItem(
-                    status_code=LEGACY_TASK_STATUS_NAMES_MAP.get(task.status.name),
+                    status_code=LEGACY_TASK_STATUS_NAMES_MAP.get(task.status.name, task.status.name),
                     task_run_id=str(task.task_id),
                     key=key,
                     user_message=user_message,
