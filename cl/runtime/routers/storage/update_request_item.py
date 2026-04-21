@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from pydantic import ConfigDict
 from cl.runtime.primitive.case_util import CaseUtil
 from cl.runtime.routers.storage.key_request_item import KeyRequestItem
 
@@ -19,9 +20,7 @@ from cl.runtime.routers.storage.key_request_item import KeyRequestItem
 class UpdateRequestItem(KeyRequestItem):
     """Class for single update request item."""
 
-    class Config:
-        alias_generator = CaseUtil.snake_to_pascal_case
-        populate_by_name = True
+    model_config = ConfigDict(alias_generator=CaseUtil.snake_to_pascal_case, populate_by_name=True)
 
     record: dict
     """Record dict to update."""

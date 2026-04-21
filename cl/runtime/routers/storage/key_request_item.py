@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from cl.runtime.primitive.case_util import CaseUtil
 from cl.runtime.records.protocols import is_key_type
 from cl.runtime.records.protocols import is_record_type
@@ -26,9 +27,7 @@ _KEY_SERIALIZER = KeySerializers.DELIMITED
 class KeyRequestItem(BaseModel):
     """Class for single key information."""
 
-    class Config:
-        alias_generator = CaseUtil.snake_to_pascal_case
-        populate_by_name = True
+    model_config = ConfigDict(alias_generator=CaseUtil.snake_to_pascal_case, populate_by_name=True)
 
     key: str
     """Key string in semicolon-delimited format."""

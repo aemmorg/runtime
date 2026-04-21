@@ -13,18 +13,17 @@
 # limitations under the License.
 
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from cl.runtime.primitive.case_util import CaseUtil
 
 
 class SelectRequestBody(BaseModel):
     """Class for /storage/select route body parameter."""
 
-    class Config:
-        alias_generator = CaseUtil.snake_to_pascal_case
-        populate_by_name = True
+    model_config = ConfigDict(alias_generator=CaseUtil.snake_to_pascal_case, populate_by_name=True)
 
-    type: str
-    """Select type shortname."""
+    type: str | None = None
+    """Select type shortname. Can be provided as query param instead."""
 
     query_dict: dict | None = None
     """Query dict."""

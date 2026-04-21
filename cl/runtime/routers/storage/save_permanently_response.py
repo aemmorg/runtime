@@ -37,7 +37,7 @@ def get_type_to_records_map(request: SavePermanentlyRequest) -> defaultdict[type
     request_type = TypeInfo.from_type_name(request.type)
     type_hint = TypeHint.for_type(request_type, optional=True)
 
-    key_objs = [_KEY_SERIALIZER.deserialize(key, type_hint) for key in request.keys]
+    key_objs = [_KEY_SERIALIZER.deserialize(key, type_hint).build() for key in request.keys]
     records = active(DataSource).load_many(key_objs)
 
     # TODO (Bohdan): Implement with_dependencies logic.
@@ -59,7 +59,6 @@ def get_type_to_records_map(request: SavePermanentlyRequest) -> defaultdict[type
 
 
 class SavePermanentlyResponse(BaseModel):
-
     @classmethod
     def _get_extension(cls) -> str:
         """Return an extension in which records should be saved."""

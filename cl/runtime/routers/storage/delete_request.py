@@ -17,6 +17,5 @@ from cl.runtime.routers.storage.key_request_item import KeyRequestItem
 
 
 class DeleteRequest(BaseModel):
-
     delete_keys: list[KeyRequestItem] | None = None
     """List of key objects to delete."""

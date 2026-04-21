@@ -14,11 +14,12 @@
 
 from __future__ import annotations
 from pydantic import BaseModel
-from cl.runtime.contexts.context_manager import active
+from pydantic import ConfigDict
+from typing_extensions import deprecated
 from cl.runtime.primitive.case_util import CaseUtil
-from cl.runtime.server.env import Env
 
 
+@deprecated("This class is obsolete. Use EnvDescriptor instead.")
 class EnvResponseItem(BaseModel):
     """Response data type for the /storage/envs route."""
 
@@ -28,18 +29,10 @@ class EnvResponseItem(BaseModel):
     parent: str | None = None
     """Name of the parent environment."""
 
-    class Config:
-        alias_generator = CaseUtil.snake_to_pascal_case
-        populate_by_name = True
+    url: str | None = None
+    """URL of the environment backend api."""
 
-    @classmethod
-    def get_envs(cls) -> list[EnvResponseItem]:
-        """Implements /storage/get_envs route."""
+    description: str | None = None
+    """Description of the environment backend api."""
 
-        # Default response when running locally without authorization
-        result_dict = {
-            "Name": active(Env).env_id,
-            "Parent": "",  # TODO: Check if None is also accepted
-        }
-
-        return [EnvResponseItem(**result_dict)]
+    model_config = ConfigDict(alias_generator=CaseUtil.snake_to_pascal_case, populate_by_name=True)
