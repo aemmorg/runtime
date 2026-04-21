@@ -68,15 +68,21 @@ elements:
 
     Notes:
         - This is a list of suggestions, no restriction on entering secrets with other names
-        - The secret names should be in snake_case, for example ["openai_api_key", "anthropic_api_key"] 
+        - The secret names should be in snake_case, for example ["openai_api_key", "anthropic_api_key"]
   vector: true
   optional: true
 - value:
     type_: Bool
   name: FullScreenMode
   comment: |-
-    Flag indicating whether the UI is in full-screen mode (e.g., only a single active tab is visible with a 
+    Flag indicating whether the UI is in full-screen mode (e.g., only a single active tab is visible with a
     minimalistic interface).
+  optional: true
+- value:
+    type_: Bool
+  name: HandlersPinnedByDefault
+  comment: Flag indicating whether handlers should be pinned to the toolbar by 
+    default.
   optional: true
 keys:
 - User

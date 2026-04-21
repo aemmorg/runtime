@@ -13,11 +13,9 @@
 # limitations under the License.
 
 from dataclasses import dataclass
-from typing import cast
 from cl.runtime.records.for_dataclasses.dataclass_mixin import DataclassMixin
 from cl.runtime.records.for_dataclasses.extensions import required
 from cl.runtime.records.key_mixin import KeyMixin
-from cl.runtime.schema.data_spec import DataSpec
 from cl.runtime.schema.type_decl_key import TypeDeclKey
 from cl.runtime.ui.user_key import UserKey
 
@@ -35,16 +33,3 @@ class UiTypeStateKey(DataclassMixin, KeyMixin):
     @classmethod
     def get_key_type(cls) -> type[KeyMixin]:
         return UiTypeStateKey
-
-    @classmethod
-    def get_type_spec(cls) -> DataSpec:
-        """Build DataSpec for record type. Override in subclasses for custom meta-attributes."""
-        # Get basic DataSpec
-        data_spec = super(UiTypeStateKey, cls).get_type_spec().clone()
-        data_spec = cast(DataSpec, data_spec)
-
-        # Custom meta attributes
-        data_spec.preserve_in_root_dataset = True
-
-        # Build and return
-        return data_spec.build()

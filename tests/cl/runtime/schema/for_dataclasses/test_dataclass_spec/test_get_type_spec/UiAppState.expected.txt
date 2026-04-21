@@ -52,4 +52,8 @@ fields:
   field_type_hint:
     schema_type: bool
     optional: true
+- field_name: handlers_pinned_by_default
+  field_type_hint:
+    schema_type: bool
+    optional: true
 
