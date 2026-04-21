@@ -36,6 +36,21 @@ class FieldSpec(BootstrapMixin):
     descending: bool | None = None
     """If True, field order in DB index will be DESCENDING rather than the default (ASCENDING)."""
 
+    key: bool | None = None
+    """If True, field is part of the key for the containing type."""
+
+    label: str | None = None
+    """Display label for the field."""
+
+    hidden: bool | None = None
+    """If True, field is hidden in the UI."""
+
+    readonly: bool | None = None
+    """If True, field is read-only in the UI."""
+
+    empty: bool | None = None
+    """If True, field is empty."""
+
     @classmethod
     def create(
         cls,
@@ -48,6 +63,7 @@ class FieldSpec(BootstrapMixin):
         field_label: str | None = None,
         field_formatter: str | None = None,
         descending: bool | None = None,
+        key: bool | None = None,
         containing_type: type,
     ) -> Self:
         """
@@ -62,6 +78,7 @@ class FieldSpec(BootstrapMixin):
             field_label: Optional label from field metadata, CaseUtil.titleize is used when not specified
             field_formatter: Optional formatter from field metadata, standard formatting is used when not specified
             descending: If True, field order in DB index will be DESCENDING rather than the default (ASCENDING)
+            key: If True, field is part of the key for the containing type
             containing_type: Type that contains the field, use to resolve the generic args at runtime
         """
 
@@ -75,8 +92,6 @@ class FieldSpec(BootstrapMixin):
 
         if field_alias is not None:
             raise RuntimeError(f"Specifying 'field_alias' is not yet supported.")
-        if field_label is not None:
-            raise RuntimeError(f"Specifying 'field_label' is not yet supported.")
         if field_formatter is not None:
             raise RuntimeError(f"Specifying 'field_formatter' in schema is not yet supported.")
 
@@ -97,5 +112,7 @@ class FieldSpec(BootstrapMixin):
             field_name=field_name,
             field_type_hint=field_type_hint,
             descending=descending,
+            key=key,
+            label=field_label,
         )
         return result
