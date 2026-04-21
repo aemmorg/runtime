@@ -4,7 +4,10 @@ fields:
 - field_name: id
   field_type_hint:
     schema_type: str
+    type_kind: Primitive
 - field_name: a
   field_type_hint:
     schema_type: int
+    type_kind: Primitive
+label: Stub Dataclass Aliased
 

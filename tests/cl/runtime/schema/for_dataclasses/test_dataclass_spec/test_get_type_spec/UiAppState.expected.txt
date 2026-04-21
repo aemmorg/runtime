@@ -4,56 +4,73 @@ fields:
 - field_name: user
   field_type_hint:
     schema_type: UserKey
+    type_kind: Key
 - field_name: opened_tabs
   field_type_hint:
     schema_type: list
+    type_kind: Container
     optional: true
     remaining:
       schema_type: TabInfo
+      type_kind: Data
 - field_name: favorites
   field_type_hint:
     schema_type: list
+    type_kind: Container
     optional: true
     remaining:
       schema_type: str
+      type_kind: Primitive
 - field_name: active_tab_index
   field_type_hint:
     schema_type: int
+    type_kind: Primitive
     optional: true
 - field_name: backend_version
   field_type_hint:
     schema_type: str
+    type_kind: Primitive
     optional: true
 - field_name: versions
   field_type_hint:
     schema_type: dict
+    type_kind: Container
     optional: true
     remaining:
       schema_type: str
+      type_kind: Primitive
 - field_name: application_name
   field_type_hint:
     schema_type: str
+    type_kind: Primitive
     optional: true
 - field_name: read_only
   field_type_hint:
     schema_type: bool
+    type_kind: Primitive
     optional: true
 - field_name: application_theme
   field_type_hint:
     schema_type: str
+    type_kind: Primitive
     optional: true
 - field_name: user_secret_identifiers
   field_type_hint:
     schema_type: list
+    type_kind: Container
     optional: true
     remaining:
       schema_type: str
+      type_kind: Primitive
 - field_name: full_screen_mode
   field_type_hint:
     schema_type: bool
+    type_kind: Primitive
     optional: true
 - field_name: handlers_pinned_by_default
   field_type_hint:
     schema_type: bool
+    type_kind: Primitive
     optional: true
+label: Ui App State
 

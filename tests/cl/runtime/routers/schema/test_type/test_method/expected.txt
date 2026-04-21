@@ -69,15 +69,21 @@ cl.UiAppState:
 
       Notes:
           - This is a list of suggestions, no restriction on entering secrets with other names
-          - The secret names should be in snake_case, for example ["openai_api_key", "anthropic_api_key"] 
+          - The secret names should be in snake_case, for example ["openai_api_key", "anthropic_api_key"]
     Vector: true
     Optional: true
   - Value:
       Type: Bool
     Name: FullScreenMode
     Comment: |-
-      Flag indicating whether the UI is in full-screen mode (e.g., only a single active tab is visible with a 
+      Flag indicating whether the UI is in full-screen mode (e.g., only a single active tab is visible with a
       minimalistic interface).
+    Optional: true
+  - Value:
+      Type: Bool
+    Name: HandlersPinnedByDefault
+    Comment: Flag indicating whether handlers should be pinned to the toolbar by
+      default.
     Optional: true
   Keys:
   - User

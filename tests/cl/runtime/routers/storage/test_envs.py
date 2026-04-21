@@ -41,7 +41,7 @@ def test_api():
         result = response.json()
 
         # Check result
-        assert result == [{"Name": "test_envs.test_api", "Parent": ""}]
+        assert result == [{"Name": "test_envs.test_api", "Parent": "", "Url": None, "Description": None}]
 
 
 if __name__ == "__main__":

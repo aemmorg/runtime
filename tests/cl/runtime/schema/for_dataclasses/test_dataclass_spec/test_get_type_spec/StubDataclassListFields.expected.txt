@@ -4,39 +4,55 @@ fields:
 - field_name: id
   field_type_hint:
     schema_type: str
+    type_kind: Primitive
 - field_name: str_list
   field_type_hint:
     schema_type: list
+    type_kind: Container
     remaining:
       schema_type: str
+      type_kind: Primitive
 - field_name: float_list
   field_type_hint:
     schema_type: list
+    type_kind: Container
     remaining:
       schema_type: float
+      type_kind: Primitive
 - field_name: date_list
   field_type_hint:
     schema_type: list
+    type_kind: Container
     remaining:
       schema_type: date
+      type_kind: Primitive
 - field_name: data_list
   field_type_hint:
     schema_type: list
+    type_kind: Container
     remaining:
       schema_type: StubDataclassData
+      type_kind: Data
 - field_name: key_list
   field_type_hint:
     schema_type: list
+    type_kind: Container
     remaining:
       schema_type: StubDataclassKey
+      type_kind: Key
 - field_name: record_list
   field_type_hint:
     schema_type: list
+    type_kind: Container
     remaining:
       schema_type: StubDataclass
+      type_kind: Record
 - field_name: derived_list
   field_type_hint:
     schema_type: list
+    type_kind: Container
     remaining:
       schema_type: StubDataclassDerived
+      type_kind: Record
+label: Stub Dataclass List Fields
 

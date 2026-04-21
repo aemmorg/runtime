@@ -4,4 +4,6 @@ fields:
 - field_name: stub_id
   field_type_hint:
     schema_type: str
+    type_kind: Primitive
+label: Stub Handlers
 

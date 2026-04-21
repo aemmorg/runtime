@@ -4,89 +4,116 @@ fields:
 - field_name: id
   field_type_hint:
     schema_type: str
+    type_kind: Primitive
 - field_name: optional_str
   field_type_hint:
     schema_type: str
+    type_kind: Primitive
     optional: true
 - field_name: required_list_of_optional_str
   field_type_hint:
     schema_type: list
+    type_kind: Container
     remaining:
       schema_type: str
+      type_kind: Primitive
       optional: true
 - field_name: optional_list_of_optional_str
   field_type_hint:
     schema_type: list
+    type_kind: Container
     optional: true
     remaining:
       schema_type: str
+      type_kind: Primitive
       optional: true
 - field_name: optional_float
   field_type_hint:
     schema_type: float
+    type_kind: Primitive
     optional: true
 - field_name: required_list_of_optional_float
   field_type_hint:
     schema_type: list
+    type_kind: Container
     remaining:
       schema_type: float
+      type_kind: Primitive
       optional: true
 - field_name: optional_list_of_optional_float
   field_type_hint:
     schema_type: list
+    type_kind: Container
     optional: true
     remaining:
       schema_type: float
+      type_kind: Primitive
       optional: true
 - field_name: optional_data
   field_type_hint:
     schema_type: StubDataclassData
+    type_kind: Data
     optional: true
 - field_name: required_list_of_optional_data
   field_type_hint:
     schema_type: list
+    type_kind: Container
     remaining:
       schema_type: StubDataclassData
+      type_kind: Data
       optional: true
 - field_name: optional_list_of_optional_data
   field_type_hint:
     schema_type: list
+    type_kind: Container
     optional: true
     remaining:
       schema_type: StubDataclassData
+      type_kind: Data
       optional: true
 - field_name: optional_key
   field_type_hint:
     schema_type: StubDataclassKey
+    type_kind: Key
     optional: true
 - field_name: required_list_of_optional_key
   field_type_hint:
     schema_type: list
+    type_kind: Container
     remaining:
       schema_type: StubDataclassKey
+      type_kind: Key
       optional: true
 - field_name: optional_list_of_optional_key
   field_type_hint:
     schema_type: list
+    type_kind: Container
     optional: true
     remaining:
       schema_type: StubDataclassKey
+      type_kind: Key
       optional: true
 - field_name: optional_record
   field_type_hint:
     schema_type: StubDataclass
+    type_kind: Record
     optional: true
 - field_name: required_list_of_optional_record
   field_type_hint:
     schema_type: list
+    type_kind: Container
     remaining:
       schema_type: StubDataclass
+      type_kind: Record
       optional: true
 - field_name: optional_list_of_optional_record
   field_type_hint:
     schema_type: list
+    type_kind: Container
     optional: true
     remaining:
       schema_type: StubDataclass
+      type_kind: Record
       optional: true
+label: Stub Dataclass Optional Fields
 

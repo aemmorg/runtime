@@ -56,13 +56,14 @@ def test_method(default_db_fixture):
         result = ResultResponseItem.get_response(request_obj)
 
         assert isinstance(result, list)
-        for result_response_item, task_run_id in zip(result, request_obj.task_run_ids):
+        for i, (result_response_item, task_run_id) in enumerate(zip(result, request_obj.task_run_ids)):
 
             # Validate type.
             assert isinstance(result_response_item, ResultResponseItem)
 
             # Validate fields.
-            assert result_response_item.key == task_run_id
+            # key is the record key for InstanceMethodTask (StubHandlersKey(stub_id=str(i)))
+            assert result_response_item.key == str(i)
             assert result_response_item.task_run_id == task_run_id
             assert result_response_item.result is not None
 
@@ -79,13 +80,14 @@ def test_api(default_db_fixture):
 
             assert isinstance(result, list)
             request_obj = ResultRequest(**request)
-            for result_item, task_run_id in zip(result, request_obj.task_run_ids):
+            for i, (result_item, task_run_id) in enumerate(zip(result, request_obj.task_run_ids)):
 
                 # Validate with Pydantic.
                 result_response_item = ResultResponseItem(**result_item)
 
                 # Validate fields.
-                assert result_response_item.key == task_run_id
+                # key is the record key for InstanceMethodTask (StubHandlersKey(stub_id=str(i)))
+                assert result_response_item.key == str(i)
                 assert result_response_item.task_run_id == task_run_id
                 assert result_response_item.result is not None
 

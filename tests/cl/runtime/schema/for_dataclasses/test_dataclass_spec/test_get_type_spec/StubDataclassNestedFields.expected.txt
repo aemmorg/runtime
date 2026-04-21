@@ -4,25 +4,34 @@ fields:
 - field_name: id
   field_type_hint:
     schema_type: str
+    type_kind: Primitive
 - field_name: base_field
   field_type_hint:
     schema_type: StubDataclassData
+    type_kind: Data
 - field_name: derived_field
   field_type_hint:
     schema_type: StubDataclassDerivedData
+    type_kind: Data
 - field_name: double_derived_field
   field_type_hint:
     schema_type: StubDataclassDoubleDerivedData
+    type_kind: Data
 - field_name: polymorphic_field
   field_type_hint:
     schema_type: StubDataclassData
+    type_kind: Data
 - field_name: polymorphic_derived_field
   field_type_hint:
     schema_type: StubDataclassDerivedData
+    type_kind: Data
 - field_name: key_field
   field_type_hint:
     schema_type: StubDataclassKey
+    type_kind: Key
 - field_name: record_as_key_field
   field_type_hint:
     schema_type: StubDataclassKey
+    type_kind: Key
+label: Stub Dataclass Nested Fields
 

@@ -4,32 +4,46 @@ fields:
 - field_name: id
   field_type_hint:
     schema_type: str
+    type_kind: Primitive
 - field_name: float_dict_list
   field_type_hint:
     schema_type: list
+    type_kind: Container
     remaining:
       schema_type: dict
+      type_kind: Container
       remaining:
         schema_type: float
+        type_kind: Primitive
 - field_name: date_dict_list
   field_type_hint:
     schema_type: list
+    type_kind: Container
     remaining:
       schema_type: dict
+      type_kind: Container
       remaining:
         schema_type: date
+        type_kind: Primitive
 - field_name: record_dict_list
   field_type_hint:
     schema_type: list
+    type_kind: Container
     remaining:
       schema_type: dict
+      type_kind: Container
       remaining:
         schema_type: StubDataclass
+        type_kind: Record
 - field_name: derived_dict_list
   field_type_hint:
     schema_type: list
+    type_kind: Container
     remaining:
       schema_type: dict
+      type_kind: Container
       remaining:
         schema_type: StubDataclassDerived
+        type_kind: Record
+label: Stub Dataclass Dict List Fields
 

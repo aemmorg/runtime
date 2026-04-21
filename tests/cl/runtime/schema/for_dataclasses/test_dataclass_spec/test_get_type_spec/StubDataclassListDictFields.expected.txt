@@ -4,56 +4,79 @@ fields:
 - field_name: id
   field_type_hint:
     schema_type: str
+    type_kind: Primitive
 - field_name: float_list_dict
   field_type_hint:
     schema_type: dict
+    type_kind: Container
     remaining:
       schema_type: list
+      type_kind: Container
       remaining:
         schema_type: float
+        type_kind: Primitive
 - field_name: float_or_none_list_dict
   field_type_hint:
     schema_type: dict
+    type_kind: Container
     remaining:
       schema_type: list
+      type_kind: Container
       remaining:
         schema_type: float
+        type_kind: Primitive
         optional: true
 - field_name: float_list_or_none_dict
   field_type_hint:
     schema_type: dict
+    type_kind: Container
     remaining:
       schema_type: list
+      type_kind: Container
       optional: true
       remaining:
         schema_type: float
+        type_kind: Primitive
 - field_name: float_list_dict_or_none
   field_type_hint:
     schema_type: dict
+    type_kind: Container
     optional: true
     remaining:
       schema_type: list
+      type_kind: Container
       remaining:
         schema_type: float
+        type_kind: Primitive
 - field_name: date_list_dict
   field_type_hint:
     schema_type: dict
+    type_kind: Container
     remaining:
       schema_type: list
+      type_kind: Container
       remaining:
         schema_type: date
+        type_kind: Primitive
 - field_name: record_list_dict
   field_type_hint:
     schema_type: dict
+    type_kind: Container
     remaining:
       schema_type: list
+      type_kind: Container
       remaining:
         schema_type: StubDataclass
+        type_kind: Record
 - field_name: derived_list_dict
   field_type_hint:
     schema_type: dict
+    type_kind: Container
     remaining:
       schema_type: list
+      type_kind: Container
       remaining:
         schema_type: StubDataclassDerived
+        type_kind: Record
+label: Stub Dataclass List Dict Fields
 

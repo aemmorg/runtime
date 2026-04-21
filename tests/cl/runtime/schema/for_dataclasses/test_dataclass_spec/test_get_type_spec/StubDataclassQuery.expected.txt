@@ -4,6 +4,8 @@ fields:
 - field_name: id
   field_type_hint:
     schema_type: str
+    type_kind: Primitive
     optional: true
     predicate: true
+label: Stub Dataclass Query
 
