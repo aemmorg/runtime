@@ -20,6 +20,7 @@ from cl.runtime.prebuild.version_util import VersionUtil
 from cl.runtime.primitive.case_util import CaseUtil
 from cl.runtime.primitive.timestamp import Timestamp
 from cl.runtime.records.for_dataclasses.extensions import optional
+from cl.runtime.routers.settings.app_features import AppFeatures
 from cl.runtime.routers.settings.env_info import EnvInfo
 from cl.runtime.server.env import Env
 from cl.runtime.settings.dynaconf_loader import ENVVAR_PREFIX
@@ -49,7 +50,13 @@ class SettingsResponse(BaseModel):
     schema_version: str = VersionUtil.get_module_version(
         module="cl.runtime.routers"
     )  # TODO: !!! Rename to .api or .server?
-    """Version of the backend-frontend API contract (schema). Used to ensure compatibility between backend and frontend."""
+    """DEPRECATED: Version of the backend-frontend API contract (schema). Use `contract_version` instead."""
+
+    contract_version: str = VersionUtil.get_module_version(module="cl.runtime.routers")
+    """Version of the backend-frontend API contract. Used to ensure compatibility between backend and frontend."""
+
+    app_features: AppFeatures | None = AppFeatures()
+    """Application feature flags that control which UI features are enabled."""
 
     application_name: str | None = optional(
         default_factory=lambda: DynaconfLoader.get_envvar_value(
