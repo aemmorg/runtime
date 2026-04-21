@@ -15,11 +15,11 @@
 from dataclasses import dataclass
 from cl.runtime.records.for_dataclasses.extensions import required
 from cl.runtime.ui.control import Control
-from cl.runtime.ui.event.control_event import ControlEvent
+from cl.runtime.ui.event.ui_event import UiEvent
 
 
 @dataclass(slots=True, kw_only=True)
-class ControlUpdateEvent(ControlEvent):
+class ControlUpdateEvent(UiEvent):
     """Event for updating multiple fields of the Control."""
 
     control: Control = required()

@@ -12,20 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import annotations
-from abc import ABC
-from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Generic
-from typing import TypeVar
-from cl.runtime.ui.control import Control
-from cl.runtime.ui.event.control_event import ControlEvent
-
-T = TypeVar("T", bound=ControlEvent)
+from cl.runtime.records.for_dataclasses.dataclass_mixin import DataclassMixin
+from cl.runtime.records.for_dataclasses.extensions import required
 
 
 @dataclass(slots=True, kw_only=True)
-class ControlEventHandler(ABC, Generic[T]):
-    @abstractmethod
-    def process(self, control: Control, event: T):
-        """Process control events."""
+class UiEvent(DataclassMixin):
+    """Base class for all websocket events."""
+
+    key: str = required()
+    "Path to control location or record key in db."

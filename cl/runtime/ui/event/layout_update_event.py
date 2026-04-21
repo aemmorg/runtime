@@ -15,11 +15,11 @@
 from dataclasses import dataclass
 from cl.runtime.records.for_dataclasses.extensions import required
 from cl.runtime.ui.control import Control
-from cl.runtime.ui.event.control_event import ControlEvent
+from cl.runtime.ui.event.ui_event import UiEvent
 
 
 @dataclass(slots=True, kw_only=True)
-class LayoutUpdateEvent(ControlEvent):
+class LayoutUpdateEvent(UiEvent):
     """Event for changing what controls are present in some panel."""
 
     removed_controls: list[str] = required(default_factory=list)

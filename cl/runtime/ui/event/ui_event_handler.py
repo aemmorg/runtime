@@ -12,14 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import annotations
+from abc import ABC
+from abc import abstractmethod
 from dataclasses import dataclass
-from cl.runtime.records.for_dataclasses.dataclass_mixin import DataclassMixin
-from cl.runtime.records.for_dataclasses.extensions import required
+from typing import Generic
+from typing import TypeVar
+from cl.runtime.records.data_mixin import DataMixin
+from cl.runtime.ui.event.ui_event import UiEvent
+
+T = TypeVar("T", bound=UiEvent)
 
 
 @dataclass(slots=True, kw_only=True)
-class ControlEvent(DataclassMixin):
-    """Base class for all websocket events."""
-
-    control_path: str = required()
-    "Path to control location."
+class UiEventHandler(ABC, Generic[T]):
+    @abstractmethod
+    def process(self, target: DataMixin, event: T) -> list[UiEvent]:
+        """Process events on a target (Control or InteractiveMixin record)."""

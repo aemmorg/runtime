@@ -14,11 +14,11 @@
 
 from dataclasses import dataclass
 from cl.runtime.records.for_dataclasses.extensions import required
-from cl.runtime.ui.event.control_event import ControlEvent
+from cl.runtime.ui.event.ui_event import UiEvent
 
 
 @dataclass(slots=True, kw_only=True)
-class RuntimeErrorEvent(ControlEvent):
+class RuntimeErrorEvent(UiEvent):
     """Event for error during runtime messages."""
 
     error: str = required()

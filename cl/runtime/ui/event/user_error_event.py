@@ -14,11 +14,11 @@
 
 from dataclasses import dataclass
 from cl.runtime.records.for_dataclasses.extensions import required
-from cl.runtime.ui.event.control_event import ControlEvent
+from cl.runtime.ui.event.ui_event import UiEvent
 
 
 @dataclass(slots=True, kw_only=True)
-class UserErrorEvent(ControlEvent):
+class UserErrorEvent(UiEvent):
     """Event for error form user site messages."""
 
     error: str = required()

@@ -15,15 +15,15 @@
 from dataclasses import dataclass
 from typing import Any
 from cl.runtime.records.for_dataclasses.extensions import required
-from cl.runtime.ui.event.control_event import ControlEvent
+from cl.runtime.ui.event.ui_event import UiEvent
 
 
 @dataclass(slots=True, kw_only=True)
-class ValueUpdateEvent(ControlEvent):
-    """Event for updating single field of the Control."""
+class ValueUpdateEvent(UiEvent):
+    """Event for updating single field of the Record."""
 
-    key: str = required()
-    "Name of the control field was changed."
+    field: str = required()
+    "Name of the record field was changed."
 
     value: Any = required()
-    "New value for the control field."
+    "New value for the record field."

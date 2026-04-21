@@ -15,18 +15,18 @@
 from dataclasses import dataclass
 from typing import Any
 from cl.runtime.records.for_dataclasses.extensions import required
-from cl.runtime.ui.event.control_event import ControlEvent
+from cl.runtime.ui.event.ui_event import UiEvent
 
 
 @dataclass(slots=True, kw_only=True)
-class PartialValueUpdateEvent(ControlEvent):
+class PartialValueUpdateEvent(UiEvent):
     """Event for updating part of single field of the Control, needs for complex controls."""
 
-    key: str = required()
-    "Name of the control field whose part was changed."
+    field: str = required()
+    "Name of the record field whose part was changed."
 
     value: Any = required()
-    "New value for part of the control field."
+    "New value for part of the record field."
 
     index: str = required()
-    "Index for the part of the control field that was changed."
+    "Index for the part of the record field that was changed."
