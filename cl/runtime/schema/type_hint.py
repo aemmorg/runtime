@@ -24,13 +24,17 @@ from cl.runtime.records.protocols import MAPPING_TYPES
 from cl.runtime.records.protocols import NDARRAY_TYPES
 from cl.runtime.records.protocols import PRIMITIVE_TYPE_NAMES
 from cl.runtime.records.protocols import SEQUENCE_TYPES
+from cl.runtime.records.protocols import is_data_key_or_record_type
+from cl.runtime.records.protocols import is_enum_type
 from cl.runtime.records.protocols import is_key_type
 from cl.runtime.records.protocols import is_mapping_type
 from cl.runtime.records.protocols import is_ndarray_type
 from cl.runtime.records.protocols import is_primitive_type
+from cl.runtime.records.protocols import is_record_type
 from cl.runtime.records.protocols import is_sequence_type
 from cl.runtime.records.protocols import is_type
 from cl.runtime.records.typename import typename
+from cl.runtime.schema.type_kind import TypeKind
 
 
 @dataclass(slots=True, kw_only=True)
@@ -40,17 +44,36 @@ class TypeHint(BootstrapMixin):
     schema_type: type  # TODO: !! Use TypeSpec and remove subtype field?
     """Class if available, if not provided it will be looked up using the type name."""
 
-    optional: bool | None
+    type_kind: TypeKind | None = None
+    """Type kind (primitive, enum, data, key, record, container), initialized from schema_type if not set."""
+
+    optional: bool | None = None
     """True if the type hint is a union with None, None otherwise."""
 
-    predicate: bool | None
+    predicate: bool | None = None
     """True if the type hint includes T | Predicate[T], None otherwise."""
 
-    remaining: Self | None
+    remaining: Self | None = None
     """Remaining chain if present, None otherwise."""
 
-    subtype: str | None
+    subtype: str | None = None
     """Subtype (e.g., long) if specified, None otherwise."""
+
+    def __init(self) -> None:
+        """Set type_kind from schema_type when not explicitly provided (invoked by build())."""
+        if self.type_kind is None:
+            if is_primitive_type(self.schema_type):
+                self.type_kind = TypeKind.PRIMITIVE
+            elif is_enum_type(self.schema_type):
+                self.type_kind = TypeKind.ENUM
+            elif is_key_type(self.schema_type):
+                self.type_kind = TypeKind.KEY
+            elif is_record_type(self.schema_type):
+                self.type_kind = TypeKind.RECORD
+            elif is_data_key_or_record_type(self.schema_type):
+                self.type_kind = TypeKind.DATA
+            elif is_sequence_type(self.schema_type) or is_mapping_type(self.schema_type):
+                self.type_kind = TypeKind.CONTAINER
 
     def to_str(self):
         """Serialize as string in type alias format."""
