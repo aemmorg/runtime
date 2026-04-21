@@ -13,8 +13,11 @@
 # limitations under the License.
 
 from dataclasses import dataclass
+from cl.runtime.primitive.case_util import CaseUtil
 from cl.runtime.records.for_dataclasses.extensions import required
+from cl.runtime.records.typename import typename
 from cl.runtime.schema.field_spec import FieldSpec
+from cl.runtime.schema.handler_spec import HandlerSpec
 from cl.runtime.schema.type_spec import TypeSpec
 
 
@@ -25,5 +28,34 @@ class DataSpec(TypeSpec):
     fields: list[FieldSpec] = required()
     """Fields in class declaration order."""
 
+    handlers: list[HandlerSpec] | None = None
+    """Handlers declared on this type."""
+
+    label: str | None = None
+    """Display label for the type."""
+
+    preserve_in_root_dataset: bool | None = None
+    """If True, force replace dataset with the root dataset for DataSource operations."""
+
+    hidden: bool | None = None
+    """If True, type is hidden in the UI."""
+
+    readonly: bool | None = None
+    """If True, type is read-only in the UI."""
+
     interactive: bool | None = None
     """True if the type is a descendant of InteractiveMixin."""
+
+    editable: bool | None = None
+    """If True, the current user has permission to insert/replace records of this type."""
+
+    deletable: bool | None = None
+    """If True, the current user has permission to delete records of this type."""
+
+    display_kind: str | None = None
+    """Display kind for the type in the UI."""
+
+    def __init(self) -> None:
+        """Set label from type name when not explicitly provided (invoked by build())."""
+        if self.label is None:
+            self.label = CaseUtil.pascal_to_title_case(typename(self.type_))
