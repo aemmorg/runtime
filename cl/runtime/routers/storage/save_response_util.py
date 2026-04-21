@@ -31,7 +31,7 @@ class SaveResponseUtil:
         if not request.records:
             return []
 
-        deserialized_records = tuple(_UI_SERIALIZER.deserialize(record_dict) for record_dict in request.records)
+        deserialized_records = tuple(_UI_SERIALIZER.deserialize(record_dict).build() for record_dict in request.records)
 
         # Check if all received records are of the same key type.
         first_key_type = deserialized_records[0].get_key_type()

@@ -16,7 +16,9 @@ from typing import Annotated
 from fastapi import APIRouter
 from fastapi import Body
 from fastapi import Header
+from fastapi import HTTPException
 from fastapi import Query
+from cl.runtime.routers.route_util import RouteUtil
 from cl.runtime.routers.storage.datasets_request import DatasetsRequest
 from cl.runtime.routers.storage.datasets_response_item import DatasetsResponseItem
 from cl.runtime.routers.storage.delete_request import DeleteRequest
@@ -70,7 +72,8 @@ async def post_load(
 
 @router.post("/select", response_model=SelectResponse)
 async def post_select(
-    select_body: Annotated[SelectRequestBody, Body(description="Select request body.")],
+    select_body: Annotated[SelectRequestBody | None, Body(description="Select request body.")] = None,
+    type_name: Annotated[str | None, Query(description="Type shortname.")] = None,
     limit: Annotated[
         int | None, Query(description="Select a specified number of records from the beginning of the list.")
     ] = None,
@@ -79,13 +82,12 @@ async def post_select(
 ) -> SelectResponse:
     """Select records by query."""
 
-    # TODO (Roman): Support select with 'limit'.
-    limit = None
+    type_ = RouteUtil.resolve(type_name, select_body.type if select_body else None, "type_name")
 
     return SelectResponse.get_response(
         SelectRequest(
-            type_=select_body.type,
-            query_dict=select_body.query_dict if select_body.query_dict else None,
+            type_=type_,
+            query_dict=select_body.query_dict if select_body and select_body.query_dict else None,
             limit=limit,
             skip=skip,
             table_format=table_format,
@@ -102,11 +104,19 @@ async def post_delete(
     return DeleteResponseUtil.delete_records(DeleteRequest(delete_keys=delete_keys))
 
 
-@router.post("/save", response_model=list[KeyRequestItem])
+@router.post("/save", responses={400: {"description": "Missing '_t' type field"}})
 async def post_save(
     records: Annotated[list[dict] | None, Body(description="List of records to save.")] = None,
 ) -> list[KeyRequestItem]:
     """Bulk save records to DB. Don't check if the record already exists."""
+
+    if records:
+        missing_type = [i for i, r in enumerate(records) if "_t" not in r]
+        if missing_type:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Records at indices {missing_type} are missing the required '_t' type field.",
+            )
 
     return SaveResponseUtil.save_records(SaveRequest(records=records))
 
@@ -124,7 +134,7 @@ async def post_update(
     Else - try to save new record without deleting old one, fails if updated record already exists.
     """
     # TODO (Roman): Implement /update route.
-    raise NotImplementedError("/storage/update route is not implemented.")
+    raise HTTPException(status_code=501, detail="/storage/update route is not implemented.")
 
 
 @router.post("/insert", response_model=list[KeyRequestItem])
