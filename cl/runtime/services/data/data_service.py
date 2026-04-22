@@ -85,7 +85,6 @@ class DataService(PydanticMixin):
     def run_select_table(cls, table_name: str, skip: int | None = None, limit: int | None = None) -> SelectDataResponse:
         """Select records by table from DB."""
 
-        # Get types stored in DB
         ds: DataSource = active(DataSource)
 
         # Select by table using load_all
@@ -100,76 +99,51 @@ class DataService(PydanticMixin):
             # Default to type_ when there are no records
             common_base_record_type = type_
 
-        # Get schema dict for type
-        schema_dict = cls._get_schema_dict(common_base_record_type)
-
-        # Check if the table is polymorphic (has descendant types in DB)
-        include_datatype = TypeResponseUtil.has_descendant_types(common_base_record_type)
-
-        # Check if the DB has multiple datasets or databases
-        include_dataset = DataSourceUtil.has_multiple_datasets(ds, record_type=common_base_record_type)
-        include_database = DataSourceUtil.has_multiple_databases(ds)
-
-        # Serialize records in UI format and add '_key' attribute (and 'Datatype' if polymorphic)
+        # Serialize records in UI format and add '_key' attribute
         data = [
-            {
-                **({"Datatype": typename(type(x))} if include_datatype else {}),
-                **({"Dataset": ""} if include_dataset else {}),
-                **({"Database": ds.db.db_id} if include_database else {}),
-                **_UI_SERIALIZER.serialize(x),
-                "_key": _KEY_SERIALIZER.serialize(x.get_key()),
-            }
+            {**_UI_SERIALIZER.serialize(x), "_key": _KEY_SERIALIZER.serialize(x.get_key())}
             for x in records
         ]
 
-        result = SelectDataResponse(
-            data=data,
-            schema_=schema_dict,  # noqa
-            base_type=_UI_SERIALIZER.serialize(common_base_record_type, TypeHints.TYPE_OR_NONE),
+        # Get type spec + dependencies via v2.0.0 TypeResponse
+        schema_response = TypeResponse.get_type(
+            TypeRequest(type_name=typename(common_base_record_type)), include_fields=False,
         )
 
-        return result
+        return SelectDataResponse(
+            data=data,
+            type_spec=schema_response.type_spec,
+            dependencies=schema_response.dependencies,
+            query_schemas=None,
+        )
 
     @classmethod
     def run_select_type(cls, type_name: str, skip: int | None = None, limit: int | None = None) -> SelectDataResponse:
         """Select records by type from DB."""
 
-        # Get types stored in DB
         ds: DataSource = active(DataSource)
 
         # Select by type
         type_ = cast(type[RecordMixin], TypeInfo.from_type_name(type_name))
         records = ds.load_by_type(type_, skip=skip, limit=limit)
 
-        # Get schema dict for type
-        schema_dict = cls._get_schema_dict(type_)
-
-        # Check if the table is polymorphic (has descendant types in DB)
-        include_datatype = TypeResponseUtil.has_descendant_types(type_)
-
-        # Check if the DB has multiple datasets or databases
-        include_dataset = DataSourceUtil.has_multiple_datasets(ds, record_type=type_)
-        include_database = DataSourceUtil.has_multiple_databases(ds)
-
-        # Serialize records in UI format and add '_key' attribute (and 'Datatype' if polymorphic)
+        # Serialize records in UI format and add '_key' attribute
         data = [
-            {
-                **({"Datatype": typename(type(x))} if include_datatype else {}),
-                **({"Dataset": ""} if include_dataset else {}),
-                **({"Database": ds.db.db_id} if include_database else {}),
-                **_UI_SERIALIZER.serialize(x),
-                "_key": _KEY_SERIALIZER.serialize(x.get_key()),
-            }
+            {**_UI_SERIALIZER.serialize(x), "_key": _KEY_SERIALIZER.serialize(x.get_key())}
             for x in records
         ]
 
-        result = SelectDataResponse(
-            data=data,
-            schema_=schema_dict,  # noqa
-            base_type=_UI_SERIALIZER.serialize(type_, TypeHints.TYPE_OR_NONE),
+        # Get type spec + dependencies via v2.0.0 TypeResponse
+        schema_response = TypeResponse.get_type(
+            TypeRequest(type_name=typename(type_)), include_fields=False,
         )
 
-        return result
+        return SelectDataResponse(
+            data=data,
+            type_spec=schema_response.type_spec,
+            dependencies=schema_response.dependencies,
+            query_schemas=None,
+        )
 
     @classmethod
     def run_select_filter(cls, table_name: str, filter_name: str):

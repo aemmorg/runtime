@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pydantic import Field
-from typing_extensions import Any
+from typing import Any
 from cl.runtime.records.for_pydantic.pydantic_mixin import PydanticMixin
 
 
@@ -23,8 +22,11 @@ class SelectDataResponse(PydanticMixin):
     data: list[Any]
     """Selected data."""
 
-    schema_: dict[str, Any] = Field(alias="Schema")
-    """Schema dict."""
+    type_spec: dict[str, Any]
+    """Serialized type spec for the selected data type."""
 
-    base_type: str
-    """Base type as entry point in schema dict."""
+    dependencies: dict[str, Any]
+    """Serialized dependencies for record, actually dict[typename: TypeSpec]."""
+
+    query_schemas: dict[str, dict[str, Any]] | None = None
+    """Serialized query type schemas indexed by query type name, None if no query types exist for the table."""
