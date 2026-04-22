@@ -21,12 +21,16 @@ from cl.runtime.records.for_pydantic.pydantic_mixin import PydanticMixin
 from cl.runtime.records.key_mixin import KeyMixin
 from cl.runtime.records.record_mixin import RecordMixin
 from cl.runtime.records.typename import typename
+from cl.runtime.records.typename import typenameof
 from cl.runtime.routers.schema.type_request import TypeRequest
+from cl.runtime.routers.schema.type_response import TypeResponse
 from cl.runtime.routers.schema.type_response_util import TypeResponseUtil
+from cl.runtime.schema.type_hint import TypeHint
 from cl.runtime.schema.type_info import TypeInfo
 from cl.runtime.serializers.data_serializers import DataSerializers
 from cl.runtime.serializers.key_serializers import KeySerializers
 from cl.runtime.serializers.type_hints import TypeHints
+from cl.runtime.services.data.load_record_response import LoadRecordResponse
 from cl.runtime.services.data.screens_response import ScreensResponse
 from cl.runtime.services.data.select_data_response import SelectDataResponse
 from cl.runtime.services.data.table_screen_item import TableScreenItem
@@ -172,6 +176,34 @@ class DataService(PydanticMixin):
         """Select records by filter from DB."""
 
         raise NotImplementedError("Select by filter currently is not supported.")
+
+    @classmethod
+    def run_load_record(cls, type_name: str, key: str) -> LoadRecordResponse:
+        """Load a single record by type name and serialized key string."""
+        ds: DataSource = active(DataSource)
+
+        # Resolve key type from type_name and deserialize key string
+        type_ = cast(type[KeyMixin], TypeInfo.from_type_name(type_name))
+        key_type = type_.get_key_type()
+        key_obj = _KEY_SERIALIZER.deserialize(key, type_hint=TypeHint.for_type(key_type)).build()
+
+        # Load record from DB (returns None if not found)
+        record = ds.load_one_or_none(key_obj)
+
+        if record is None:
+            return LoadRecordResponse()
+
+        # Serialize record for UI
+        data = _UI_SERIALIZER.serialize(record)
+
+        # Get type spec and dependencies in the v2.0.0 response shape
+        schema_response = TypeResponse.get_type(TypeRequest(type_name=typenameof(record)))
+
+        return LoadRecordResponse(
+            record=data,
+            type_spec=schema_response.type_spec,
+            dependencies=schema_response.dependencies,
+        )
 
     @classmethod
     def _get_schema_dict(cls, type_: type | None) -> dict[str, dict]:
