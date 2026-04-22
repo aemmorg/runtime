@@ -333,6 +333,33 @@ def is_interactive_type(type_: type) -> bool:
         )
 
 
+def is_dashboard_type(type_: type) -> bool:
+    """Returns true if the argument's class name ends with 'Dashboard'.
+
+    Uses a plain suffix check on the class name, so 'NotADashboard' also matches
+    while 'DashboardLayout' does not. Callers should name types accordingly.
+    """
+    if (type_name := getattr(type_, "__name__", None)) is not None:
+        return type_name.endswith("Dashboard")
+    else:
+        raise RuntimeError(
+            f"The argument of is_dashboard_type is an instance of type {type(type_).__name__}\nrather than type variable for this type, use type(arg) instead of arg."
+        )
+
+
+def is_singleton_type(type_: type) -> bool:
+    """Returns true if the argument is a record type whose key has no fields."""
+    if getattr(type_, "__name__", None) is not None:
+        if not is_record_type(type_) or not hasattr(type_, "get_key_type"):
+            return False
+        key_type = type_.get_key_type()
+        return key_type is not None and len(key_type.get_field_names()) == 0
+    else:
+        raise RuntimeError(
+            f"The argument of is_singleton_type is an instance of type {type(type_).__name__}\nrather than type variable for this type, use type(arg) instead of arg."
+        )
+
+
 def is_predicate_type(type_: type) -> bool:
     """Returns true if the argument is one of the supported query predicate types."""
     # Do not use isinstance(type_, type) to accept GenericAlias classes, including from packages (e.g., numpy)

@@ -17,7 +17,9 @@ from abc import ABC
 from typing import Self
 from memoization import cached
 from cl.runtime.records.data_mixin import DataMixin
+from cl.runtime.records.protocols import is_dashboard_type
 from cl.runtime.records.protocols import is_interactive_type
+from cl.runtime.records.protocols import is_singleton_type
 from cl.runtime.records.typename import typename
 from cl.runtime.schema.data_spec import DataSpec
 from cl.runtime.schema.field_spec import FieldSpec
@@ -52,6 +54,9 @@ class DataclassMixin(DataMixin, ABC):
             type_=cls,
             fields=fields,
             interactive=True if is_interactive_type(cls) else None,
+            display_kind=(
+                "Dashboard" if is_dashboard_type(cls) else "Singleton" if is_singleton_type(cls) else None
+            ),
         ).build()
 
     @classmethod

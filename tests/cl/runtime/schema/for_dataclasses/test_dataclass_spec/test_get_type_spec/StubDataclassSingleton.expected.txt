@@ -6,4 +6,5 @@ fields:
     schema_type: str
     type_kind: Primitive
 label: Stub Dataclass Singleton
+display_kind: Singleton
 
