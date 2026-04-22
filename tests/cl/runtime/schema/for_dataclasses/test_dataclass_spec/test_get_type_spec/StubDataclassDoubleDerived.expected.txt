@@ -5,6 +5,7 @@ fields:
   field_type_hint:
     schema_type: str
     type_kind: Primitive
+  key: true
 - field_name: derived_str_field
   field_type_hint:
     schema_type: str

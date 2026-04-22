@@ -15,7 +15,6 @@
 from typing import Any
 from cl.runtime.contexts.context_manager import active
 from cl.runtime.db.data_source import DataSource
-from cl.runtime.db.data_source_util import DataSourceUtil
 from cl.runtime.primitive.case_util import CaseUtil
 from cl.runtime.records.for_pydantic.pydantic_mixin import PydanticMixin
 from cl.runtime.records.key_mixin import KeyMixin
@@ -23,7 +22,6 @@ from cl.runtime.records.protocols import is_data_key_or_record_type
 from cl.runtime.records.protocols import is_key_type
 from cl.runtime.records.protocols import is_primitive_type
 from cl.runtime.records.protocols import is_sequence_type
-from cl.runtime.routers.schema.type_response_util import TypeResponseUtil
 from cl.runtime.routers.task.run_request import RunRequest
 from cl.runtime.serializers.data_serializers import DataSerializers
 from cl.runtime.tasks.instance_method_task import InstanceMethodTask
@@ -94,46 +92,7 @@ class RunResponseUtil:
             # Do not serialize Primitive, as its serialization does not work without type hinting
             return result
         else:
-            serialized = _ui_serializer.serialize(result)
-            include_datatype = is_data_key_or_record_type(type(result)) and TypeResponseUtil.has_descendant_types(type(result))
-
-            # Check if the DB has multiple datasets or databases
-            ds = active(DataSource)
-            result_type = type(result) if is_data_key_or_record_type(type(result)) else None
-            include_dataset = (
-                DataSourceUtil.has_multiple_datasets(ds, record_type=result_type)
-                if result_type is not None
-                else False
-            )
-            include_database = DataSourceUtil.has_multiple_databases(ds)
-
-            if isinstance(serialized, dict) and (include_datatype or include_dataset or include_database):
-                result_dict = {}
-                if include_datatype:
-                    result_dict["Datatype"] = serialized.get("_t", "")
-                if include_dataset:
-                    result_dict["Dataset"] = ""
-                if include_database:
-                    result_dict["Database"] = ds.db.db_id
-                result_dict.update(serialized)
-                serialized = result_dict
-            elif isinstance(serialized, (list, tuple)) and (include_datatype or include_dataset or include_database):
-                reordered = []
-                for item in serialized:
-                    if isinstance(item, dict):
-                        result_dict = {}
-                        if include_datatype and "_t" in item:
-                            result_dict["Datatype"] = item["_t"]
-                        if include_dataset:
-                            result_dict["Dataset"] = ""
-                        if include_database:
-                            result_dict["Database"] = ds.db.db_id
-                        if result_dict:
-                            result_dict.update(item)
-                            item = result_dict
-                    reordered.append(item)
-                serialized = reordered
-            return serialized
+            return _ui_serializer.serialize(result)
 
     @classmethod
     def _is_dict_or_list_of_dicts(cls, value: Any) -> bool:

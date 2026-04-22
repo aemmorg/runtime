@@ -15,11 +15,9 @@
 from __future__ import annotations
 from cl.runtime.contexts.context_manager import active
 from cl.runtime.db.data_source import DataSource
-from cl.runtime.db.data_source_util import DataSourceUtil
-from cl.runtime.routers.schema.type_response_util import TypeResponseUtil
+from cl.runtime.records.protocols import is_mixin_type
 from cl.runtime.routers.storage.load_request import LoadRequest
 from cl.runtime.routers.storage.records_with_schema_response import RecordsWithSchemaResponse
-from cl.runtime.schema.type_decl import TypeDecl
 from cl.runtime.schema.type_hint import TypeHint
 from cl.runtime.schema.type_info import TypeInfo
 from cl.runtime.serializers.data_serializers import DataSerializers
@@ -36,18 +34,20 @@ class LoadResponse(RecordsWithSchemaResponse):
 
     @classmethod
     def get_response(cls, request: LoadRequest) -> LoadResponse:
-
         # TODO: !!! Consider returning the same size of result as the input
 
         # Handle empty request
         if not request.load_keys:
-            # TODO: Review and avoid noqa
             return LoadResponse(schema_=cls._get_schema_dict(None), data=[])  # noqa
 
         # TODO: !!! Do not rely on first element to detect type
         record_type_name = request.load_keys[0].type
         record_type = TypeInfo.from_type_name(record_type_name)
-        key_type = record_type.get_key_type()
+        if is_mixin_type(record_type):
+            # If record type is mixin, use it directly for deserialization
+            key_type = record_type
+        else:
+            key_type = record_type.get_key_type()
 
         # Deserialize keys in request
         keys = tuple(
@@ -55,75 +55,40 @@ class LoadResponse(RecordsWithSchemaResponse):
             for x in request.load_keys or tuple()
         )
 
-        # Load and serialize records
+        # Load records and drop None entries
         loaded_records = active(DataSource).load_many_or_none(keys)
+        loaded_records = [r for r in loaded_records if r is not None]
 
-        # Find the lowest common base of the loaded types except None
-        loaded_record_types = tuple(type(x) for x in loaded_records if x is not None)
+        if not loaded_records:
+            return LoadResponse(schema_=cls._get_schema_dict(None), data=[])  # noqa
 
-        # TODO: Decide if this is the right logic to return empty response if records not found
-        if loaded_record_types:
-            # Find a common base
-            common_base = TypeInfo.get_common_base_type(types=loaded_record_types)
+        # Find the lowest common base of the loaded types
+        loaded_record_types = tuple(type(x) for x in loaded_records)
+        common_base = TypeInfo.get_common_base_type(types=loaded_record_types)
 
-            # Check if the table is polymorphic (has descendant types in DB)
-            include_datatype = TypeResponseUtil.has_descendant_types(common_base)
+        # Serialize records for UI (v2.0.0 shape, no Datatype/Dataset/Database columns)
+        serialized_records = [_UI_SERIALIZER.serialize(record) for record in loaded_records]
 
-            # Check if the DB has multiple datasets or databases
-            ds = active(DataSource)
-            include_dataset = DataSourceUtil.has_multiple_datasets(ds, record_type=common_base)
-            include_database = DataSourceUtil.has_multiple_databases(ds)
+        # Create schema dict for the common base
+        schema_dict = cls._get_schema_dict(common_base)
 
-            # At least one of the records is not None
-            serialized_records = []
-            for record in loaded_records:
-                serialized = _UI_SERIALIZER.serialize(record)
-                if isinstance(serialized, dict) and (include_datatype or include_dataset or include_database):
-                    result_dict = {}
-                    if include_datatype:
-                        result_dict["Datatype"] = serialized.get("_t", "")
-                    if include_dataset:
-                        result_dict["Dataset"] = ""
-                    if include_database:
-                        result_dict["Database"] = ds.db.db_id
-                    result_dict.update(serialized)
-                    serialized = result_dict
-                serialized_records.append(serialized)
-
-            # Create schema dict for the common base
-            schema_dict = cls._get_schema_dict(common_base)
-
-            # Return data and schema
-            return LoadResponse(schema_=schema_dict, data=serialized_records)  # noqa  # TODO: Review noqa
-        else:
-            # All of the records are None, return an empty list
-            return LoadResponse(schema_=cls._get_schema_dict(None), data=[])  # noqa  # TODO: Review noqa
+        return LoadResponse(schema_=schema_dict, data=serialized_records)  # noqa
 
     @classmethod
     def _get_default_ui_type_state(cls, ui_type_state_requested_key: UiTypeStateKey) -> UiTypeState:
-        """Return default UiTypeState with pinned all handlers."""
+        """Return default UiTypeState with all discovered handler names pinned.
 
-        type_state_record_type = TypeInfo.from_type_name(ui_type_state_requested_key.type_.name)
-        type_state_record_type_schema = TypeDecl.as_dict_with_dependencies(type_state_record_type)
+        Uses DataSpec.handlers (v2.0.0) rather than the legacy TypeDecl path.
+        """
+        from cl.runtime.schema.type_info import TypeInfo as _TI
+        type_state_record_type = _TI.from_type_name(ui_type_state_requested_key.type_.name)
+        spec = type_state_record_type.get_type_spec()
 
-        # Iterate over type declarations to get all handlers
-        all_handlers = []
-        for decl_dict in type_state_record_type_schema.values():
-            declare_block = decl_dict.get("Declare")
-            if not declare_block:
-                continue
-
-            handlers_block = declare_block.get("Handlers")
-            if not handlers_block:
-                continue
-
-            all_handlers.extend(
-                [
-                    handler_name
-                    for handler_decl in handlers_block
-                    if (handler_name := handler_decl.get("Name")) not in all_handlers
-                ]
-            )
+        all_handlers: list[str] = []
+        handlers = getattr(spec, "handlers", None) or []
+        for h in handlers:
+            if h.name not in all_handlers:
+                all_handlers.append(h.name)
 
         return UiTypeState(
             user=ui_type_state_requested_key.user,

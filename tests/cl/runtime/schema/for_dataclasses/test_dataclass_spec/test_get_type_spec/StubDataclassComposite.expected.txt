@@ -5,13 +5,16 @@ fields:
   field_type_hint:
     schema_type: str
     type_kind: Primitive
+  key: true
 - field_name: embedded_1
   field_type_hint:
     schema_type: StubDataclassKey
     type_kind: Key
+  key: true
 - field_name: embedded_2
   field_type_hint:
     schema_type: StubDataclassKey
     type_kind: Key
+  key: true
 label: Stub Dataclass Composite
 

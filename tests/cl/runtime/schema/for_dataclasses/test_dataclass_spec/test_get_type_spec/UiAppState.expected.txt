@@ -5,6 +5,7 @@ fields:
   field_type_hint:
     schema_type: UserKey
     type_kind: Key
+  key: true
 - field_name: opened_tabs
   field_type_hint:
     schema_type: list

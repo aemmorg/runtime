@@ -5,5 +5,360 @@ fields:
   field_type_hint:
     schema_type: str
     type_kind: Primitive
+  key: true
+handlers:
+- name: RunClassMethod1A
+  type_: job
+  comment: Stub handler.
+  static: true
+  label: Run Class Method 1A
+- name: RunClassMethod1B
+  type_: job
+  comment: Stub handler.
+  static: true
+  label: Run Class Method 1B
+- name: RunClassMethodWithBinaryParam
+  type_: job
+  comment: Stub method.
+  static: true
+  params:
+  - name: PdfFile
+    type_hint:
+      schema_type: FileData
+      type_kind: Data
+  label: Run Class Method With Binary Param
+- name: RunClassMethodWithParams2A
+  type_: job
+  comment: Stub handler.
+  static: true
+  params:
+  - name: Param1
+    type_hint:
+      schema_type: str
+      type_kind: Primitive
+  - name: Param2
+    type_hint:
+      schema_type: str
+      type_kind: Primitive
+  label: Run Class Method With Params 2A
+- name: RunClassMethodWithParams2B
+  type_: job
+  comment: Stub handler.
+  static: true
+  params:
+  - name: Param1
+    type_hint:
+      schema_type: str
+      type_kind: Primitive
+  - name: Param2
+    type_hint:
+      schema_type: str
+      type_kind: Primitive
+      optional: true
+  label: Run Class Method With Params 2B
+- name: RunClassMethodWithParams3A
+  type_: job
+  comment: Stub handler.
+  static: true
+  params:
+  - name: Param1
+    type_hint:
+      schema_type: str
+      type_kind: Primitive
+  - name: Param2
+    type_hint:
+      schema_type: str
+      type_kind: Primitive
+      optional: true
+  label: Run Class Method With Params 3A
+- name: RunClassMethodWithParams3B
+  type_: job
+  comment: Stub handler.
+  static: true
+  params:
+  - name: Param1
+    type_hint:
+      schema_type: str
+      type_kind: Primitive
+  - name: Param2
+    type_hint:
+      schema_type: str
+      type_kind: Primitive
+      optional: true
+  label: Run Class Method With Params 3B
+- name: RunInstanceMethod1A
+  type_: job
+  comment: Stub handler.
+  static: false
+  label: Run Instance Method 1A
+- name: RunInstanceMethod1B
+  type_: job
+  comment: Stub handler.
+  static: false
+  label: Run Instance Method 1B
+- name: RunInstanceMethodWithBinaryParam
+  type_: job
+  comment: Stub method.
+  static: false
+  params:
+  - name: PdfFile
+    type_hint:
+      schema_type: FileData
+      type_kind: Data
+  - name: NoteParam
+    type_hint:
+      schema_type: str
+      type_kind: Primitive
+  label: Run Instance Method With Binary Param
+- name: RunInstanceMethodWithIntParam1A
+  type_: job
+  comment: Stub handler.
+  static: false
+  params:
+  - name: IntParam
+    type_hint:
+      schema_type: int
+      type_kind: Primitive
+  label: Run Instance Method With Int Param 1A
+- name: RunInstanceMethodWithParams2A
+  type_: job
+  comment: Stub handler.
+  static: false
+  params:
+  - name: Param1
+    type_hint:
+      schema_type: str
+      type_kind: Primitive
+  - name: Param2
+    type_hint:
+      schema_type: str
+      type_kind: Primitive
+      optional: true
+  label: Run Instance Method With Params 2A
+- name: RunInstanceMethodWithParams2B
+  type_: job
+  comment: Stub handler.
+  static: false
+  params:
+  - name: Param1
+    type_hint:
+      schema_type: str
+      type_kind: Primitive
+  - name: Param2
+    type_hint:
+      schema_type: str
+      type_kind: Primitive
+      optional: true
+  label: Run Instance Method With Params 2B
+- name: RunInstanceMethodWithParams3A
+  type_: job
+  comment: Stub handler.
+  static: false
+  params:
+  - name: Param1
+    type_hint:
+      schema_type: str
+      type_kind: Primitive
+  - name: Param2
+    type_hint:
+      schema_type: str
+      type_kind: Primitive
+      optional: true
+  label: Run Instance Method With Params 3A
+- name: RunInstanceMethodWithParams3B
+  type_: job
+  comment: Stub handler.
+  static: false
+  params:
+  - name: Param1
+    type_hint:
+      schema_type: str
+      type_kind: Primitive
+  - name: Param2
+    type_hint:
+      schema_type: str
+      type_kind: Primitive
+      optional: true
+  label: Run Instance Method With Params 3B
+- name: RunInstanceMethodWithPrimitiveParams1A
+  type_: job
+  comment: Stub handler.
+  static: false
+  params:
+  - name: StrParam
+    type_hint:
+      schema_type: str
+      type_kind: Primitive
+      optional: true
+  - name: FloatParam
+    type_hint:
+      schema_type: float
+      type_kind: Primitive
+      optional: true
+  - name: BoolParam
+    type_hint:
+      schema_type: bool
+      type_kind: Primitive
+      optional: true
+  - name: IntParam
+    type_hint:
+      schema_type: int
+      type_kind: Primitive
+      optional: true
+  - name: DateParam
+    type_hint:
+      schema_type: date
+      type_kind: Primitive
+      optional: true
+  - name: TimeParam
+    type_hint:
+      schema_type: time
+      type_kind: Primitive
+      optional: true
+  - name: DatetimeParam
+    type_hint:
+      schema_type: datetime
+      type_kind: Primitive
+      optional: true
+  - name: UuidParam
+    type_hint:
+      schema_type: UUID
+      type_kind: Primitive
+      optional: true
+  - name: BytesParam
+    type_hint:
+      schema_type: bytes
+      type_kind: Primitive
+      optional: true
+  label: Run Instance Method With Primitive Params 1A
+- name: RunLongHandler
+  type_: job
+  static: false
+  label: Run Long Handler
+- name: RunLongHandlerWithError
+  type_: job
+  static: false
+  label: Run Long Handler With Error
+- name: RunLongStaticHandler
+  type_: job
+  static: true
+  label: Run Long Static Handler
+- name: RunMethodPersistRecord
+  type_: job
+  comment: Stub method.
+  static: false
+  params:
+  - name: Record
+    type_hint:
+      schema_type: StubDataclass
+      type_kind: Record
+  label: Run Method Persist Record
+- name: RunMethodWithNavigateEvent
+  type_: job
+  comment: Stub method.
+  static: false
+  label: Run Method With Navigate Event
+- name: RunMethodWithRefreshEvent
+  type_: job
+  comment: Stub method.
+  static: false
+  label: Run Method With Refresh Event
+- name: RunStaticMethod1A
+  type_: job
+  comment: Stub handler.
+  static: true
+  label: Run Static Method 1A
+- name: RunStaticMethod1B
+  type_: job
+  comment: Stub handler.
+  static: true
+  label: Run Static Method 1B
+- name: RunStaticMethodWithParams2A
+  type_: job
+  comment: Stub handler.
+  static: true
+  params:
+  - name: Param1
+    type_hint:
+      schema_type: str
+      type_kind: Primitive
+  - name: Param2
+    type_hint:
+      schema_type: str
+      type_kind: Primitive
+      optional: true
+  label: Run Static Method With Params 2A
+- name: RunStaticMethodWithParams2B
+  type_: job
+  comment: Stub handler.
+  static: true
+  params:
+  - name: Param1
+    type_hint:
+      schema_type: str
+      type_kind: Primitive
+  - name: Param2
+    type_hint:
+      schema_type: str
+      type_kind: Primitive
+      optional: true
+  label: Run Static Method With Params 2B
+- name: RunStaticMethodWithParams3A
+  type_: job
+  comment: Stub handler.
+  static: true
+  params:
+  - name: Param1
+    type_hint:
+      schema_type: str
+      type_kind: Primitive
+  - name: Param2
+    type_hint:
+      schema_type: str
+      type_kind: Primitive
+      optional: true
+  label: Run Static Method With Params 3A
+- name: RunStaticMethodWithParams3B
+  type_: job
+  comment: Stub handler.
+  static: true
+  params:
+  - name: Param1
+    type_hint:
+      schema_type: str
+      type_kind: Primitive
+  - name: Param2
+    type_hint:
+      schema_type: str
+      type_kind: Primitive
+      optional: true
+  label: Run Static Method With Params 3B
+- name: RunSumParams
+  type_: job
+  comment: Stub method.
+  static: false
+  params:
+  - name: Param1
+    type_hint:
+      schema_type: str
+      type_kind: Primitive
+  - name: Param2
+    type_hint:
+      schema_type: str
+      type_kind: Primitive
+  return_type:
+    schema_type: str
+    type_kind: Primitive
+  label: Run Sum Params
+- name: RunWithError
+  type_: job
+  comment: Stub method.
+  static: false
+  label: Run With Error
+- name: RunWithUserError
+  type_: job
+  comment: Stub method.
+  static: false
+  label: Run With User Error
 label: Stub Handlers
 

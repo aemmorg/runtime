@@ -5,52 +5,64 @@ fields:
   field_type_hint:
     schema_type: str
     type_kind: Primitive
+  key: true
 - field_name: key_float_field
   field_type_hint:
     schema_type: float
     type_kind: Primitive
+  key: true
 - field_name: key_bool_field
   field_type_hint:
     schema_type: bool
     type_kind: Primitive
+  key: true
 - field_name: key_int_field
   field_type_hint:
     schema_type: int
     type_kind: Primitive
+  key: true
 - field_name: key_long_field
   field_type_hint:
     schema_type: int
     type_kind: Primitive
     subtype: long
+  key: true
 - field_name: key_date_field
   field_type_hint:
     schema_type: date
     type_kind: Primitive
+  key: true
 - field_name: key_time_field
   field_type_hint:
     schema_type: time
     type_kind: Primitive
+  key: true
 - field_name: key_date_time_field
   field_type_hint:
     schema_type: datetime
     type_kind: Primitive
+  key: true
 - field_name: key_uuid_field
   field_type_hint:
     schema_type: UUID
     type_kind: Primitive
+  key: true
 - field_name: key_bytes_field
   field_type_hint:
     schema_type: bytes
     type_kind: Primitive
+  key: true
 - field_name: key_type_field
   field_type_hint:
     schema_type: type
     type_kind: Primitive
     optional: true
+  key: true
 - field_name: key_int_enum_field
   field_type_hint:
     schema_type: StubIntEnum
     type_kind: Enum
+  key: true
 - field_name: obj_str_field
   field_type_hint:
     schema_type: str

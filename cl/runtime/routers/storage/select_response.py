@@ -15,6 +15,7 @@
 from __future__ import annotations
 from enum import Enum
 from typing import Any
+from fastapi import HTTPException
 from cl.runtime.contexts.context_manager import active
 from cl.runtime.db.data_source import DataSource
 from cl.runtime.primitive.case_util import CaseUtil
@@ -23,14 +24,15 @@ from cl.runtime.records.protocols import is_primitive_type
 from cl.runtime.records.record_mixin import RecordMixin
 from cl.runtime.records.typename import typename
 from cl.runtime.records.typename import typeof
-from cl.runtime.db.data_source_util import DataSourceUtil
-from cl.runtime.routers.schema.type_response_util import TypeResponseUtil
 from cl.runtime.routers.storage.records_with_schema_response import RecordsWithSchemaResponse
 from cl.runtime.routers.storage.select_request import SelectRequest
 from cl.runtime.schema.type_info import TypeInfo
 from cl.runtime.schema.type_kind import TypeKind
 from cl.runtime.serializers.data_serializers import DataSerializers
 from cl.runtime.serializers.key_serializers import KeySerializers
+
+_SELECT_MAX_RECORDS = 10000
+"""Hard cap on the number of records returned by /storage/select to prevent unbounded queries."""
 
 
 class SelectResponse(RecordsWithSchemaResponse):
@@ -41,16 +43,16 @@ class SelectResponse(RecordsWithSchemaResponse):
         """Implements /storage/select route."""
 
         if request.query_dict:
-            raise RuntimeError("Select with 'query_dict' currently is not supported.")
+            raise HTTPException(status_code=400, detail="Select with 'query_dict' is not supported.")
 
         if request.table_format is False:
-            raise RuntimeError("Select with 'table_format=False' currently is not supported.")
+            raise HTTPException(status_code=400, detail="Select with 'table_format=False' is not supported.")
 
         if request.skip != 0:
-            raise RuntimeError("Select with 'skip != 0' currently is not supported.")
+            raise HTTPException(status_code=400, detail="Select with 'skip != 0' is not supported.")
 
         if request.limit is not None:
-            raise RuntimeError("Select with 'limit' currently is not supported.")
+            raise HTTPException(status_code=400, detail="Select with 'limit' is not supported.")
 
         ds = active(DataSource)
 
@@ -59,7 +61,6 @@ class SelectResponse(RecordsWithSchemaResponse):
             # Get records for a type
             record_type_name = request.type_
             record_type = TypeInfo.from_type_name(record_type_name)
-            # Load records for the type
             records = ds.load_by_type(record_type)
             common_base_record_type = record_type
         elif type_kind == TypeKind.KEY:
@@ -69,85 +70,44 @@ class SelectResponse(RecordsWithSchemaResponse):
             records = ds.load_all(key_type)
 
             if records:
-                # Get the common type of the records stored in the table
                 record_types = [type(record) for record in records]
                 common_base_record_type = TypeInfo.get_common_base_type(types=record_types)
             else:
-                # Default to key type when there are no records
                 common_base_record_type = key_type
         else:
             raise RuntimeError(f"Type {request.type_} is neither a record nor a key.")
 
-        # Check if the table is polymorphic (has descendant types in DB)
-        include_datatype = TypeResponseUtil.has_descendant_types(common_base_record_type)
+        # Enforce hard cap to prevent unbounded responses
+        records = records[:_SELECT_MAX_RECORDS]
 
-        # Check if the DB has multiple datasets or databases
-        include_dataset = DataSourceUtil.has_multiple_datasets(ds, record_type=common_base_record_type)
-        include_database = DataSourceUtil.has_multiple_databases(ds)
+        # Serialize records for table (v2.0.0 shape, no Datatype/Dataset/Database columns)
+        serialized_records = [cls._serialize_record_for_table(record) for record in records]
 
-        # Serialize records for table.
-        serialized_records = [
-            cls._serialize_record_for_table(
-                record,
-                include_datatype=include_datatype,
-                include_dataset=include_dataset,
-                include_database=include_database,
-                dataset_value="" if include_dataset else "",
-                database_value=ds.db.db_id if include_database else "",
-            )
-            for record in records
-        ]
-
-        # Get schema dict for type.
         schema_dict = cls._get_schema_dict(common_base_record_type)
 
         return SelectResponse(schema_=schema_dict, data=serialized_records)  # noqa
 
     @classmethod
-    def _serialize_record_for_table(
-        cls,
-        record: RecordMixin,
-        *,
-        include_datatype: bool,
-        include_dataset: bool = False,
-        include_database: bool = False,
-        dataset_value: str = "",
-        database_value: str = "",
-    ) -> dict[str, Any]:
-        """
-        Serialize record to ui table format.
-        Contains only fields of supported types, _key and _t will be added based on record.
-        """
+    def _serialize_record_for_table(cls, record: RecordMixin) -> dict[str, Any]:
+        """Serialize record to UI table format: primitives/keys/enums only, plus _t and _key."""
 
         all_slots = record.get_field_names()
 
-        # Get subset of slots which supported in table format.
+        # Get subset of slots which are supported in table format
         table_fields = {
             CaseUtil.snake_to_pascal_case_keep_trailing_underscore(slot)
             for slot in all_slots
             if (slot_v := getattr(record, slot)) is not None
             and (
-                # TODO (Roman): Consider adding other types to table format.
-                # Check if field is primitive, key or enum.
                 is_primitive_type(typeof(slot_v))
                 or is_key_type(type(slot_v))
                 or isinstance(slot_v, Enum)
             )
         }
 
-        # Serialize record to ui format, filter table fields, and add _t and _key
-        record_type_name = typename(type(record))
-        table_dict = {}
-        if include_datatype:
-            table_dict["Datatype"] = record_type_name
-        if include_dataset:
-            table_dict["Dataset"] = dataset_value
-        if include_database:
-            table_dict["Database"] = database_value
-        table_dict.update(
-            {k: v for k, v in DataSerializers.FOR_UI.serialize(record).items() if k in table_fields}
-        )
-        table_dict["_t"] = record_type_name
+        table_dict = {k: v for k, v in DataSerializers.FOR_UI.serialize(record).items() if k in table_fields}
+
+        table_dict["_t"] = typename(type(record))
         table_dict["_key"] = KeySerializers.DELIMITED.serialize(record.get_key())
 
         return table_dict

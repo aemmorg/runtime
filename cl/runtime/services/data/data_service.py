@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Any
 from typing import cast
 from inflection import titleize
 from cl.runtime.contexts.context_manager import active
 from cl.runtime.db.data_source import DataSource
-from cl.runtime.db.data_source_util import DataSourceUtil
 from cl.runtime.records.for_pydantic.pydantic_mixin import PydanticMixin
 from cl.runtime.records.key_mixin import KeyMixin
 from cl.runtime.records.record_mixin import RecordMixin
@@ -24,12 +24,10 @@ from cl.runtime.records.typename import typename
 from cl.runtime.records.typename import typenameof
 from cl.runtime.routers.schema.type_request import TypeRequest
 from cl.runtime.routers.schema.type_response import TypeResponse
-from cl.runtime.routers.schema.type_response_util import TypeResponseUtil
 from cl.runtime.schema.type_hint import TypeHint
 from cl.runtime.schema.type_info import TypeInfo
 from cl.runtime.serializers.data_serializers import DataSerializers
 from cl.runtime.serializers.key_serializers import KeySerializers
-from cl.runtime.serializers.type_hints import TypeHints
 from cl.runtime.services.data.load_record_response import LoadRecordResponse
 from cl.runtime.services.data.screens_response import ScreensResponse
 from cl.runtime.services.data.select_data_response import SelectDataResponse
@@ -82,8 +80,14 @@ class DataService(PydanticMixin):
         return screens
 
     @classmethod
-    def run_select_table(cls, table_name: str, skip: int | None = None, limit: int | None = None) -> SelectDataResponse:
-        """Select records by table from DB."""
+    def run_select_table(
+        cls,
+        table_name: str,
+        skip: int | None = None,
+        limit: int | None = None,
+        query_dict: Any | None = None,
+    ) -> SelectDataResponse:
+        """Select records by table from DB. `query_dict` accepted for v2.0.0 signature but currently ignored."""
 
         ds: DataSource = active(DataSource)
 
@@ -118,8 +122,14 @@ class DataService(PydanticMixin):
         )
 
     @classmethod
-    def run_select_type(cls, type_name: str, skip: int | None = None, limit: int | None = None) -> SelectDataResponse:
-        """Select records by type from DB."""
+    def run_select_type(
+        cls,
+        type_name: str,
+        skip: int | None = None,
+        limit: int | None = None,
+        query_dict: Any | None = None,
+    ) -> SelectDataResponse:
+        """Select records by type from DB. `query_dict` accepted for v2.0.0 signature but currently ignored."""
 
         ds: DataSource = active(DataSource)
 
@@ -151,6 +161,8 @@ class DataService(PydanticMixin):
 
         raise NotImplementedError("Select by filter currently is not supported.")
 
+
+
     @classmethod
     def run_load_record(cls, type_name: str, key: str) -> LoadRecordResponse:
         """Load a single record by type name and serialized key string."""
@@ -179,7 +191,3 @@ class DataService(PydanticMixin):
             dependencies=schema_response.dependencies,
         )
 
-    @classmethod
-    def _get_schema_dict(cls, type_: type | None) -> dict[str, dict]:
-        """Create schema dict for type. If 'type_' is None - return empty dict."""
-        return TypeResponseUtil.get_type(TypeRequest(type_name=typename(type_))) if type_ is not None else dict()

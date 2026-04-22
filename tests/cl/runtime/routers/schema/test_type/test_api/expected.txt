@@ -6,6 +6,7 @@ TypeSpec:
     FieldTypeHint:
       SchemaType: UserKey
       TypeKind: Key
+    Key: true
   - FieldName: opened_tabs
     FieldTypeHint:
       SchemaType: list
@@ -83,6 +84,7 @@ Dependencies:
       FieldTypeHint:
         SchemaType: str
         TypeKind: Primitive
+      Key: true
     Label: User Key
   TabInfo:
     Type: TabInfo
