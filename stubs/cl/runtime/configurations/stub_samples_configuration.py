@@ -117,26 +117,26 @@ class StubSamplesConfiguration(Configuration):
         # GroupBarPlot
         active(DataSource).replace_many(
             (
-                StubGroupBarPlots.get_single_group_plot(self.configuration_id + "stub_group_bar_plots.single_group"),
+                StubGroupBarPlots.get_single_group_plot(self.configuration_id + ".stub_group_bar_plots.single_group"),
                 StubGroupBarPlots.get_4_groups_2_bars_plot(
-                    self.configuration_id + "stub_group_bar_plots.4_groups_2_bars"
+                    self.configuration_id + ".stub_group_bar_plots.4_groups_2_bars"
                 ),
-                StubGroupBarPlots.get_4_groups_5_bars(self.configuration_id + "stub_group_bar_plots.4_groups_5_bars"),
+                StubGroupBarPlots.get_4_groups_5_bars(self.configuration_id + ".stub_group_bar_plots.4_groups_5_bars"),
             ),
             commit=True,
         )
 
         # HeatMapPlot
         active(DataSource).replace_many(
-            (StubHeatMapPlots.get_basic_plot(self.configuration_id + "stub_heat_map_plots.basic"),),
+            (StubHeatMapPlots.get_basic_plot(self.configuration_id + ".stub_heat_map_plots.basic"),),
             commit=True,
         )
 
         # LinePlot
         active(DataSource).replace_many(
             (
-                StubLinePlots.get_one_line_plot(self.configuration_id + "stub_line_plots.one_line"),
-                StubLinePlots.get_two_line_plot(self.configuration_id + "stub_line_plots.two_line"),
+                StubLinePlots.get_one_line_plot(self.configuration_id + ".stub_line_plots.one_line"),
+                StubLinePlots.get_two_line_plot(self.configuration_id + ".stub_line_plots.two_line"),
             ),
             commit=True,
         )

@@ -20,8 +20,6 @@ from cl.runtime.plots.plot_color import PlotColor
 from cl.runtime.plots.plot_line_style import PlotLineStyle
 from cl.runtime.plots.plot_surface_style import PlotSurfaceStyle
 from cl.runtime.plots.plotting_engine import PlottingEngine
-from cl.runtime.plots.scatter_plot_2d import ScatterPlot2D
-from cl.runtime.plots.scatter_plot_3d import ScatterPlot3D
 from cl.runtime.records.typename import typenameof
 
 
@@ -34,6 +32,8 @@ class PlotlyEngine(PlottingEngine):
 
     def render_html(self, plot: Plot) -> bytes:
         """Render the plot to HTML."""
+        from cl.runtime.plots.scatter_plot_2d import ScatterPlot2D
+        from cl.runtime.plots.scatter_plot_3d import ScatterPlot3D
 
         if isinstance(plot, ScatterPlot3D):
             # Render ScatterPlot3D to HTML
