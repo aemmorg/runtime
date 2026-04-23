@@ -38,6 +38,9 @@ Usage:
 # Ensure bootstrap module can be found and import to configure PYTHONPATH and other settings
 # This code block must remain at the top before any other imports
 import locate
+
+from cl.runtime.project.project_layout import ProjectLayout
+
 locate.append_sys_path("../../..")
 import cl.runtime.bootstrap  # noqa: F401
 # isort: on
@@ -46,7 +49,6 @@ import platform
 import subprocess
 import sys
 from pathlib import Path
-from cl.runtime.project.project_util import ProjectUtil
 
 
 # ---------------------------------------------------------------------------
@@ -373,7 +375,7 @@ def _write_requirements(
 
 def update_requirements() -> None:
     """Resolve full dependency tree and write unified requirements.txt."""
-    project_root = ProjectUtil.get_project_root()
+    project_root = ProjectLayout.get_project_root()
     pyproject_path = Path(project_root) / "pyproject.toml"
     if not pyproject_path.exists():
         raise RuntimeError(

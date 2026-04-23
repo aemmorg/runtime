@@ -102,7 +102,7 @@ def init_project(force: bool = False) -> None:
     # Run update_requirements to resolve the full dependency tree (uv/poetry/pip-compile)
     # and generate the unified requirements.txt at project root
     update_requirements_script = str(Path(__file__).parent / "update_requirements.py")
-    project_root = ProjectUtil.get_project_root()
+    project_root = ProjectLayout.get_project_root()
     subprocess.run(
         [sys.executable, update_requirements_script, "--project-root", project_root],
         check=True,
