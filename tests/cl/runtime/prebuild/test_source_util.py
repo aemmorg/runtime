@@ -19,13 +19,12 @@ from cl.runtime.prebuild.source_util import SourceUtil
 from cl.runtime.project.project_layout import ProjectLayout
 
 
-def _count_py_files_via_os(directory: str, exclude_names: tuple[str, ...]) -> int:
-    """Count .py files in a directory tree using a subprocess (cross-platform OS command)."""
-    exclude_set = repr(set(exclude_names))
+def _count_py_files_via_os(directory: str) -> int:
+    """Count non-empty .py files in a directory tree using a subprocess (cross-platform OS command)."""
     script = (
         f"import pathlib; "
         f"print(len([p for p in pathlib.Path(r'{directory}').rglob('*.py') "
-        f"if p.name not in {exclude_set}]))"
+        f"if p.stat().st_size > 0]))"
     )
     result = subprocess.run(
         [sys.executable, "-c", script],
@@ -40,9 +39,8 @@ def test_source_util():
     """Test SourceUtil.get_abs_source_files with package parameter against an independent OS file count."""
 
     package = "cl.runtime"
-    exclude_names = ("__init__.py",)
 
-    # Get file count from SourceUtil
+    # Get file count from SourceUtil (default: all .py files, skipping empty ones)
     source_files = SourceUtil.get_abs_source_files(package=package)
     source_util_count = len(source_files)
 
@@ -54,7 +52,7 @@ def test_source_util():
     os_count = 0
     for root_dir in (source_root, stubs_root, tests_root):
         if root_dir is not None:
-            os_count += _count_py_files_via_os(root_dir, exclude_names)
+            os_count += _count_py_files_via_os(root_dir)
 
     assert source_util_count == os_count, (
         f"SourceUtil found {source_util_count} files but OS command found {os_count} files " f"for package '{package}'"
