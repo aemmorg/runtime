@@ -16,7 +16,7 @@ import pytest
 from cl.runtime.qa.qa_client import QaClient
 from cl.runtime.qa.regression_guard import RegressionGuard
 from cl.runtime.routers.schema.type_request import TypeRequest
-from cl.runtime.routers.schema.type_response_util import TypeResponseUtil
+from cl.runtime.routers.schema.type_response import TypeResponse
 
 requests = [{"type_name": "UiAppState"}]
 
@@ -27,7 +27,7 @@ def test_method():
     for request in requests:
         # Run the coroutine wrapper added by the FastAPI decorator and validate the result
         request_obj = TypeRequest(**request)
-        result_dict = TypeResponseUtil.get_type(request_obj)
+        result_dict = TypeResponse.get_type(request_obj)
         RegressionGuard().build().write(result_dict)
 
     RegressionGuard.verify_all()
