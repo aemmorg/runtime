@@ -35,27 +35,27 @@ class DataSerializers:
         primitive_serializer=PrimitiveSerializers.DEFAULT,
         enum_serializer=EnumSerializers.DEFAULT,
     ).build()
-    """Default bidirectional data serializer with default serialization for primitive types and enums."""
+    """Default bidirectional data serializer to dict."""
 
     FOR_REPORTING = DataSerializer(
         primitive_serializer=PrimitiveSerializers.DEFAULT,
         enum_serializer=EnumSerializers.DEFAULT,
         type_inclusion=TypeInclusion.OMIT,
     ).build()
-    """Omit type information when the output is used for reporting, deserialization is not possible."""
+    """Default unidirectional data serializer to dict, omitting type information prevents deserialization."""
 
     FOR_JSON = DataSerializer(
         primitive_serializer=PrimitiveSerializers.FOR_JSON,
         enum_serializer=EnumSerializers.DEFAULT,
     ).build()
-    """Default bidirectional data serializer settings for JSON."""
+    """Default bidirectional data serializer to JSON."""
 
     FOR_JSON_REPORTING = DataSerializer(
         primitive_serializer=PrimitiveSerializers.FOR_JSON,
         enum_serializer=EnumSerializers.DEFAULT,
         type_inclusion=TypeInclusion.OMIT,
     ).build()
-    """Default bidirectional data serializer settings for JSON."""
+    """Default unidirectional data serializer to JSON, omitting type information prevents deserialization."""
 
     FOR_YAML_SERIALIZATION = DataSerializer(
         primitive_serializer=PrimitiveSerializers.FOR_YAML_SERIALIZATION,
@@ -74,7 +74,7 @@ class DataSerializers:
         enum_serializer=EnumSerializers.DEFAULT,
         type_inclusion=TypeInclusion.OMIT,
     ).build()
-    """Default bidirectional data serializer settings for JSON."""
+    """Default unidirectional data serializer to YAML, omitting type information prevents deserialization."""
 
     FOR_UI = DataSerializer(
         primitive_serializer=PrimitiveSerializers.FOR_UI,
