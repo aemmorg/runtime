@@ -4,6 +4,7 @@ default:
   # Documented in CaseSettings class
   case_conversion_rules:
     type_: Type
+    return_: Return
 
   # Documented in PackageSettings class
   package_name: Runtime
