@@ -14,9 +14,10 @@
 
 from abc import ABC
 from abc import abstractmethod
-from collections.abc import Mapping
+from collections import defaultdict
 from dataclasses import dataclass
 from typing import Sequence
+from frozendict import frozendict
 from cl.runtime.file.file_util import FileUtil
 from cl.runtime.file.reader_key import ReaderKey
 from cl.runtime.primitive.timestamp import Timestamp
@@ -37,14 +38,15 @@ class Reader(ReaderKey, RecordMixin, ABC):
             self.reader_id = Timestamp.create()
 
     @abstractmethod
-    def load_file(self, *, file_path: str) -> tuple[RecordMixin]:
+    def load_file(self, *, file_path: str) -> frozendict[str, tuple[RecordMixin, ...]]:
         """
-        Load one or multiple records from a single file.
+        Load one or multiple records from a single file grouped by dataset.
 
         Args:
             file_path: Absolute path to the file to load
         Returns:
-            Tuple of loaded records
+            Frozendict mapping dataset identifier to a tuple of records.
+            Records without an explicit dataset are placed under the root dataset "/".
         Raises:
             RuntimeError: If an error occurs during file reading or record loading
         """
@@ -56,7 +58,7 @@ class Reader(ReaderKey, RecordMixin, ABC):
         ext: str,
         file_include_patterns: Sequence[str] | None = None,
         file_exclude_patterns: Sequence[str] | None = None,
-    ) -> Mapping[str, Sequence[RecordMixin]]:
+    ) -> frozendict[str, tuple[RecordMixin, ...]]:
         """
         Load records from files in the specified dirs with the specified extension.
 
@@ -66,7 +68,8 @@ class Reader(ReaderKey, RecordMixin, ABC):
             file_include_patterns: Optional list of filename glob patterns to include
             file_exclude_patterns: Optional list of filename glob patterns to exclude
         Returns:
-            Mapping from dataset to records where single backslash key represents root dataset
+            Frozendict mapping dataset identifier to a tuple of records.
+            Records without an explicit dataset are placed under the root dataset "/".
         Raises:
             RuntimeError: If an error occurs during file reading or record loading
         """
@@ -78,7 +81,9 @@ class Reader(ReaderKey, RecordMixin, ABC):
             file_exclude_patterns=file_exclude_patterns,
         )
 
-        result = []
+        merged: dict[str, list[RecordMixin]] = defaultdict(list)
         for file_path in file_paths:
-            result.extend(self.load_file(file_path=file_path))
-        return tuple(result)
+            file_result = self.load_file(file_path=file_path)
+            for dataset, records in file_result.items():
+                merged[dataset].extend(records)
+        return frozendict({k: tuple(v) for k, v in merged.items()})

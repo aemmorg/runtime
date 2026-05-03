@@ -32,59 +32,43 @@ _SERIALIZER = DataSerializers.FOR_JSON
 class JsonlReader(Reader):
     """Load records from JSONL (JSON Lines) files into the context database."""
 
-    def load_all(
-        self,
-        *,
-        dirs: Sequence[str],
-        ext: str,
-        file_include_patterns: Sequence[str] | None = None,
-        file_exclude_patterns: Sequence[str] | None = None,
-    ) -> frozendict[str, tuple[RecordMixin, ...]]:
+    def load_file(self, *, file_path: str) -> frozendict[str, tuple[RecordMixin, ...]]:
+        """Load records from a single JSONL file grouped by dataset."""
 
-        file_paths = FileUtil.enumerate_files(
-            dirs=dirs,
-            ext=ext,
-            file_include_patterns=file_include_patterns,
-            file_exclude_patterns=file_exclude_patterns,
-        )
-
-        # Iterate over files, grouping records by dataset
         records_by_dataset: dict[str, list[RecordMixin]] = defaultdict(list)
-        for file_path in file_paths:
-            try:
-                record_type = FileUtil.get_type_from_filename(file_path, raise_on_fail=False)
+        try:
+            record_type = FileUtil.get_type_from_filename(file_path, raise_on_fail=False)
 
-                with open(file_path, mode="rb") as file:
-                    data = file.read().strip()
+            with open(file_path, mode="rb") as file:
+                data = file.read().strip()
 
-                    if not data:
-                        continue
+                if not data:
+                    return frozendict()
 
-                    # Parse all lines in a single orjson call by wrapping as a JSON array
-                    non_empty_lines = [line for line in data.split(b"\n") if line.strip()]
-                    json_bytes = b"[" + b",".join(non_empty_lines) + b"]"
-                    object_dicts = orjson.loads(json_bytes)
+                # Parse all lines in a single orjson call by wrapping as a JSON array
+                non_empty_lines = [line for line in data.split(b"\n") if line.strip()]
+                json_bytes = b"[" + b",".join(non_empty_lines) + b"]"
+                object_dicts = orjson.loads(json_bytes)
 
-                    invalid_objects = {
-                        index
-                        for index, object_dict in enumerate(object_dicts)
-                        for key in object_dict.keys()
-                        if key is None or key == ""
-                    }
+                invalid_objects = {
+                    index
+                    for index, object_dict in enumerate(object_dicts)
+                    for key in object_dict.keys()
+                    if key is None or key == ""
+                }
 
-                    if invalid_objects:
-                        rows_str = "".join([f"Row: {invalid_object}\n" for invalid_object in invalid_objects])
-                        raise RuntimeError(
-                            "Misaligned values found in the following objects.\n"
-                            "Check the placement of commas, brackets and double quotes.\n" + rows_str
-                        )
+                if invalid_objects:
+                    rows_str = "".join([f"Row: {invalid_object}\n" for invalid_object in invalid_objects])
+                    raise RuntimeError(
+                        "Misaligned values found in the following objects.\n"
+                        "Check the placement of commas, brackets and double quotes.\n" + rows_str
+                    )
 
-                    # Deserialize rows into records and group by dataset
-                    for object_dict in object_dicts:
-                        record, dataset = self._deserialize_object(record_type=record_type, object_dict=object_dict)
-                        records_by_dataset[dataset or "\\"].append(record)
-            except Exception as e:
-                raise RuntimeError(f"Failed to load JSONL file {file_path}.\n" f"Error: {e}") from e
+                for object_dict in object_dicts:
+                    record, dataset = self._deserialize_object(record_type=record_type, object_dict=object_dict)
+                    records_by_dataset[dataset or "/"].append(record)
+        except Exception as e:
+            raise RuntimeError(f"Failed to load JSONL file {file_path}.\n" f"Error: {e}") from e
 
         return frozendict({k: tuple(v) for k, v in records_by_dataset.items()})
 

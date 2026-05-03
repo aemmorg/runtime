@@ -33,55 +33,37 @@ _SERIALIZER = DataSerializers.FOR_CSV
 class CsvReader(Reader):
     """Helper class for working with CSV files."""
 
-    def load_all(
-        self,
-        *,
-        dirs: Sequence[str],
-        ext: str,
-        file_include_patterns: Sequence[str] | None = None,
-        file_exclude_patterns: Sequence[str] | None = None,
-    ) -> frozendict[str, tuple[RecordMixin, ...]]:
+    def load_file(self, *, file_path: str) -> frozendict[str, tuple[RecordMixin, ...]]:
+        """Load records from a single CSV file grouped by dataset."""
 
-        file_paths = FileUtil.enumerate_files(
-            dirs=dirs,
-            ext=ext,
-            file_include_patterns=file_include_patterns,
-            file_exclude_patterns=file_exclude_patterns,
-        )
-
-        # Iterate over files, grouping records by dataset
         records_by_dataset: dict[str, list[RecordMixin]] = defaultdict(list)
-        for file_path in file_paths:
-            try:
-                # Determine record type from filename
-                record_type = FileUtil.get_type_from_filename(file_path)
+        try:
+            record_type = FileUtil.get_type_from_filename(file_path)
 
-                with open(file_path, mode="r", encoding="utf-8") as file:
+            with open(file_path, mode="r", encoding="utf-8") as file:
 
-                    # The reader is an iterable of row dicts
-                    csv_reader = csv.DictReader(file)
-                    row_dicts = [row_dict for row_dict in csv_reader]
+                csv_reader = csv.DictReader(file)
+                row_dicts = [row_dict for row_dict in csv_reader]
 
-                    invalid_rows = {
-                        index
-                        for index, row_dict in enumerate(row_dicts)
-                        for key in row_dict.keys()
-                        if key is None or key == ""  # TODO: Add other checks for invalid keys
-                    }
+                invalid_rows = {
+                    index
+                    for index, row_dict in enumerate(row_dicts)
+                    for key in row_dict.keys()
+                    if key is None or key == ""  # TODO: Add other checks for invalid keys
+                }
 
-                    if invalid_rows:
-                        rows_str = "".join([f"Row: {invalid_row}\n" for invalid_row in invalid_rows])
-                        raise RuntimeError(
-                            "Misaligned values found in the following rows.\n"
-                            "Check the placement of commas and double quotes.\n" + rows_str
-                        )
+                if invalid_rows:
+                    rows_str = "".join([f"Row: {invalid_row}\n" for invalid_row in invalid_rows])
+                    raise RuntimeError(
+                        "Misaligned values found in the following rows.\n"
+                        "Check the placement of commas and double quotes.\n" + rows_str
+                    )
 
-                    # Deserialize rows into records and group by dataset
-                    for row_dict in row_dicts:
-                        record, dataset = self._deserialize_row(record_type=record_type, row_dict=row_dict)
-                        records_by_dataset[dataset or "\\"].append(record)
-            except Exception as e:
-                raise RuntimeError(f"Failed to load CSV file {file_path}. Error: {e}") from e
+                for row_dict in row_dicts:
+                    record, dataset = self._deserialize_row(record_type=record_type, row_dict=row_dict)
+                    records_by_dataset[dataset or "/"].append(record)
+        except Exception as e:
+            raise RuntimeError(f"Failed to load CSV file {file_path}. Error: {e}") from e
 
         return frozendict({k: tuple(v) for k, v in records_by_dataset.items()})
 
