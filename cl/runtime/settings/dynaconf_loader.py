@@ -21,6 +21,7 @@ from dotenv import find_dotenv
 from dotenv import load_dotenv
 from dynaconf import Dynaconf
 from frozendict import frozendict
+from ruamel.yaml import YAML
 from typing_extensions import Self
 from cl.runtime.project.project_layout import ProjectLayout
 from cl.runtime.qa.qa_util import QaUtil
@@ -165,6 +166,10 @@ class DynaconfLoader(BootstrapMixin):
         # Exclude non-existent files from get_settings_files
         self._abs_settings_files = tuple(x for x in abs_settings_files if os.path.exists(x))
 
+        # Pre-validate YAML settings files so a parse error raises a clean RuntimeError before Dynaconf is invoked.
+        # Done here (not inside Dynaconf access) to keep the traceback shallow and the diagnostic message focused.
+        DynaconfLoader._validate_yaml_settings_files(self._abs_settings_files)
+
         # Dynaconf settings in raw format (including system settings),
         # some keys may be strings instead of dictionaries or lists
         dynaconf = Dynaconf(
@@ -175,21 +180,12 @@ class DynaconfLoader(BootstrapMixin):
             dotenv_override=True,
         )
 
-        # Wrap Dynaconf access so parser errors (YAML/TOML/INI/JSON) raise RuntimeError rather than a parser-specific
-        # exception type. Dynaconf is lazy: file parsing happens on the first attribute access, not at construction.
-        try:
-            # Extract the settings environment and convert to lowercase
-            self._settings_env = dynaconf.current_env.lower()
+        # Extract the settings environment and convert to lowercase
+        self._settings_env = dynaconf.current_env.lower()
 
-            # Extract user settings using as_dict(), then convert containers at all levels to dictionaries and lists
-            # and convert root level keys to lowercase in case settings are specified using envvars in uppercase format
-            settings_dict = {k.lower(): v for k, v in dynaconf.as_dict().items()}
-        except Exception as e:
-            files_str = "\n".join(f"  - {f}" for f in self._abs_settings_files) or "  (no settings files found)"
-            raise RuntimeError(
-                f"Failed to parse settings files for package '{self.package}':\n{files_str}\n"
-                f"Error: {e}"
-            ) from e
+        # Extract user settings using as_dict(), then convert containers at all levels to dictionaries and lists
+        # and convert root level keys to lowercase in case the settings are specified using envvars in uppercase format
+        settings_dict = {k.lower(): v for k, v in dynaconf.as_dict().items()}
 
         # Populate selected fields in the package loader
         if self.package is not None:
@@ -305,3 +301,21 @@ class DynaconfLoader(BootstrapMixin):
         3. Default value or None if not specified
         """
         return os.environ.get(envvar) or dotenv_values().get(envvar) or default
+
+    @staticmethod
+    def _validate_yaml_settings_files(paths: tuple[str, ...]) -> None:
+        """Parse each existing YAML settings file with ruamel.yaml; raise a clean RuntimeError on parse failure.
+
+        Pre-validation produces a focused diagnostic (file, line, column, parser message) instead of the deep
+        Dynaconf/ruamel traceback that would otherwise surface on first attribute access.
+        """
+        yaml_loader = YAML(typ="safe")
+        for path in paths:
+            if not path.endswith((".yaml", ".yml")):
+                continue
+            try:
+                with open(path, mode="r", encoding="utf-8") as f:
+                    yaml_loader.load(f)
+            except Exception as e:
+                # `from None` suppresses the chained ruamel traceback; the parser message already names line/column.
+                raise RuntimeError(f"Failed to parse settings file {path}.\nError: {e}") from None
