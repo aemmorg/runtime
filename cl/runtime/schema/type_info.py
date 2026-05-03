@@ -572,7 +572,7 @@ class TypeInfo(BootstrapMixin):
                 f"Two types in the imported packages share the same type name: {type_info.type_name}\n"
                 f"  - {existing_info.qual_name}\n"
                 f"  - {type_info.qual_name}\n"
-                f"Use TypeAlias.csv to resolve the name collision.\n"
+                f"Define a custom name for one of them using 'type_name_rules' field in settings to resolve.\n"
             )
 
     @classmethod
@@ -744,7 +744,7 @@ class TypeInfo(BootstrapMixin):
                             f"Two types in TypeInfo.csv share the same type name: {type_info.type_name}\n"
                             f"  - {existing_info.qual_name}\n"
                             f"  - {type_info.qual_name}\n"
-                            f"Use TypeAlias.csv to resolve the name collision.\n"
+                            f"Define a custom name for one of them using 'type_name_rules' field in settings.\n"
                         )
         else:
             # TypeInfo.csv does not exist, rebuild

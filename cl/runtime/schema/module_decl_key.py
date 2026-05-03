@@ -40,10 +40,10 @@ class ModuleDeclKey(DataclassMixin, KeyMixin):
         #  key in the schema dict. Sensitive case: drill down polymorphic field when the field value is a derived class,
         #  but in the declaration it is a base class.
         if self.module_name is not None and self.module_name != GLOBAL_MODULE_NAME:
-            raise RuntimeError(
+            raise RuntimeError(  # TODO(Roman): Message is unclear, please improve
                 "Using a real module name leads to schema inconsistency for UI. "
                 "The module name is temporarily global and should not be specified manually. "
-                "Please create ModuleDeclKey without init parameters."
+                "To resolve, create ModuleDeclKey without init parameters."
             )
 
         # Set global module name.

@@ -145,7 +145,7 @@ class CaseUtil:
             raise RuntimeError(
                 f"String '{value}' cannot be converted to snake_case because the round-trip conversion\n"
                 f"produces '{back}' instead of the original '{value}'.\n"
-                f"Please either:\n"
+                f"To resolve, either:\n"
                 f"(a) Change PascalCase name from '{value}' to '{back}' to allow lossless\n"
                 f"    PascalCase to snake_case roundtrip or\n"
                 f"(b) Add the intended snake_case and PascalCase pair to case_conversion_rules in settings.\n"
@@ -187,7 +187,7 @@ class CaseUtil:
             raise RuntimeError(
                 f"String '{value}' cannot be converted to PascalCase because the round-trip conversion\n"
                 f"produces '{back}' instead of the original '{value}'.\n"
-                f"Please either:\n"
+                f"To resolve, either:\n"
                 f"(a) Change snake_case string from '{value}' to '{back}' to allow lossless\n"
                 f"    snake_case to PascalCase roundtrip or\n"
                 f"(b) Add the intended snake_case and PascalCase pair to case_conversion_rules in settings.\n"

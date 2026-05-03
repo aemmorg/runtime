@@ -137,7 +137,7 @@ class FrontendSettings(Settings):
         if self.frontend_version is None:
             raise RuntimeError(
                 "Cannot install frontend because the frontend version is missing.\n"
-                "Please specify 'frontend_version' in settings.yaml."
+                "To resolve, specify 'frontend_version' in settings.yaml."
             )
 
         # Get download URI
