@@ -522,7 +522,9 @@ class BasicMongoDb(Db):
             collection_name = key_type_name.removesuffix("Key")
             collection = mongo_db[collection_name]
 
-            # Add a unique index on tenant and key in ascending order
+            # Add a unique index on tenant and key in ascending order,
+            # dataset is not part of unique key for BasicMongoDb because
+            # a record can only exist in one dataset for this Db type
             key_index = (
                 ("_tenant", pymongo.ASCENDING),
                 ("_key", pymongo.ASCENDING),
