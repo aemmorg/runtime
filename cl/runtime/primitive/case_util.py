@@ -40,6 +40,15 @@ _NON_ALNUM_DOT_RE: Pattern = re.compile(r"[^a-zA-Z0-9.]")
 _MULTI_UNDERSCORE_RE: Pattern = re.compile(r"_+")
 """Match one or more consecutive underscores."""
 
+_SNAKE_TO_PASCAL_DICT: dict[str, str] = {"type_": "Type"}
+"""Mapping from snake_case to PascalCase, initialized with hardcoded entries and expanded from settings on demand."""
+
+_PASCAL_TO_SNAKE_DICT: dict[str, str] = {v: k for k, v in _SNAKE_TO_PASCAL_DICT.items()}
+"""Mapping from PascalCase to snake_case, initialized with hardcoded entries and expanded from settings on demand."""
+
+_CONVERSION_RULES_LOADED: bool = False
+"""Flag indicating whether case conversion rules have been loaded from CaseSettings."""
+
 
 class CaseUtil:
     """Utilities for case conversion between PascalCase, snake_case, UPPER_CASE, and Title Case.
@@ -123,7 +132,25 @@ class CaseUtil:
         if cls.is_empty(value):
             return value
         cls.check_pascal_case(value)
-        return cls._pascal_to_snake_unchecked(value)
+
+        if value in _PASCAL_TO_SNAKE_DICT:
+            return _PASCAL_TO_SNAKE_DICT[value]
+
+        result = cls._pascal_to_snake_unchecked(value)
+        back = cls._snake_to_pascal_unchecked(result)
+        if back != value:
+            cls._ensure_conversion_rules_loaded()
+            if value in _PASCAL_TO_SNAKE_DICT:
+                return _PASCAL_TO_SNAKE_DICT[value]
+            raise RuntimeError(
+                f"String '{value}' cannot be converted to snake_case because the round-trip conversion\n"
+                f"produces '{back}' instead of the original '{value}'.\n"
+                f"Please either:\n"
+                f"(a) Change PascalCase name from '{value}' to '{back}' to allow lossless\n"
+                f"    PascalCase to snake_case roundtrip or\n"
+                f"(b) Add the intended snake_case and PascalCase pair to case_conversion_rules in settings.\n"
+            )
+        return result
 
     @classmethod
     def upper_to_snake_case(cls, value: str | None) -> str | None:
@@ -147,7 +174,25 @@ class CaseUtil:
         if cls.is_empty(value):
             return value
         cls.check_snake_case(value)
-        return cls._snake_to_pascal_unchecked(value)
+
+        if value in _SNAKE_TO_PASCAL_DICT:
+            return _SNAKE_TO_PASCAL_DICT[value]
+
+        result = cls._snake_to_pascal_unchecked(value)
+        back = cls._pascal_to_snake_unchecked(result)
+        if back != value:
+            cls._ensure_conversion_rules_loaded()
+            if value in _SNAKE_TO_PASCAL_DICT:
+                return _SNAKE_TO_PASCAL_DICT[value]
+            raise RuntimeError(
+                f"String '{value}' cannot be converted to PascalCase because the round-trip conversion\n"
+                f"produces '{back}' instead of the original '{value}'.\n"
+                f"Please either:\n"
+                f"(a) Change snake_case string from '{value}' to '{back}' to allow lossless\n"
+                f"    snake_case to PascalCase roundtrip or\n"
+                f"(b) Add the intended snake_case and PascalCase pair to case_conversion_rules in settings.\n"
+            )
+        return result
 
     @classmethod
     def upper_to_pascal_case(cls, value: str | None) -> str | None:
@@ -409,14 +454,27 @@ class CaseUtil:
     def _check_round_trip(cls, value: str, format_: str) -> None:
         """Error message if the value does not survive a lossless round-trip conversion."""
         if format_ == "PascalCase":
+            if value in _PASCAL_TO_SNAKE_DICT:
+                return
             back = cls._snake_to_pascal_unchecked(cls._pascal_to_snake_unchecked(value))
         elif format_ == "snake_case":
+            if value in _SNAKE_TO_PASCAL_DICT:
+                return
             back = cls._pascal_to_snake_unchecked(cls._snake_to_pascal_unchecked(value))
         elif format_ == "UPPER_CASE":
+            if value.lower() in _SNAKE_TO_PASCAL_DICT:
+                return
             back = cls._pascal_to_snake_unchecked(cls._snake_to_pascal_unchecked(value.lower())).upper()
         else:
             return
         if back != value:
+            cls._ensure_conversion_rules_loaded()
+            if format_ == "PascalCase" and value in _PASCAL_TO_SNAKE_DICT:
+                return
+            if format_ == "snake_case" and value in _SNAKE_TO_PASCAL_DICT:
+                return
+            if format_ == "UPPER_CASE" and value.lower() in _SNAKE_TO_PASCAL_DICT:
+                return
             raise RuntimeError(
                 f"String {value} is not {format_} because it does not round-trip "
                 f"losslessly (converts to {back}).",
@@ -460,3 +518,33 @@ class CaseUtil:
         if any(c.isdigit() for c in segment):
             return segment.upper()
         return segment.capitalize()
+
+    @classmethod
+    def _ensure_conversion_rules_loaded(cls) -> None:
+        """Load case conversion rules from CaseSettings into the in-memory dicts. No-op if already loaded."""
+        global _CONVERSION_RULES_LOADED
+        if _CONVERSION_RULES_LOADED:
+            return
+
+        # Delayed import to avoid circular dependency
+        from cl.runtime.settings.case_settings import CaseSettings
+
+        # Get conversion rules from all settings sources
+        snake_to_pascal, pascal_to_snake = CaseSettings.get_combined_conversion_rules()
+        for snake, pascal in snake_to_pascal.items():
+            if snake in _SNAKE_TO_PASCAL_DICT and _SNAKE_TO_PASCAL_DICT[snake] != pascal:
+                raise RuntimeError(
+                    f"Conflicting case conversion for snake_case value '{snake}': "
+                    f"existing mapping '{snake}' -> '{_SNAKE_TO_PASCAL_DICT[snake]}' "
+                    f"conflicts with settings entry '{snake}' -> '{pascal}'."
+                )
+            if pascal in _PASCAL_TO_SNAKE_DICT and _PASCAL_TO_SNAKE_DICT[pascal] != snake:
+                raise RuntimeError(
+                    f"Conflicting case conversion for PascalCase value '{pascal}': "
+                    f"existing mapping '{pascal}' -> '{_PASCAL_TO_SNAKE_DICT[pascal]}' "
+                    f"conflicts with settings entry '{pascal}' -> '{snake}'."
+                )
+            _SNAKE_TO_PASCAL_DICT[snake] = pascal
+            _PASCAL_TO_SNAKE_DICT[pascal] = snake
+
+        _CONVERSION_RULES_LOADED = True
