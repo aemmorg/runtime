@@ -175,12 +175,21 @@ class DynaconfLoader(BootstrapMixin):
             dotenv_override=True,
         )
 
-        # Extract the settings environment and conver to lowercase
-        self._settings_env = dynaconf.current_env.lower()
+        # Wrap Dynaconf access so parser errors (YAML/TOML/INI/JSON) raise RuntimeError rather than a parser-specific
+        # exception type. Dynaconf is lazy: file parsing happens on the first attribute access, not at construction.
+        try:
+            # Extract the settings environment and convert to lowercase
+            self._settings_env = dynaconf.current_env.lower()
 
-        # Extract user settings using as_dict(), then convert containers at all levels to dictionaries and lists
-        # and convert root level keys to lowercase in case the settings are specified using envvars in uppercase format
-        settings_dict = {k.lower(): v for k, v in dynaconf.as_dict().items()}
+            # Extract user settings using as_dict(), then convert containers at all levels to dictionaries and lists
+            # and convert root level keys to lowercase in case settings are specified using envvars in uppercase format
+            settings_dict = {k.lower(): v for k, v in dynaconf.as_dict().items()}
+        except Exception as e:
+            files_str = "\n".join(f"  - {f}" for f in self._abs_settings_files) or "  (no settings files found)"
+            raise RuntimeError(
+                f"Failed to parse settings files for package '{self.package}':\n{files_str}\n"
+                f"Error: {e}"
+            ) from e
 
         # Populate selected fields in the package loader
         if self.package is not None:

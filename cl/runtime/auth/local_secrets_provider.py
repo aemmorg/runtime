@@ -85,12 +85,16 @@ class LocalSecretsProvider(SecretsProvider):
     def _load_secrets(self) -> dict[str, dict]:
         secrets_path = self._get_secrets_dir() / ".secrets.yaml"
         try:
-            result = ruamel.yaml.YAML(typ="safe", pure=True).load(secrets_path.read_text())
-            if result is None:
-                return {}
-            return result
+            content = secrets_path.read_text()
         except FileNotFoundError:
             return {}
+        try:
+            result = ruamel.yaml.YAML(typ="safe", pure=True).load(content)
+        except Exception as e:
+            raise RuntimeError(f"Failed to parse secrets file {secrets_path}.\nError: {e}") from e
+        if result is None:
+            return {}
+        return result
 
     def _save_secrets(self, secrets_dict: dict[str, dict]) -> None:
         secrets_path = self._get_secrets_dir() / ".secrets.yaml"

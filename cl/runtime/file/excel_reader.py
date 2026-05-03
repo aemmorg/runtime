@@ -77,6 +77,13 @@ class ExcelReader(Reader):
             List of generated CSV file paths.
         """
 
+        try:
+            return cls._convert_file_impl(xlsx_path)
+        except Exception as e:
+            raise RuntimeError(f"Failed to convert XLSX file {xlsx_path}.\nError: {e}") from e
+
+    @classmethod
+    def _convert_file_impl(cls, xlsx_path: str) -> list[str]:
         wb = load_workbook(xlsx_path, read_only=True, data_only=True)
         sheet_names = wb.sheetnames
 
