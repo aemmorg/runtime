@@ -103,12 +103,11 @@ class PreloadConfiguration(Configuration):
             # Validate dataset format and save each group with the appropriate dataset
             all_records = list(chain.from_iterable(records_by_dataset.values()))
             for dataset, group_records in records_by_dataset.items():
-                if not dataset.startswith("\\"):
+                if not dataset.startswith("/"):
                     raise RuntimeError(
-                        f"Dataset identifier '{dataset}' must begin with a backslash character."
+                        f"Dataset identifier '{dataset}' must begin with a slash character."
                     )
-                temp_ds = DataSource(db=ds.db, datasets=[dataset], tenant=ds.tenant).build()
-                temp_ds.insert_many(group_records, commit=True)
+                ds.insert_many(group_records, datasets=[dataset], commit=True)
 
             # Execute run_configure on all preloaded Configuration records with autorun=True
             autorun_configurations = [

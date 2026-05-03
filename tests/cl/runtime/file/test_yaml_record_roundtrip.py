@@ -108,7 +108,7 @@ def test_roundtrip_with_type_field():
                 dirs=[dir_path],
                 ext="yaml",
                 file_include_patterns=[record_type_pattern],
-            ).get("\\", ()))
+            ).get("/", ()))
 
             # Verify
             assert BuilderChecks.is_equal(records_from_yaml, expected_records)
@@ -137,7 +137,7 @@ def test_roundtrip_without_type_field():
                 dirs=[dir_path],
                 ext="yaml",
                 file_include_patterns=[record_type_pattern],
-            ).get("\\", ()))
+            ).get("/", ()))
 
             # Verify
             assert BuilderChecks.is_equal(records_from_yaml, expected_records)
@@ -164,7 +164,7 @@ def test_roundtrip_single_record():
         records_from_yaml = list(yaml_reader.load_all(
             dirs=[dir_path],
             ext="yaml",
-        ).get("\\", ()))
+        ).get("/", ()))
 
         # Verify
         assert len(records_from_yaml) == 1
@@ -196,7 +196,7 @@ def test_roundtrip_mixed_types():
         records_from_yaml = list(yaml_reader.load_all(
             dirs=[dir_path],
             ext="yaml",
-        ).get("\\", ()))
+        ).get("/", ()))
 
         # Verify all records loaded correctly
         assert len(records_from_yaml) == len(expected_records)

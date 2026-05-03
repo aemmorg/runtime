@@ -53,7 +53,7 @@ def test_csv_reader_accepts_lf(tmp_path):
     csv_path = tmp_path / "StubDataclassDerived.csv"
     csv_path.write_bytes(_CSV_LF.encode("utf-8"))
 
-    records = CsvReader().build().load_all(dirs=[str(tmp_path)], ext="csv")
+    records = list(CsvReader().build().load_all(dirs=[str(tmp_path)], ext="csv").get("/", ()))
     assert len(records) == 3
     _assert_no_cr_in_fields(records)
     assert records[0].id == "eol_id_1"
@@ -64,7 +64,7 @@ def test_csv_reader_accepts_crlf(tmp_path):
     csv_path = tmp_path / "StubDataclassDerived.csv"
     csv_path.write_bytes(_CSV_CRLF.encode("utf-8"))
 
-    records = CsvReader().build().load_all(dirs=[str(tmp_path)], ext="csv")
+    records = list(CsvReader().build().load_all(dirs=[str(tmp_path)], ext="csv").get("/", ()))
     assert len(records) == 3
     _assert_no_cr_in_fields(records)
     assert records[0].id == "eol_id_1"
@@ -122,7 +122,7 @@ def test_json_reader_accepts_lf(tmp_path):
     json_path = tmp_path / "StubDataclassDerived.json"
     json_path.write_bytes(_JSON_LF.encode("utf-8"))
 
-    records = JsonReader().build().load_all(dirs=[str(tmp_path)], ext="json")
+    records = list(JsonReader().build().load_all(dirs=[str(tmp_path)], ext="json").get("/", ()))
     assert len(records) == 3
     _assert_no_cr_in_fields(records)
     assert records[0].id == "eol_id_1"
@@ -133,7 +133,7 @@ def test_json_reader_accepts_crlf(tmp_path):
     json_path = tmp_path / "StubDataclassDerived.json"
     json_path.write_bytes(_JSON_CRLF.encode("utf-8"))
 
-    records = JsonReader().build().load_all(dirs=[str(tmp_path)], ext="json")
+    records = list(JsonReader().build().load_all(dirs=[str(tmp_path)], ext="json").get("/", ()))
     assert len(records) == 3
     _assert_no_cr_in_fields(records)
     assert records[0].id == "eol_id_1"
@@ -173,7 +173,7 @@ def test_jsonl_reader_accepts_lf(tmp_path):
     jsonl_path = tmp_path / "StubDataclassDerived.jsonl"
     jsonl_path.write_bytes(_JSONL_LF.encode("utf-8"))
 
-    records = JsonlReader().build().load_all(dirs=[str(tmp_path)], ext="jsonl")
+    records = list(JsonlReader().build().load_all(dirs=[str(tmp_path)], ext="jsonl").get("/", ()))
     assert len(records) == 3
     _assert_no_cr_in_fields(records)
     assert records[0].id == "eol_id_1"
@@ -184,7 +184,7 @@ def test_jsonl_reader_accepts_crlf(tmp_path):
     jsonl_path = tmp_path / "StubDataclassDerived.jsonl"
     jsonl_path.write_bytes(_JSONL_CRLF.encode("utf-8"))
 
-    records = JsonlReader().build().load_all(dirs=[str(tmp_path)], ext="jsonl")
+    records = list(JsonlReader().build().load_all(dirs=[str(tmp_path)], ext="jsonl").get("/", ()))
     assert len(records) == 3
     _assert_no_cr_in_fields(records)
     assert records[0].id == "eol_id_1"
@@ -223,7 +223,7 @@ def test_yaml_reader_accepts_lf(tmp_path):
     yaml_path = tmp_path / "StubDataclassDerived.yaml"
     yaml_path.write_bytes(_YAML_LF.encode("utf-8"))
 
-    records = YamlReader().build().load_all(dirs=[str(tmp_path)], ext="yaml")
+    records = list(YamlReader().build().load_all(dirs=[str(tmp_path)], ext="yaml").get("/", ()))
     assert len(records) == 1
     _assert_no_cr_in_fields(records)
     assert records[0].id == "eol_id_1"
@@ -234,7 +234,7 @@ def test_yaml_reader_accepts_crlf(tmp_path):
     yaml_path = tmp_path / "StubDataclassDerived.yaml"
     yaml_path.write_bytes(_YAML_CRLF.encode("utf-8"))
 
-    records = YamlReader().build().load_all(dirs=[str(tmp_path)], ext="yaml")
+    records = list(YamlReader().build().load_all(dirs=[str(tmp_path)], ext="yaml").get("/", ()))
     assert len(records) == 1
     _assert_no_cr_in_fields(records)
     assert records[0].id == "eol_id_1"
@@ -270,7 +270,7 @@ def test_csv_roundtrip_preserves_records(tmp_path):
         (tmp_path / fd.name).write_bytes(fd.file_bytes)
 
     # Read back
-    records = CsvReader().build().load_all(dirs=[str(tmp_path)], ext="csv")
+    records = list(CsvReader().build().load_all(dirs=[str(tmp_path)], ext="csv").get("/", ()))
     assert len(records) == 3
     _assert_no_cr_in_fields(records)
     for orig, loaded in zip(_SAMPLE_RECORDS, records):
@@ -288,7 +288,7 @@ def test_json_roundtrip_preserves_records(tmp_path):
         (out_dir / fd.name).write_bytes(fd.file_bytes)
 
     # Read back
-    records = JsonReader().build().load_all(dirs=[str(tmp_path)], ext="json")
+    records = list(JsonReader().build().load_all(dirs=[str(tmp_path)], ext="json").get("/", ()))
     assert len(records) == 3
     _assert_no_cr_in_fields(records)
     loaded_by_id = {r.id: r for r in records}
@@ -305,7 +305,7 @@ def test_jsonl_roundtrip_preserves_records(tmp_path):
         (tmp_path / fd.name).write_bytes(fd.file_bytes)
 
     # Read back
-    records = JsonlReader().build().load_all(dirs=[str(tmp_path)], ext="jsonl")
+    records = list(JsonlReader().build().load_all(dirs=[str(tmp_path)], ext="jsonl").get("/", ()))
     assert len(records) == 3
     _assert_no_cr_in_fields(records)
     for orig, loaded in zip(_SAMPLE_RECORDS, records):
@@ -323,7 +323,7 @@ def test_yaml_roundtrip_preserves_records(tmp_path):
         (out_dir / fd.name).write_bytes(fd.file_bytes)
 
     # Read back
-    records = YamlReader().build().load_all(dirs=[str(tmp_path)], ext="yaml")
+    records = list(YamlReader().build().load_all(dirs=[str(tmp_path)], ext="yaml").get("/", ()))
     assert len(records) == 3
     _assert_no_cr_in_fields(records)
     loaded_by_id = {r.id: r for r in records}

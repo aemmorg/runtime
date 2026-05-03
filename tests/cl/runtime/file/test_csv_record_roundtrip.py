@@ -103,7 +103,7 @@ def test_roundtrip(default_db_fixture):
                 dirs=[dir_path],
                 ext="csv",
                 file_include_patterns=[record_type_pattern],
-            ).get("\\", ()))
+            ).get("/", ()))
             assert BuilderChecks.is_equal(records_from_csv, expected_records)
         finally:
             if os.path.exists(dir_path):

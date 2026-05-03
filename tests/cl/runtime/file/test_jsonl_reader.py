@@ -29,7 +29,7 @@ def test_load_all(default_db_fixture):
     env_dir = QaUtil.get_test_dir_from_call_stack()
 
     jsonl_reader = JsonlReader().build()
-    records = list(jsonl_reader.load_all(dirs=[env_dir], ext="jsonl", file_include_patterns=["StubDataclassDerived.*"]).get("\\", ()))
+    records = list(jsonl_reader.load_all(dirs=[env_dir], ext="jsonl", file_include_patterns=["StubDataclassDerived.*"]).get("/", ()))
     active(DataSource).insert_many(records, commit=True)
 
     # Verify
@@ -77,7 +77,7 @@ def test_performance(default_db_fixture, tmp_path):
         result = jsonl_reader.load_all(dirs=[str(tmp_path)], ext="jsonl")
         elapsed = time.perf_counter() - start
 
-        records = result.get("\\", ())
+        records = result.get("/", ())
         assert len(records) == row_count
         results.append((row_count, elapsed))
 

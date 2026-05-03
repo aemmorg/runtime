@@ -65,7 +65,7 @@ def test_yaml_reader(default_db_fixture):
 
     # Act: read each test input file in the env_dir and load data into the local cache
     yaml_reader = YamlReader().build()
-    records = list(yaml_reader.load_all(dirs=[env_dir], ext="yaml").get("\\", ()))
+    records = list(yaml_reader.load_all(dirs=[env_dir], ext="yaml").get("/", ()))
     active(DataSource).insert_many(records, commit=True)
 
     # Assert: verify the data loaded into the local cache

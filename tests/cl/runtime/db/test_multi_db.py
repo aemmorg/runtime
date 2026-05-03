@@ -481,11 +481,6 @@ def test_load_record_from_another_tenant(multi_db_fixture):
     assert active(DataSource).load_one_or_none(records.get_key()) is None
 
 
-def _ds_with_datasets(ds: DataSource, datasets: list[str]) -> DataSource:
-    """Create a new DataSource with different datasets, sharing the same DB and tenant."""
-    return DataSource(db=ds.db, datasets=datasets, tenant=ds.tenant).build()
-
-
 def test_dataset_filtering(default_db_fixture):
     """Test saving records to specific datasets and loading with dataset filtering."""
     ds = active(DataSource)
@@ -498,44 +493,40 @@ def test_dataset_filtering(default_db_fixture):
     ds.insert_many(root_records, commit=True)
 
     # Save records to a custom dataset
-    ds_custom = _ds_with_datasets(ds, ["\\Custom"])
     custom_records = [
         StubDataclass(id="custom1").build(),
         StubDataclass(id="custom2").build(),
         StubDataclass(id="custom3").build(),
     ]
-    ds_custom.insert_many(custom_records, commit=True)
+    ds.insert_many(custom_records, datasets=["/Custom"], commit=True)
 
     # Load from root dataset only
-    loaded = ds.load_all(key_type=StubDataclassKey)
+    loaded = ds.load_all(key_type=StubDataclassKey, datasets=["/"])
     loaded_ids = sorted(r.id for r in loaded)
     assert loaded_ids == ["root1", "root2"]
 
     # Load from custom dataset only
-    loaded = ds_custom.load_all(key_type=StubDataclassKey)
+    loaded = ds.load_all(key_type=StubDataclassKey, datasets=["/Custom"])
     loaded_ids = sorted(r.id for r in loaded)
     assert loaded_ids == ["custom1", "custom2", "custom3"]
 
     # Load from both datasets
-    ds_both = _ds_with_datasets(ds, ["\\", "\\Custom"])
-    loaded = ds_both.load_all(key_type=StubDataclassKey)
+    loaded = ds.load_all(key_type=StubDataclassKey, datasets=["/", "/Custom"])
     loaded_ids = sorted(r.id for r in loaded)
     assert loaded_ids == ["custom1", "custom2", "custom3", "root1", "root2"]
 
 
 def test_dataset_format_validation(default_db_fixture):
-    """Test that dataset identifiers not starting with backslash are rejected."""
+    """Test that dataset identifiers not starting with slash are rejected."""
     ds = active(DataSource)
 
-    # Invalid dataset format (missing backslash prefix) should raise
-    with pytest.raises(RuntimeError, match="must begin with a backslash"):
-        ds_bad = _ds_with_datasets(ds, ["InvalidDataset"])
-        ds_bad.insert_one(StubDataclass(id="bad").build(), commit=True)
+    # Invalid dataset format (missing slash prefix) should raise
+    with pytest.raises(RuntimeError, match="must begin with a slash"):
+        ds.insert_one(StubDataclass(id="bad").build(), datasets=["InvalidDataset"], commit=True)
 
-    # Forward slash prefix should also be rejected
-    with pytest.raises(RuntimeError, match="must begin with a backslash"):
-        ds_bad = _ds_with_datasets(ds, ["/ForwardSlash"])
-        ds_bad.insert_one(StubDataclass(id="bad").build(), commit=True)
+    # Backslash prefix should also be rejected
+    with pytest.raises(RuntimeError, match="must begin with a slash"):
+        ds.insert_one(StubDataclass(id="bad").build(), datasets=["\\BackSlash"], commit=True)
 
 
 def test_same_key_different_datasets(default_db_fixture):
@@ -546,22 +537,20 @@ def test_same_key_different_datasets(default_db_fixture):
     ds.insert_one(StubDataclass(id="shared").build(), commit=True)
 
     # Save a record with the same id="shared" to a different dataset
-    ds_other = _ds_with_datasets(ds, ["\\Other"])
-    ds_other.insert_one(StubDataclass(id="shared").build(), commit=True)
+    ds.insert_one(StubDataclass(id="shared").build(), datasets=["/Other"], commit=True)
 
     # Load from root - should get one record
-    loaded = ds.load_all(key_type=StubDataclassKey)
+    loaded = ds.load_all(key_type=StubDataclassKey, datasets=["/"])
     assert len(loaded) == 1
     assert loaded[0].id == "shared"
 
     # Load from Other - should get one record
-    loaded = ds_other.load_all(key_type=StubDataclassKey)
+    loaded = ds.load_all(key_type=StubDataclassKey, datasets=["/Other"])
     assert len(loaded) == 1
     assert loaded[0].id == "shared"
 
     # Load from both - should get two records (same key, different datasets)
-    ds_both = _ds_with_datasets(ds, ["\\", "\\Other"])
-    loaded = ds_both.load_all(key_type=StubDataclassKey)
+    loaded = ds.load_all(key_type=StubDataclassKey, datasets=["/", "/Other"])
     assert len(loaded) == 2
 
 
@@ -569,20 +558,16 @@ def test_default_dataset_is_root(default_db_fixture):
     """Test that records go to root dataset when datasets is the default."""
     ds = active(DataSource)
 
-    # Default datasets should be root
-    assert list(ds.datasets) == ["\\"]
-
-    # Save without changing datasets
+    # Save without specifying datasets (goes to root by default)
     ds.insert_one(StubDataclass(id="defaulted").build(), commit=True)
 
-    # Load explicitly from root dataset - same as default
+    # Load from root dataset (default) should find it
     loaded = ds.load_all(key_type=StubDataclassKey)
     loaded_ids = [r.id for r in loaded]
     assert "defaulted" in loaded_ids
 
     # Load from a different dataset should not find it
-    ds_other = _ds_with_datasets(ds, ["\\Other"])
-    loaded = ds_other.load_all(key_type=StubDataclassKey)
+    loaded = ds.load_all(key_type=StubDataclassKey, datasets=["/Other"])
     loaded_ids = [r.id for r in loaded]
     assert "defaulted" not in loaded_ids
 
@@ -591,19 +576,20 @@ def test_dataset_sort_order(default_db_fixture):
     """Test that results are sorted ascending by dataset, then by key."""
     ds = active(DataSource)
 
-    # Save to dataset \\B
-    ds_b = _ds_with_datasets(ds, ["\\B"])
-    ds_b.insert_many([StubDataclass(id="b2").build(), StubDataclass(id="b1").build()], commit=True)
+    # Save to dataset /B
+    ds.insert_many(
+        [StubDataclass(id="b2").build(), StubDataclass(id="b1").build()], datasets=["/B"], commit=True
+    )
 
-    # Save to dataset \\A
-    ds_a = _ds_with_datasets(ds, ["\\A"])
-    ds_a.insert_many([StubDataclass(id="a2").build(), StubDataclass(id="a1").build()], commit=True)
+    # Save to dataset /A
+    ds.insert_many(
+        [StubDataclass(id="a2").build(), StubDataclass(id="a1").build()], datasets=["/A"], commit=True
+    )
 
     # Load from both datasets with ASC sort
-    ds_both = _ds_with_datasets(ds, ["\\A", "\\B"])
-    loaded = ds_both.load_all(key_type=StubDataclassKey, sort_order=SortOrder.ASC)
+    loaded = ds.load_all(key_type=StubDataclassKey, datasets=["/A", "/B"], sort_order=SortOrder.ASC)
     loaded_ids = [r.id for r in loaded]
-    # Dataset \\A records first (sorted by key ASC), then \\B records (sorted by key ASC)
+    # Dataset /A records first (sorted by key ASC), then /B records (sorted by key ASC)
     assert loaded_ids == ["a1", "a2", "b1", "b2"]
 
 

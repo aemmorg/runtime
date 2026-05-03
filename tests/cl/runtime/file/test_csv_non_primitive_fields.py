@@ -195,11 +195,11 @@ def _assert_csv_roundtrip(records):
         _write_file_data_to_dir(first_write, tmp_dir)
 
         csv_reader = CsvReader().build()
-        loaded_records = csv_reader.load_all(
+        loaded_records = list(csv_reader.load_all(
             dirs=[tmp_dir],
             ext="csv",
             file_include_patterns=[f"{type_name}*"],
-        )
+        ).get("/", ()))
 
         # Verify loaded records match originals
         assert BuilderChecks.is_equal(loaded_records, records), (

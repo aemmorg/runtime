@@ -103,7 +103,7 @@ def test_roundtrip_with_type_field():
                 dirs=[dir_path],
                 ext="json",
                 file_include_patterns=[record_type_pattern],
-            ).get("\\", ()))
+            ).get("/", ()))
 
             # Verify
             assert BuilderChecks.is_equal(records_from_json, expected_records)
@@ -132,7 +132,7 @@ def test_roundtrip_without_type_field():
                 dirs=[dir_path],
                 ext="json",
                 file_include_patterns=[record_type_pattern],
-            ).get("\\", ()))
+            ).get("/", ()))
 
             # Verify
             assert BuilderChecks.is_equal(records_from_json, expected_records)
@@ -159,7 +159,7 @@ def test_roundtrip_single_record():
         records_from_json = list(json_reader.load_all(
             dirs=[dir_path],
             ext="json",
-        ).get("\\", ()))
+        ).get("/", ()))
 
         # Verify
         assert len(records_from_json) == 1
@@ -190,7 +190,7 @@ def test_roundtrip_mixed_types():
         records_from_json = list(json_reader.load_all(
             dirs=[dir_path],
             ext="json",
-        ).get("\\", ()))
+        ).get("/", ()))
 
         # Verify all records loaded correctly
         assert len(records_from_json) == len(expected_records)
