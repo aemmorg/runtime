@@ -142,5 +142,21 @@ def test_load_column_formats(default_db_fixture):
         assert records[0] == expected, f"Record mismatch for {fmt} column format"
 
 
+def test_generated_csv_read_as_regular(work_dir_fixture):
+    """Test that a regular CSV file with sep= sentinel raises an error directing to the xlsx source."""
+
+    csv_reader = CsvReader().build()
+    with pytest.raises(RuntimeError, match="has sep= prefix"):
+        csv_reader.load_file(file_path="StubDataclassDerived.WithSep.csv")
+
+
+def test_edited_generated_csv(work_dir_fixture):
+    """Test that a generated CSV without sep= sentinel raises an error about manual editing."""
+
+    csv_reader = CsvReader().build()
+    with pytest.raises(RuntimeError, match="has no sep= prefix"):
+        csv_reader.load_file(file_path="StubDataclassDerived.Sheet1.WithoutSep.generated.csv")
+
+
 if __name__ == "__main__":
     pytest.main([__file__])

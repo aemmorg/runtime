@@ -17,6 +17,7 @@ import datetime as dt
 import os
 import re
 import types
+from collections import defaultdict
 from dataclasses import dataclass
 from typing import Sequence
 from typing import Union
@@ -29,8 +30,10 @@ from cl.runtime.file.file_util import FileUtil
 from cl.runtime.file.reader import Reader
 from cl.runtime.primitive.case_util import CaseUtil
 from cl.runtime.records.record_mixin import RecordMixin
+from cl.runtime.file.csv_reader import CsvReader
 
 _INVALID_SHEET_NAME_RE = re.compile(r'[/\\<>:"|?*\x00\n]')
+_SENTINEL = "sep=,"
 
 
 @dataclass(slots=True, kw_only=True)
@@ -38,8 +41,17 @@ class ExcelReader(Reader):
     """Read records from XLSX files by converting to CSV files on disk."""
 
     def load_file(self, *, file_path: str) -> frozendict[str, tuple[RecordMixin, ...]]:
-        """ExcelReader converts to CSV; records are loaded by CsvReader."""
-        return frozendict()
+        """Convert xlsx to generated CSV files and load records using CsvReader."""
+
+        csv_paths = self._convert_file(file_path)
+
+        csv_reader = CsvReader().build()
+        merged: dict[str, list[RecordMixin]] = defaultdict(list)
+        for csv_path in csv_paths:
+            file_result = csv_reader.load_file(file_path=csv_path)
+            for dataset, records in file_result.items():
+                merged[dataset].extend(records)
+        return frozendict({k: tuple(v) for k, v in merged.items()})
 
     @classmethod
     def convert_to_csv(
@@ -64,7 +76,7 @@ class ExcelReader(Reader):
 
     @classmethod
     def _convert_file(cls, xlsx_path: str) -> list[str]:
-        """Convert a single XLSX file to one or more CSV files.
+        """Convert a single XLSX file to one or more generated CSV files.
 
         Returns:
             List of generated CSV file paths.
@@ -80,7 +92,6 @@ class ExcelReader(Reader):
         wb = load_workbook(xlsx_path, read_only=True, data_only=True)
         sheet_names = wb.sheetnames
 
-        stem = os.path.splitext(xlsx_path)[0]
         dir_path = os.path.dirname(xlsx_path)
         base_name = os.path.splitext(os.path.basename(xlsx_path))[0]
 
@@ -119,12 +130,16 @@ class ExcelReader(Reader):
                 if field_name in temporal_fields:
                     column_types[i] = temporal_fields[field_name]
 
-            # Create CSV filenames
+            # Create CSV filenames with .generated.csv suffix
             norm_name = cls._normalize_sheet_name(sheet_name)
-            csv_path = os.path.join(dir_path, f"{base_name}.{norm_name}.csv")
+            csv_path = os.path.join(dir_path, f"{base_name}.{norm_name}.generated.csv")
 
-            # Write CSV with consistent settings
+            # Check if existing generated file has been manually edited
+            cls._check_not_edited(csv_path)
+
+            # Write CSV with sep=, sentinel and consistent settings
             with open(csv_path, "w", newline="", encoding="utf-8") as f:
+                f.write(f"{_SENTINEL}{os.linesep}")
                 writer = csv.writer(
                     f,
                     delimiter=",",
@@ -142,6 +157,19 @@ class ExcelReader(Reader):
 
         wb.close()
         return csv_paths
+
+    @classmethod
+    def _check_not_edited(cls, csv_path: str) -> None:
+        """Raise RuntimeError if an existing generated CSV has been manually edited."""
+        if not os.path.exists(csv_path):
+            return
+        with open(csv_path, "r", encoding="utf-8") as f:
+            first_line = f.readline().rstrip("\r\n")
+        if first_line != _SENTINEL:
+            raise RuntimeError(
+                f"Generated file '{csv_path}' has been edited (missing sep=, sentinel). "
+                f"Delete it to regenerate from the xlsx source."
+            )
 
     @classmethod
     def _get_temporal_field_types(cls, record_type: type) -> dict[str, type]:

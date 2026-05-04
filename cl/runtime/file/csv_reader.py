@@ -15,6 +15,7 @@
 import csv
 import os
 from collections import defaultdict
+from dataclasses import dataclass
 from typing import Any
 from typing import Sequence
 from frozendict import frozendict
@@ -30,17 +31,44 @@ from cl.runtime.serializers.data_serializers import DataSerializers
 _SERIALIZER = DataSerializers.FOR_CSV
 
 
+@dataclass(slots=True, kw_only=True)
 class CsvReader(Reader):
     """Helper class for working with CSV files."""
 
+    generated: bool | None = None
+    """Set to True for generated CSV files with sep= sentinel prefix."""
+
     def load_file(self, *, file_path: str) -> frozendict[str, tuple[RecordMixin, ...]]:
         """Load records from a single CSV file grouped by dataset."""
+
+        generated = self.generated
+        if generated is None and file_path.endswith(".generated.csv"):
+            generated = True
+
+        with open(file_path, mode="r", encoding="utf-8") as f:
+            has_sentinel = f.readline().rstrip("\r\n").startswith("sep=")
+
+        if generated is None and has_sentinel:
+            xlsx_file_path = self._xlsx_path_from_csv(file_path)
+            raise RuntimeError(
+                f"CSV file {file_path} has sep= prefix, indicating it has been "
+                f"generated from {xlsx_file_path}. Read the .xlsx file instead."
+            )
+        if generated and not has_sentinel:
+            xlsx_file_path = self._xlsx_path_from_csv(file_path)
+            raise RuntimeError(
+                f"CSV file {file_path} has no sep= prefix, indicating it has been "
+                f"edited manually after it has been generated from {xlsx_file_path}. "
+                f"Move changes to the .xlsx file and delete {file_path} to continue."
+            )
 
         records_by_dataset: dict[str, list[RecordMixin]] = defaultdict(list)
         try:
             record_type = FileUtil.get_type_from_filename(file_path)
 
             with open(file_path, mode="r", encoding="utf-8") as file:
+                if has_sentinel:
+                    file.readline()
 
                 csv_reader = csv.DictReader(file)
                 row_dicts = [row_dict for row_dict in csv_reader]
@@ -183,6 +211,18 @@ class CsvReader(Reader):
             file_include_patterns=file_include_patterns,
             file_exclude_patterns=file_exclude_patterns,
         )
+
+    @staticmethod
+    def _xlsx_path_from_csv(file_path: str) -> str:
+        """Derive the xlsx source path from a CSV file path."""
+        dir_path = os.path.dirname(file_path)
+        basename = os.path.basename(file_path)
+        if basename.endswith(".generated.csv"):
+            stem = basename.removesuffix(".generated.csv")
+        else:
+            stem = os.path.splitext(basename)[0]
+        xlsx_base = stem.rsplit(".", 1)[0]
+        return os.path.join(dir_path, f"{xlsx_base}.xlsx")
 
     @classmethod
     def _deserialize_row(cls, *, record_type: type, row_dict: dict[str, Any]) -> tuple[RecordMixin, str | None]:
