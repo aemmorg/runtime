@@ -15,7 +15,7 @@
 import datetime as dt
 import os
 from dataclasses import dataclass
-from typing_extensions import final
+from typing import final
 from cl.runtime.primitive.case_util import CaseUtil
 from cl.runtime.primitive.datetime_util import DatetimeUtil
 from cl.runtime.project.project_layout import ProjectLayout

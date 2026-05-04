@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from itertools import chain
 from typing import Sequence
 from more_itertools import consume
-from typing_extensions import final
+from typing import final
 from cl.runtime.configurations.configuration import Configuration
 from cl.runtime.contexts.context_manager import active
 from cl.runtime.db.data_source import DataSource

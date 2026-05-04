@@ -14,7 +14,7 @@
 
 import os
 from dataclasses import dataclass
-from typing_extensions import final
+from typing import final
 from cl.runtime.project.project_layout import ProjectLayout
 from cl.runtime.records.for_dataclasses.extensions import required
 from cl.runtime.records.typename import typename

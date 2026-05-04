@@ -14,7 +14,7 @@
 
 from dataclasses import dataclass
 from typing import Mapping
-from typing_extensions import final
+from typing import final
 from cl.runtime.settings.project_settings import ProjectSettings
 from cl.runtime.settings.settings import Settings
 

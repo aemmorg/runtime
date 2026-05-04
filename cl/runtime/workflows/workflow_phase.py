@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from dataclasses import dataclass
-from typing_extensions import final
+from typing import final
 from cl.runtime.records.record_mixin import RecordMixin
 from cl.runtime.workflows.workflow_phase_key import WorkflowPhaseKey
 

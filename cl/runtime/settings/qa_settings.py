@@ -14,7 +14,7 @@
 
 from dataclasses import dataclass
 from typing import Sequence
-from typing_extensions import final
+from typing import final
 from cl.runtime.project.project_checks import ProjectChecks
 from cl.runtime.settings.settings import Settings
 from cl.runtime.settings.settings_util import SettingsUtil

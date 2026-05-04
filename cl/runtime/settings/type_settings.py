@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from typing import Mapping
 from memoization import cached
 from parse import parse
-from typing_extensions import final
+from typing import final
 from cl.runtime.primitive.case_util import CaseUtil
 from cl.runtime.settings.project_settings import ProjectSettings
 from cl.runtime.settings.settings import Settings

@@ -14,7 +14,7 @@
 
 import os
 from dataclasses import dataclass
-from typing_extensions import final
+from typing import final
 from cl.runtime.project.resources_util import ResourcesUtil
 from cl.runtime.settings.env_settings import EnvSettings
 from cl.runtime.settings.settings import Settings

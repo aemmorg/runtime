@@ -14,7 +14,7 @@
 
 from dataclasses import dataclass
 from getpass import getuser
-from typing_extensions import final
+from typing import final
 from cl.runtime.primitive.case_util import CaseUtil
 from cl.runtime.primitive.enum_util import EnumUtil
 from cl.runtime.primitive.identifier_util import IdentifierUtil

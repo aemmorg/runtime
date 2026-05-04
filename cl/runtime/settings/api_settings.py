@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from dataclasses import dataclass
-from typing_extensions import final
+from typing import final
 from cl.runtime.records.typename import typename
 from cl.runtime.settings.settings import Settings
 

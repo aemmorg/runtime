@@ -17,7 +17,7 @@ import sys
 from dataclasses import dataclass
 from typing import Mapping
 from typing import Sequence
-from typing_extensions import final  # TODO: !!! Do not import from typing_extensions
+from typing import final  # TODO: !!! Do not import from typing_extensions
 from cl.runtime.project.project_layout import ProjectLayout
 from cl.runtime.records.for_dataclasses.extensions import required
 from cl.runtime.settings.dynaconf_loader import DynaconfLoader
