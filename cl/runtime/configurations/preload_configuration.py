@@ -107,7 +107,7 @@ class PreloadConfiguration(Configuration):
                     raise RuntimeError(
                         f"Dataset identifier '{dataset}' must begin with a slash character."
                     )
-                ds.insert_many(group_records, datasets=[dataset], commit=True)
+                ds.insert_many(group_records, dataset=dataset, commit=True)
 
             # Execute run_configure on all preloaded Configuration records with autorun=True
             autorun_configurations = [

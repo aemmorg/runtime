@@ -123,7 +123,7 @@ class LocalCache(Db):
         key_type: type[KeyMixin],
         records: Sequence[RecordMixin],
         *,
-        datasets: Sequence[str] | None = None,
+        dataset: str,
         tenant: str,
         save_policy: SavePolicy,
     ) -> None:
@@ -131,7 +131,7 @@ class LocalCache(Db):
         # Check params
         assert TypeCheck.guard_key_type(key_type)
         assert TypeCheck.guard_record_sequence(records)
-        self._check_datasets(datasets)
+        self._check_dataset(dataset)
         self._check_tenant(tenant)
 
         # TODO: Provide a more performant implementation

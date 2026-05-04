@@ -85,11 +85,11 @@ class DataSource(DataSourceKey, RecordMixin):
     _pending_deletions: list[tuple[KeyMixin, tuple[str, ...] | None]] | None = None
     """Keys and their datasets that will be deleted on commit."""
 
-    _pending_insertions: list[tuple[RecordMixin, tuple[str, ...] | None]] | None = None
-    """Records and their datasets that will be inserted on commit."""
+    _pending_insertions: list[tuple[RecordMixin, str | None]] | None = None
+    """Records and their dataset that will be inserted on commit."""
 
-    _pending_replacements: list[tuple[RecordMixin, tuple[str, ...] | None]] | None = None
-    """Records and their datasets that will be replaced on commit."""
+    _pending_replacements: list[tuple[RecordMixin, str | None]] | None = None
+    """Records and their dataset that will be replaced on commit."""
 
     _backup: Db | None = None
     """Optional backup Db (CsvDb) for durable file storage."""
@@ -694,7 +694,7 @@ class DataSource(DataSourceKey, RecordMixin):
         self,
         record: RecordMixin,
         *,
-        datasets: Sequence[str] | None = None,
+        dataset: str | None = None,
         commit: bool,
     ) -> None:
         """
@@ -706,16 +706,16 @@ class DataSource(DataSourceKey, RecordMixin):
 
         Args:
             record: Record to be inserted
-            datasets: Sequence of dataset identifiers (None means all datasets)
+            dataset: Dataset identifier where the record will be stored (defaults to root "/" if not specified)
             commit: If True, commit() is called immediately after which will also commit other pending saves and deletes
         """
-        self._save_many([record], datasets=datasets, commit=commit, save_policy=SavePolicy.INSERT)
+        self._save_many([record], dataset=dataset, commit=commit, save_policy=SavePolicy.INSERT)
 
     def insert_many(
         self,
         records: RecordMixin | Sequence[RecordMixin],
         *,
-        datasets: Sequence[str] | None = None,
+        dataset: str | None = None,
         commit: bool,
     ) -> None:
         """
@@ -727,16 +727,16 @@ class DataSource(DataSourceKey, RecordMixin):
 
         Args:
             records: A sequence of records which may have different key types
-            datasets: Sequence of dataset identifiers (None means all datasets)
+            dataset: Dataset identifier where the records will be stored (defaults to root "/" if not specified)
             commit: If True, commit() is called immediately after which will also commit other pending saves and deletes
         """
-        self._save_many(records, datasets=datasets, commit=commit, save_policy=SavePolicy.INSERT)
+        self._save_many(records, dataset=dataset, commit=commit, save_policy=SavePolicy.INSERT)
 
     def replace_one(
         self,
         record: RecordMixin,
         *,
-        datasets: Sequence[str] | None = None,
+        dataset: str | None = None,
         commit: bool,
     ) -> None:
         """
@@ -748,16 +748,16 @@ class DataSource(DataSourceKey, RecordMixin):
 
         Args:
             record: Record to be saved
-            datasets: Sequence of dataset identifiers (None means all datasets)
+            dataset: Dataset identifier where the record will be stored (defaults to root "/" if not specified)
             commit: If True, commit() is called immediately after which will also commit other pending saves and deletes
         """
-        self._save_many([record], datasets=datasets, commit=commit, save_policy=SavePolicy.REPLACE)
+        self._save_many([record], dataset=dataset, commit=commit, save_policy=SavePolicy.REPLACE)
 
     def replace_many(
         self,
         records: RecordMixin | Sequence[RecordMixin],
         *,
-        datasets: Sequence[str] | None = None,
+        dataset: str | None = None,
         commit: bool,
     ) -> None:
         """
@@ -769,10 +769,10 @@ class DataSource(DataSourceKey, RecordMixin):
 
         Args:
             records: A sequence of records which may have different key types
-            datasets: Sequence of dataset identifiers (None means all datasets)
+            dataset: Dataset identifier where the records will be stored (defaults to root "/" if not specified)
             commit: If True, commit() is called immediately after which will also commit other pending saves and deletes
         """
-        self._save_many(records, datasets=datasets, commit=commit, save_policy=SavePolicy.REPLACE)
+        self._save_many(records, dataset=dataset, commit=commit, save_policy=SavePolicy.REPLACE)
 
     def delete_one(
         self,
@@ -876,9 +876,8 @@ class DataSource(DataSourceKey, RecordMixin):
 
             # Collect (record_type, dataset) pairs for presence tracking
             record_type_dataset_pairs = set()
-            for r, ds_tuple in (self._pending_insertions + self._pending_replacements):
-                for ds in (ds_tuple if ds_tuple is not None else (DatasetUtil.root(),)):
-                    record_type_dataset_pairs.add((typeof(r), ds))
+            for r, ds in (self._pending_insertions + self._pending_replacements):
+                record_type_dataset_pairs.add((typeof(r), ds if ds is not None else DatasetUtil.root()))
             if record_type_dataset_pairs:
                 # Add RecordTypePresence type itself
                 record_type_dataset_pairs.add((RecordTypePresence, DatasetUtil.root()))
@@ -905,30 +904,30 @@ class DataSource(DataSourceKey, RecordMixin):
                         tenant=self.tenant.tenant_id,
                     )
 
-            # Invoke save_many for all pending inserts grouped by (key_type, datasets)
+            # Invoke save_many for all pending inserts grouped by (key_type, dataset)
             if self._pending_insertions:
                 insert_groups = defaultdict(list)
-                for record, ds_tuple in self._pending_insertions:
-                    insert_groups[(record.get_key_type(), ds_tuple)].append(record)
-                for (key_type, ds_tuple), records_for_group in insert_groups.items():
+                for record, ds in self._pending_insertions:
+                    insert_groups[(record.get_key_type(), ds)].append(record)
+                for (key_type, ds), records_for_group in insert_groups.items():
                     self._get_db().save_many(
                         key_type,
                         records_for_group,
-                        datasets=ds_tuple if ds_tuple is not None else (DatasetUtil.root(),),
+                        dataset=ds if ds is not None else DatasetUtil.root(),
                         tenant=self.tenant.tenant_id,
                         save_policy=SavePolicy.INSERT,
                     )
 
-            # Invoke save_many for all pending replacements grouped by (key_type, datasets)
+            # Invoke save_many for all pending replacements grouped by (key_type, dataset)
             if self._pending_replacements:
                 replace_groups = defaultdict(list)
-                for record, ds_tuple in self._pending_replacements:
-                    replace_groups[(record.get_key_type(), ds_tuple)].append(record)
-                for (key_type, ds_tuple), records_for_group in replace_groups.items():
+                for record, ds in self._pending_replacements:
+                    replace_groups[(record.get_key_type(), ds)].append(record)
+                for (key_type, ds), records_for_group in replace_groups.items():
                     self._get_db().save_many(
                         key_type,
                         records_for_group,
-                        datasets=ds_tuple if ds_tuple is not None else (DatasetUtil.root(),),
+                        dataset=ds if ds is not None else DatasetUtil.root(),
                         tenant=self.tenant.tenant_id,
                         save_policy=SavePolicy.REPLACE,
                     )
@@ -937,25 +936,25 @@ class DataSource(DataSourceKey, RecordMixin):
             if self._backup is not None:
                 if self._pending_insertions:
                     insert_groups = defaultdict(list)
-                    for record, ds_tuple in self._pending_insertions:
-                        insert_groups[(record.get_key_type(), ds_tuple)].append(record)
-                    for (key_type, ds_tuple), records_for_group in insert_groups.items():
+                    for record, ds in self._pending_insertions:
+                        insert_groups[(record.get_key_type(), ds)].append(record)
+                    for (key_type, ds), records_for_group in insert_groups.items():
                         self._backup.save_many(
                             key_type,
                             records_for_group,
-                            datasets=ds_tuple if ds_tuple is not None else (DatasetUtil.root(),),
+                            dataset=ds if ds is not None else DatasetUtil.root(),
                             tenant=self.tenant.tenant_id,
                             save_policy=SavePolicy.INSERT,
                         )
                 if self._pending_replacements:
                     replace_groups = defaultdict(list)
-                    for record, ds_tuple in self._pending_replacements:
-                        replace_groups[(record.get_key_type(), ds_tuple)].append(record)
-                    for (key_type, ds_tuple), records_for_group in replace_groups.items():
+                    for record, ds in self._pending_replacements:
+                        replace_groups[(record.get_key_type(), ds)].append(record)
+                    for (key_type, ds), records_for_group in replace_groups.items():
                         self._backup.save_many(
                             key_type,
                             records_for_group,
-                            datasets=ds_tuple if ds_tuple is not None else (DatasetUtil.root(),),
+                            dataset=ds if ds is not None else DatasetUtil.root(),
                             tenant=self.tenant.tenant_id,
                             save_policy=SavePolicy.REPLACE,
                         )
@@ -1009,7 +1008,7 @@ class DataSource(DataSourceKey, RecordMixin):
             self._get_db().save_many(
                 key_type,
                 records,
-                datasets=datasets if datasets is not None else (DatasetUtil.root(),),
+                dataset=DatasetUtil.root(),
                 tenant=self.tenant.tenant_id,
                 save_policy=SavePolicy.REPLACE,
             )
@@ -1073,7 +1072,7 @@ class DataSource(DataSourceKey, RecordMixin):
         self,
         records: Sequence[RecordMixin],
         *,
-        datasets: Sequence[str] | None = None,
+        dataset: str | None = None,
         commit: bool,
         save_policy: SavePolicy,
     ) -> None:
@@ -1086,7 +1085,7 @@ class DataSource(DataSourceKey, RecordMixin):
 
         Args:
             records: A sequence of records which may have different key types
-            datasets: Sequence of dataset identifiers (None means all datasets)
+            dataset: Dataset identifier where the records will be stored (defaults to root "/" if not specified)
             commit: If True, commit() is called immediately after which will also commit other pending saves and deletes
             save_policy: Insert vs. replace policy, partial update is not included due to design considerations
         """
@@ -1097,15 +1096,16 @@ class DataSource(DataSourceKey, RecordMixin):
         if len(records) == 0:
             return
 
-        # Convert datasets to tuple for immutable storage with pending operations
-        datasets_tuple = tuple(datasets) if datasets is not None else None
+        # Validate dataset format if specified
+        if dataset is not None:
+            Db._check_dataset(dataset)
 
         if save_policy == SavePolicy.INSERT:
-            # Add to the list of pending inserts with datasets
-            self._pending_insertions.extend((record, datasets_tuple) for record in records)
+            # Add to the list of pending inserts with dataset
+            self._pending_insertions.extend((record, dataset) for record in records)
         elif save_policy == SavePolicy.REPLACE:
-            # Add to the list of pending replacements with datasets
-            self._pending_replacements.extend((record, datasets_tuple) for record in records)
+            # Add to the list of pending replacements with dataset
+            self._pending_replacements.extend((record, dataset) for record in records)
         else:
             ErrorUtil.enum_value_error(save_policy, SavePolicy)
 

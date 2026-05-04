@@ -159,7 +159,7 @@ class Db(DbKey, RecordMixin, ABC):
         key_type: type[KeyMixin],
         records: Sequence[RecordMixin],
         *,
-        datasets: Sequence[str],
+        dataset: str,
         tenant: str,
         save_policy: SavePolicy,
     ) -> None:
@@ -169,7 +169,7 @@ class Db(DbKey, RecordMixin, ABC):
         Args:
             key_type: Key type determines the database table
             records: Sequence of records to save, record.get_key_type() must match the key_type argument for each record
-            datasets: Sequence of backslash-delimited dataset identifiers (required for save)
+            dataset: Slash-delimited dataset identifier where the records will be stored
             tenant: Unique tenant identifier, tenants are isolated when sharing the same DB
             save_policy: Insert vs. replace policy, partial update is not included due to design considerations
         """
@@ -294,6 +294,20 @@ class Db(DbKey, RecordMixin, ABC):
 
         # Create and return a new DB instance
         return db_type(db_id=db_id).build()
+
+    @classmethod
+    def _check_dataset(cls, dataset: str) -> None:
+        """Error if dataset has invalid format."""
+        if dataset is None:
+            raise RuntimeError("Dataset identifier cannot be None.")
+        elif dataset == "":
+            raise RuntimeError("Dataset identifier cannot be an empty string.")
+        elif not isinstance(dataset, str):
+            raise RuntimeError("Dataset identifier must be a string.")
+        elif not dataset.startswith("/"):
+            raise RuntimeError(
+                f"Dataset identifier '{dataset}' must begin with a slash character."
+            )
 
     @classmethod
     def _check_datasets(cls, datasets: Sequence[str] | None) -> None:

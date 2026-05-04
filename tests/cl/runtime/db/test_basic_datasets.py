@@ -31,7 +31,7 @@ def test_single_dataset(multi_db_fixture):
         StubDataclass(id="r1").build(),
         StubDataclass(id="r2").build(),
     ]
-    ds.insert_many(records, datasets=["/"], commit=True)
+    ds.insert_many(records, dataset="/", commit=True)
 
     # All records are in root dataset
     loaded = ds.load_all(StubDataclassKey)
@@ -48,8 +48,8 @@ def test_two_datasets_root_and_child(multi_db_fixture):
     rec_root = StubDataclass(id="root").build()
     rec_a = StubDataclass(id="a").build()
 
-    ds.insert_one(rec_root, datasets=["/"], commit=True)
-    ds.insert_one(rec_a, datasets=["/A"], commit=True)
+    ds.insert_one(rec_root, dataset="/", commit=True)
+    ds.insert_one(rec_a, dataset="/A", commit=True)
 
     # Load all without dataset filter
     all_records = ds.load_all(StubDataclassKey)
@@ -77,10 +77,10 @@ def test_multiple_datasets(multi_db_fixture):
     rec_b = StubDataclass(id="b").build()
     rec_ab = StubDataclass(id="ab").build()
 
-    ds.insert_one(rec_root, datasets=["/"], commit=True)
-    ds.insert_one(rec_a, datasets=["/A"], commit=True)
-    ds.insert_one(rec_b, datasets=["/B"], commit=True)
-    ds.insert_one(rec_ab, datasets=["/A/B"], commit=True)
+    ds.insert_one(rec_root, dataset="/", commit=True)
+    ds.insert_one(rec_a, dataset="/A", commit=True)
+    ds.insert_one(rec_b, dataset="/B", commit=True)
+    ds.insert_one(rec_ab, dataset="/A/B", commit=True)
 
     # Load all without dataset filter
     all_records = ds.load_all(StubDataclassKey)
@@ -114,10 +114,10 @@ def test_multiple_datasets_presence(multi_db_fixture):
     """Test that RecordTypePresence correctly tracks per-dataset presence."""
     ds = active(DataSource)
 
-    ds.insert_one(StubDataclass(id="root").build(), datasets=["/"], commit=True)
-    ds.insert_one(StubDataclass(id="a").build(), datasets=["/A"], commit=True)
-    ds.insert_one(StubDataclass(id="b").build(), datasets=["/B"], commit=True)
-    ds.insert_one(StubDataclass(id="ab").build(), datasets=["/A/B"], commit=True)
+    ds.insert_one(StubDataclass(id="root").build(), dataset="/", commit=True)
+    ds.insert_one(StubDataclass(id="a").build(), dataset="/A", commit=True)
+    ds.insert_one(StubDataclass(id="b").build(), dataset="/B", commit=True)
+    ds.insert_one(StubDataclass(id="ab").build(), dataset="/A/B", commit=True)
 
     # Check RecordTypePresence records
     presences = ds.load_by_type(RecordTypePresence)
@@ -133,8 +133,8 @@ def test_multiple_datasets_derived_types(multi_db_fixture):
     ds = active(DataSource)
 
     # Insert base type in root, derived type in /A
-    ds.insert_one(StubDataclass(id="base").build(), datasets=["/"], commit=True)
-    ds.insert_one(StubDataclassDerived(id="derived").build(), datasets=["/A"], commit=True)
+    ds.insert_one(StubDataclass(id="base").build(), dataset="/", commit=True)
+    ds.insert_one(StubDataclassDerived(id="derived").build(), dataset="/A", commit=True)
 
     # Load all from the table (key type)
     all_records = ds.load_all(StubDataclassKey)
@@ -154,8 +154,8 @@ def test_insert_many_with_dataset(multi_db_fixture):
     records_a = [StubDataclass(id="a1").build(), StubDataclass(id="a2").build()]
     records_b = [StubDataclass(id="b1").build()]
 
-    ds.insert_many(records_a, datasets=["/A"], commit=True)
-    ds.insert_many(records_b, datasets=["/B"], commit=True)
+    ds.insert_many(records_a, dataset="/A", commit=True)
+    ds.insert_many(records_b, dataset="/B", commit=True)
 
     # Load all
     all_records = ds.load_all(StubDataclassKey)
@@ -173,7 +173,7 @@ def test_empty_dataset_filter(multi_db_fixture):
     """Test loading from a dataset that has no records."""
     ds = active(DataSource)
 
-    ds.insert_one(StubDataclass(id="root").build(), datasets=["/"], commit=True)
+    ds.insert_one(StubDataclass(id="root").build(), dataset="/", commit=True)
 
     # Load from a dataset that has no records
     empty = ds.load_all(StubDataclassKey, datasets=["/NonExistent"])

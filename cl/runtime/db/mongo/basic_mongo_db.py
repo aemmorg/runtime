@@ -355,7 +355,7 @@ class BasicMongoDb(Db):
         key_type: type[KeyMixin],
         records: Sequence[RecordMixin],
         *,
-        datasets: Sequence[str],
+        dataset: str,
         tenant: str,
         save_policy: SavePolicy,
     ) -> None:
@@ -363,7 +363,7 @@ class BasicMongoDb(Db):
         # Check params
         assert TypeCheck.guard_key_type(key_type)
         assert TypeCheck.guard_record_sequence(records)
-        self._check_datasets(datasets)
+        self._check_dataset(dataset)
         self._check_tenant(tenant)
 
         # Get MongoDB collection for the key type
@@ -374,14 +374,14 @@ class BasicMongoDb(Db):
             # Serialize key
             serialized_key = _KEY_SERIALIZER.serialize(record.get_key())
             key_dict = {
-                "_dataset": datasets[0],
+                "_dataset": dataset,
                 "_key": serialized_key,
                 "_tenant": tenant,
             }
 
             # Serialize record
             serialized_record = _RECORD_SERIALIZER.serialize(record)
-            serialized_record["_dataset"] = datasets[0]
+            serialized_record["_dataset"] = dataset
             serialized_record["_key"] = serialized_key
             serialized_record["_tenant"] = tenant
 

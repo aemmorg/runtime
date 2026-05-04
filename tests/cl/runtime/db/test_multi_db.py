@@ -499,7 +499,7 @@ def test_dataset_filtering(default_db_fixture):
         StubDataclass(id="custom2").build(),
         StubDataclass(id="custom3").build(),
     ]
-    ds.insert_many(custom_records, datasets=["/Custom"], commit=True)
+    ds.insert_many(custom_records, dataset="/Custom", commit=True)
 
     # Load from root dataset only
     loaded = ds.load_all(key_type=StubDataclassKey, datasets=["/"])
@@ -523,11 +523,11 @@ def test_dataset_format_validation(default_db_fixture):
 
     # Invalid dataset format (missing slash prefix) should raise
     with pytest.raises(RuntimeError, match="must begin with a slash"):
-        ds.insert_one(StubDataclass(id="bad").build(), datasets=["InvalidDataset"], commit=True)
+        ds.insert_one(StubDataclass(id="bad").build(), dataset="InvalidDataset", commit=True)
 
     # Backslash prefix should also be rejected
     with pytest.raises(RuntimeError, match="must begin with a slash"):
-        ds.insert_one(StubDataclass(id="bad").build(), datasets=["\\BackSlash"], commit=True)
+        ds.insert_one(StubDataclass(id="bad").build(), dataset="\\BackSlash", commit=True)
 
 
 def test_same_key_different_datasets(default_db_fixture):
@@ -540,7 +540,7 @@ def test_same_key_different_datasets(default_db_fixture):
     if ds.db.cast(Db).is_nested():
         # Nested DB can store the same key in different datasets, last dataset in ascending order wins
         # Save a record with the same id="shared" to a different dataset
-        ds.insert_one(StubDataclass(id="shared").build(), datasets=["/Other"], commit=True)
+        ds.insert_one(StubDataclass(id="shared").build(), dataset="/Other", commit=True)
 
         # Load from root - should get one record
         loaded = ds.load_all(key_type=StubDataclassKey, datasets=["/"])
@@ -558,7 +558,7 @@ def test_same_key_different_datasets(default_db_fixture):
     else:
         # Non-nested DB must prevent storing the same key in different datasets
         with pytest.raises(Exception):
-            ds.insert_one(StubDataclass(id="shared").build(), datasets=["/Other"], commit=True)
+            ds.insert_one(StubDataclass(id="shared").build(), dataset="/Other", commit=True)
 
 
 def test_default_dataset_is_root(default_db_fixture):
@@ -585,12 +585,12 @@ def test_dataset_sort_order(default_db_fixture):
 
     # Save to dataset /B
     ds.insert_many(
-        [StubDataclass(id="b2").build(), StubDataclass(id="b1").build()], datasets=["/B"], commit=True
+        [StubDataclass(id="b2").build(), StubDataclass(id="b1").build()], dataset="/B", commit=True
     )
 
     # Save to dataset /A
     ds.insert_many(
-        [StubDataclass(id="a2").build(), StubDataclass(id="a1").build()], datasets=["/A"], commit=True
+        [StubDataclass(id="a2").build(), StubDataclass(id="a1").build()], dataset="/A", commit=True
     )
 
     # Load from both datasets with ASC sort

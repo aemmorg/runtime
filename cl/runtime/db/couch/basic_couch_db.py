@@ -385,7 +385,7 @@ class BasicCouchDb(Db):
         key_type: type[KeyMixin],
         records: Sequence[RecordMixin],
         *,
-        datasets: Sequence[str],
+        dataset: str,
         tenant: str,
         save_policy: SavePolicy,
     ) -> None:
@@ -393,7 +393,7 @@ class BasicCouchDb(Db):
         # Check params
         assert TypeCheck.guard_key_type(key_type)
         assert TypeCheck.guard_record_sequence(records)
-        self._check_datasets(datasets)
+        self._check_dataset(dataset)
         self._check_tenant(tenant)
 
         # Get CouchDB database and collection name for the key type
@@ -409,7 +409,7 @@ class BasicCouchDb(Db):
             # Serialize record
             serialized_record = _RECORD_SERIALIZER.serialize(record)
             serialized_record["_id"] = doc_id
-            serialized_record["_dataset"] = datasets[0]
+            serialized_record["_dataset"] = dataset
             serialized_record["_key"] = serialized_key
             serialized_record["_tenant"] = tenant
             serialized_record["_collection"] = collection_name
