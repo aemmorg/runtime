@@ -18,7 +18,7 @@ ObjStrWithEolField: |-
 ObjStrWithTrailingEolField: |
   abc
   def
-ObjStrTimestampField: 2023-05-01T10:15:30.000Z-1a1a1a1a1a1a1a1a1a1a
+ObjStrTimestampField: 20230501-101530000-38D1M6GT38D1M6GT
 ObjFloatField: 1.23
 ObjBoolField: true
 ObjIntField: '123'

@@ -38,7 +38,7 @@ class StubDataclassPrimitiveFields(StubDataclassPrimitiveFieldsKey, RecordMixin)
     obj_str_with_trailing_eol_field: str | None = "abc\ndef\n"
     """Stub field."""
 
-    obj_str_timestamp_field: str | None = "2023-05-01T10:15:30.000Z-1a1a1a1a1a1a1a1a1a1a"
+    obj_str_timestamp_field: str | None = "20230501-101530000-38D1M6GT38D1M6GT"
     """Stub field."""
 
     obj_float_field: float | None = 1.23

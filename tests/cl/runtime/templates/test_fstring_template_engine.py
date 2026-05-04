@@ -44,7 +44,7 @@ def test_primitive_fields():
     expected_result = (
         "obj_str_field: abc\n"
         "obj_str_with_eol_field: abc\ndef\n"
-        "obj_str_timestamp_field: 2023-05-01T10:15:30.000Z-1a1a1a1a1a1a1a1a1a1a\n"
+        "obj_str_timestamp_field: 20230501-101530000-38D1M6GT38D1M6GT\n"
         "obj_float_field: 1.23\n"
         "obj_bool_field: true\n"
         "obj_int_field: 123\n"
