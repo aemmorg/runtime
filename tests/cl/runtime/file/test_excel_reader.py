@@ -18,6 +18,7 @@ import os
 import pytest
 from openpyxl import Workbook
 from cl.runtime.file.excel_reader import ExcelReader
+from stubs.cl.runtime.records.for_dataclasses.stub_dataclass_primitive_fields import StubDataclassPrimitiveFields
 
 _STUBS_DIR = os.path.normpath(
     os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "preloads", "stubs", "cl", "runtime", "file")
@@ -221,8 +222,6 @@ def test_format_no_field_type():
 
 def test_temporal_field_types():
     """Test _get_temporal_field_types extracts date/time/datetime fields from a record type."""
-
-    from stubs.cl.runtime.records.for_dataclasses.stub_dataclass_primitive_fields import StubDataclassPrimitiveFields
 
     temporal = ExcelReader._get_temporal_field_types(StubDataclassPrimitiveFields)
 

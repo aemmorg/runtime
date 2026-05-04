@@ -294,8 +294,6 @@ class RegressionGuard(BootstrapMixin):
 
             # For PNG files, use pixel hash comparison
             if self.ext == "png":
-                from cl.runtime.qa.png_util import PngUtil
-
                 received_hash = PngUtil.get_pixel_hash_from_png(received_path)
                 expected_hash = PngUtil.get_pixel_hash_from_png(expected_path)
                 content_matches = received_hash == expected_hash

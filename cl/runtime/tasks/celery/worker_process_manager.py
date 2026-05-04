@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import logging
+import logging.config
 import multiprocessing
 import os
 import signal
@@ -166,7 +167,6 @@ class WorkerProcessManager:
     @classmethod
     def _worker_target(cls, worker_id: int, worker_name: str, log_config: Dict) -> None:
         """Target function for worker process."""
-        import logging.config
         from cl.runtime.tasks.celery.celery_queue import celery_app
 
         # Setup logging from main process

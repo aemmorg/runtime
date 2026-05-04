@@ -15,6 +15,7 @@
 import logging
 import uvicorn
 from cl.runtime.settings.celery_settings import CelerySettings
+from cl.runtime.tasks.celery.worker_health_monitor import WorkerHealthMonitor
 
 _logger = logging.getLogger(__name__)
 
@@ -26,7 +27,5 @@ class ShutdownAwareServer(uvicorn.Server):
         """Stop worker health monitor before uvicorn kills worker processes."""
         _logger.info("Shutdown signal %s received, stopping worker health monitor", sig)
         if CelerySettings.instance().celery_multiprocess_pool:
-            from cl.runtime.tasks.celery.worker_health_monitor import WorkerHealthMonitor
-
             WorkerHealthMonitor.stop_monitoring()
         super().handle_exit(sig, frame)

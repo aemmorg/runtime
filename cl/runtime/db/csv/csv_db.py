@@ -22,6 +22,7 @@ from cl.runtime.db.query_mixin import QueryMixin
 from cl.runtime.db.save_policy import SavePolicy
 from cl.runtime.db.sort_order import SortOrder
 from cl.runtime.primitive.char_util import CharUtil
+from cl.runtime.project.project_layout import ProjectLayout
 from cl.runtime.records.key_mixin import KeyMixin
 from cl.runtime.records.record_mixin import RecordMixin
 from cl.runtime.records.record_mixin import TRecord
@@ -49,12 +50,8 @@ class CsvDb(Db):
 
         # Default csv_dir to {project_root}/records
         if self.csv_dir is None:
-            from cl.runtime.project.project_layout import ProjectLayout
-
             self.csv_dir = os.path.join(ProjectLayout.get_project_root(), "records")
         elif not os.path.isabs(self.csv_dir):
-            from cl.runtime.project.project_layout import ProjectLayout
-
             self.csv_dir = os.path.join(ProjectLayout.get_project_root(), self.csv_dir)
 
     def is_empty(self) -> bool:

@@ -15,6 +15,7 @@
 """Tests for DataclassMixin handler discovery and key-field flagging introduced for v2.0.0."""
 
 import pytest
+from cl.runtime.ui.ui_app_state import UiAppState
 from stubs.cl.runtime.records.for_dataclasses.stub_dataclass import StubDataclass
 from stubs.cl.runtime.records.for_dataclasses.stub_dataclass_handlers import StubHandlers
 
@@ -48,7 +49,6 @@ def test_non_key_field_not_flagged():
     """Fields not part of the key should not have key=True."""
 
     # Pick any record type with non-key fields
-    from cl.runtime.ui.ui_app_state import UiAppState
     spec = UiAppState.get_type_spec()
     non_key_fields = [f for f in spec.fields if f.field_name != "user"]  # user is the key
     # At least one non-key field exists

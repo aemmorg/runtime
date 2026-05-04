@@ -80,8 +80,7 @@ class LoadResponse(RecordsWithSchemaResponse):
 
         Uses DataSpec.handlers (v2.0.0) rather than the legacy TypeDecl path.
         """
-        from cl.runtime.schema.type_info import TypeInfo as _TI
-        type_state_record_type = _TI.from_type_name(ui_type_state_requested_key.type_.name)
+        type_state_record_type = TypeInfo.from_type_name(ui_type_state_requested_key.type_.name)
         spec = type_state_record_type.get_type_spec()
 
         all_handlers: list[str] = []

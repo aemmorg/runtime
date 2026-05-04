@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import re
+from dateutil.parser import parse
 
 
 class CsvUtil:
@@ -111,8 +112,6 @@ class CsvUtil:
 
         # Try dateutil parsing as a fallback for Excel-reformatted dates
         try:
-            from dateutil.parser import parse
-
             parsed = parse(value, dayfirst=False)
             return f"{parsed.year:04}{parsed.month:02}{parsed.day:02}"
         except (ValueError, OverflowError):

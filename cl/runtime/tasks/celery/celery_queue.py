@@ -16,7 +16,9 @@ import logging
 import logging.config
 import multiprocessing
 import os
+import signal
 from dataclasses import dataclass
+from logging.config import dictConfig
 from typing import ClassVar
 from typing import Dict
 from typing import Final
@@ -27,6 +29,7 @@ from celery import Celery
 from celery.exceptions import Reject
 from celery.signals import setup_logging
 from pika.exceptions import ChannelClosedByBroker
+from pymongo import MongoClient
 from cl.runtime.contexts.context_manager import activate
 from cl.runtime.contexts.context_manager import active
 from cl.runtime.contexts.context_snapshot import ContextSnapshot
@@ -78,8 +81,6 @@ class CeleryQueue(TaskQueue):
     @setup_logging.connect()
     def _config_loggers(*args, **kwargs):
         """Setup logging config for celery worker."""
-        from logging.config import dictConfig
-
         # Use empty config to suppress celery logger and propagate to root.
         dictConfig(celery_empty_logging_config)
 
@@ -117,8 +118,6 @@ class CeleryQueue(TaskQueue):
             # Parse MongoDB URI to extract database name
             # Format: mongodb://localhost:27017/celery-{context_id}
             try:
-                from pymongo import MongoClient
-
                 # Delete stuck RUNNING/PENDING tasks from previous backend runs
                 all_tasks: tuple[Task, ...] = active(DataSource).load_all(key_type=TaskKey)
                 stuck_tasks = [task for task in all_tasks if task.status in (TaskStatus.RUNNING, TaskStatus.PENDING)]
@@ -297,7 +296,6 @@ class CeleryQueue(TaskQueue):
                 return True
 
             # Multi-worker mode: kill all workers and purge queue
-            import signal
             from cl.runtime.tasks.celery.worker_process_manager import WorkerProcessManager
 
             manager = WorkerProcessManager.instance()
@@ -314,8 +312,6 @@ class CeleryQueue(TaskQueue):
             # Purge MongoDB queue
             if celery_settings.celery_broker == "mongodb":
                 try:
-                    from pymongo import MongoClient
-
                     mongo_client = MongoClient(celery_settings.celery_broker_uri)
                     db_name = celery_settings.celery_broker_uri.split("/")[-1]
                     mongo_db = mongo_client[db_name]
