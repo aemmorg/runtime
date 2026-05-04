@@ -97,6 +97,7 @@ class TimestampFormatUtil:
         fix: bool,
         verbose: bool = False,
         file_exclude_patterns: Sequence[str] | None = None,
+        dir_exclude_patterns: Sequence[str] | None = None,
     ) -> None:
         """Check or fix legacy timestamp formats in all text files under the given directories.
 
@@ -105,9 +106,12 @@ class TimestampFormatUtil:
             fix: If True, fix all legacy timestamps; if False, only check and report
             verbose: Print messages about fixes to stdout if specified
             file_exclude_patterns: Optional list of filename glob patterns to exclude
+            dir_exclude_patterns: Optional list of directory name glob patterns to exclude
         """
         if file_exclude_patterns is None:
             file_exclude_patterns = []
+        if dir_exclude_patterns is None:
+            dir_exclude_patterns = []
 
         total_files_changed = 0
         total_replacements = 0
@@ -117,10 +121,11 @@ class TimestampFormatUtil:
             if not os.path.isdir(dir_path):
                 continue
             for root, dirnames, filenames in os.walk(dir_path):
-                # Skip hidden and special directories
+                # Skip hidden, special, and explicitly excluded directories
                 dirnames[:] = [
                     d for d in dirnames
                     if not d.startswith(".") and not d.startswith("__") and d != "logs"
+                    and not any(fnmatch(d, pat) for pat in dir_exclude_patterns)
                 ]
 
                 for filename in filenames:

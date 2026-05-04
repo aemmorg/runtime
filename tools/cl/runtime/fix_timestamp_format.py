@@ -47,8 +47,14 @@ if __name__ == '__main__':
         dirs=tuple(dirs),
         fix=True,
         verbose=True,
-        # Prevent fixing of the unit test samples
+        # Prevent fixing of test files that use intentionally invalid (legacy) timestamp formats
         file_exclude_patterns=[
             "invalid_timestamp_*",
+            "test_timestamp_format.py",
+            "test_timestamp.py",
+        ],
+        dir_exclude_patterns=[
+            "test_timestamp",
+            "test_timestamp_format",
         ],
     )
