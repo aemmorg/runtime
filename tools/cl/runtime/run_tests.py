@@ -44,10 +44,16 @@ if sys.platform == "win32":
         pass
 
 
-REPO_ROOT = os.path.normpath(
-    os.environ.get("CL_RUN_TESTS_ROOT")
-    or os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", "..")
-)
+# Bootstrap sys.path so cl.runtime.* is importable, then resolve the project root via ProjectLayout.
+# This file lives at <repo>/runtime/tools/cl/runtime/run_tests.py, so parents[3] is <repo>/runtime,
+# which is the runtime package's source root (the entry that needs to be on PYTHONPATH).
+_RUNTIME_SRC = str(pathlib.Path(__file__).resolve().parents[3])
+if _RUNTIME_SRC not in sys.path:
+    sys.path.insert(0, _RUNTIME_SRC)
+
+from cl.runtime.project.project_layout import ProjectLayout  # noqa: E402
+
+PROJECT_ROOT = ProjectLayout.get_project_root()
 
 
 def split_nodeid(nodeid):
@@ -59,16 +65,16 @@ def split_nodeid(nodeid):
 
 
 def link_file(path):
-    """Render a path as an OSC 8 hyperlink. path can be absolute or relative to REPO_ROOT."""
+    """Render a path as an OSC 8 hyperlink. path can be absolute or relative to PROJECT_ROOT."""
     native = path.replace("/", os.sep)
     if os.path.isabs(native):
         abs_path = os.path.normpath(native)
         try:
-            display = os.path.relpath(abs_path, REPO_ROOT)
+            display = os.path.relpath(abs_path, PROJECT_ROOT)
         except ValueError:
             display = abs_path
     else:
-        abs_path = os.path.normpath(os.path.join(REPO_ROOT, native))
+        abs_path = os.path.normpath(os.path.join(PROJECT_ROOT, native))
         display = native
     uri = pathlib.Path(abs_path).as_uri()
     return f"\x1b]8;;{uri}\x1b\\{display}\x1b]8;;\x1b\\"
@@ -122,7 +128,7 @@ class ProgressReporter:
 
     def _display(self, abs_path):
         try:
-            return os.path.relpath(abs_path, REPO_ROOT)
+            return os.path.relpath(abs_path, PROJECT_ROOT)
         except ValueError:
             return abs_path
 
@@ -240,13 +246,31 @@ def print_grouped(nodeids):
 
 
 def main():
-    submodules = ["runtime", "convince", "admin", "resume"]
-    log_path = os.path.join(REPO_ROOT, "run_tests.log")
+    all_submodules = ["runtime", "convince", "admin", "resume"]
+
+    # Optional positional args: subset of submodule names to run (default: all).
+    requested = sys.argv[1:]
+    if requested:
+        unknown = [s for s in requested if s not in all_submodules]
+        if unknown:
+            sys.stderr.write(
+                f"ERROR: unknown submodule(s): {', '.join(unknown)}. "
+                f"Known: {', '.join(all_submodules)}\n"
+            )
+            sys.exit(2)
+        submodules = requested
+    else:
+        submodules = all_submodules
+
+    # Log file is written to the current working directory. Wrapper .cmd scripts are responsible
+    # for setting CWD to where they want the log to land (typically next to the .cmd file).
+    log_path = os.path.join(os.getcwd(), "run_tests.log")
 
     # Build the list of paths needed by both the controller process and xdist worker subprocesses.
-    # REPO_ROOT is required so cross-submodule imports like `from resume.cl.resume...` resolve when
-    # one submodule's source references another by its top-level package name.
-    extra_paths = [REPO_ROOT] + [os.path.join(REPO_ROOT, sub) for sub in submodules]
+    # PROJECT_ROOT is required so cross-submodule imports like `from resume.cl.resume...` resolve when
+    # one submodule's source references another by its top-level package name. All submodule paths
+    # are added regardless of which subset is being run, since cross-submodule imports still occur.
+    extra_paths = [PROJECT_ROOT] + [os.path.join(PROJECT_ROOT, sub) for sub in all_submodules]
 
     # In-process sys.path for the controller (also affects serial pytest runs without xdist).
     for path in extra_paths:
@@ -262,19 +286,19 @@ def main():
 
     test_dirs = []
     for sub in submodules:
-        test_dir = os.path.join(REPO_ROOT, sub, "tests")
+        test_dir = os.path.join(PROJECT_ROOT, sub, "tests")
         if os.path.isdir(test_dir):
             test_dirs.append(test_dir)
 
     real_stdout = sys.stdout
-    reporter = ProgressReporter(real_stdout, rootpath=REPO_ROOT)
+    reporter = ProgressReporter(real_stdout, rootpath=PROJECT_ROOT)
 
     log_file = open(log_path, "w", encoding="utf-8")
     saved_stdout, saved_stderr = sys.stdout, sys.stderr
     sys.stdout, sys.stderr = log_file, log_file
     try:
         pytest.main(
-            [*test_dirs, "-n", "auto", "--dist=loadfile", "--rootdir", REPO_ROOT, "--color=no", "--tb=long"],
+            [*test_dirs, "-n", "auto", "--dist=loadfile", "--rootdir", PROJECT_ROOT, "--color=no", "--tb=long"],
             plugins=[reporter],
         )
     finally:
