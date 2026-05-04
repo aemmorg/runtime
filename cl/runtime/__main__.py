@@ -67,6 +67,8 @@ async def handle_exception(request, exc):
     # IMPORTANT:
     # - If UserMessage is set it will be shown to the user on toast badge and bell becomes red.
     # - Otherwise default message will be shown.
+    import traceback
+    _LOGGER.error(f"Unhandled exception on {request.method} {request.url.path}: {exc}\n{''.join(traceback.format_exception(type(exc), exc, exc.__traceback__))}")
     user_message = str(exc) if isinstance(exc, UserError) else None
     return JSONResponse({"UserMessage": user_message}, status_code=500)
 
