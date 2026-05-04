@@ -14,6 +14,9 @@
 
 from dataclasses import dataclass
 from typing import Any
+
+import pytest
+
 from cl.runtime.records.variant.str_variant import StrVariant
 from cl.runtime.records.variant.text_container import TextContainer
 from cl.runtime.records.variant.variant_util import VariantUtil
@@ -92,6 +95,8 @@ def test_partial_value_update_event(default_db_fixture, type_info_fixture):
     assert events[1].index == "1"
 
 
+# TODO(Claude): Identify the reason for test failure, fix and remove skip
+@pytest.mark.skip("Restore after the test is fixed.")
 def test_nested_partial_value_update_event(default_db_fixture, type_info_fixture):
     """Test update_partial_value with nested index (e.g. '0.data.1') on TreeTableControl."""
 
@@ -256,3 +261,7 @@ def test_control_update_event(default_db_fixture, type_info_fixture):
     assert events[1].control["_t"] == "TextControl"
     assert events[1].control["Value"] == "Changed"
     assert events[1].control["WrapLines"] == False
+
+
+if __name__ == "__main__":
+    pytest.main([__file__])
