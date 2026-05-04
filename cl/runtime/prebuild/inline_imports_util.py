@@ -219,6 +219,64 @@ class InlineImportsUtil:
         return results
 
     @classmethod
+    def _find_inline_imports_after_code_begins(
+        cls,
+        source: str,
+        file_path: str,
+    ) -> list[ast.Import | ast.ImportFrom]:
+        """Find import statements that appear after the first non-import code in the file.
+
+        Heuristic: scans top-level statements to find the first one that is not an import
+        or a module docstring, then flags any import at any nesting level whose line number
+        is at or after that point. Imports marked with `# noqa` on any of their lines are
+        skipped so intentional inline imports can opt out.
+
+        Args:
+            source: File source code
+            file_path: Path for error reporting
+
+        Returns:
+            List of ast.Import / ast.ImportFrom nodes ordered by line number.
+        """
+        try:
+            tree = ast.parse(source, filename=file_path)
+        except SyntaxError:
+            return []
+
+        code_start_line: int | None = None
+        for stmt in tree.body:
+            if isinstance(stmt, (ast.Import, ast.ImportFrom)):
+                continue
+            # Skip module-level docstring (a bare string expression)
+            if (
+                isinstance(stmt, ast.Expr)
+                and isinstance(stmt.value, ast.Constant)
+                and isinstance(stmt.value.value, str)
+            ):
+                continue
+            code_start_line = stmt.lineno
+            break
+
+        if code_start_line is None:
+            return []
+
+        source_lines = source.split("\n")
+        inline_imports: list[ast.Import | ast.ImportFrom] = []
+        for node in ast.walk(tree):
+            if not isinstance(node, (ast.Import, ast.ImportFrom)):
+                continue
+            if node.lineno < code_start_line:
+                continue
+            end_line = node.end_lineno or node.lineno
+            import_lines = source_lines[node.lineno - 1 : end_line]
+            if any(cls._has_noqa(line) for line in import_lines):
+                continue
+            inline_imports.append(node)
+
+        inline_imports.sort(key=lambda n: n.lineno)
+        return inline_imports
+
+    @classmethod
     def _find_inline_imports(
         cls,
         source: str,

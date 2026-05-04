@@ -18,8 +18,26 @@ import os
 import shutil
 import tempfile
 from cl.runtime.prebuild.inline_imports_util import InlineImportsUtil
+from cl.runtime.prebuild.source_util import SourceUtil
+from cl.runtime.project.project_layout import ProjectLayout
+from cl.runtime.qa.regression_guard import RegressionGuard
+from cl.runtime.settings.project_settings import ProjectSettings
 
 _STUBS_DIR = os.path.normpath(os.path.join(os.path.dirname(__file__), "../../../../stubs/cl/runtime/prebuild"))
+
+
+def _file_path_to_module(file_path: str, abs_package_dirs: list[str]) -> str:
+    """Convert an absolute source file path to a dotted module name relative to a PYTHONPATH entry."""
+    file_path_norm = os.path.normpath(file_path)
+    for pkg_dir in abs_package_dirs:
+        try:
+            rel = os.path.relpath(file_path_norm, pkg_dir)
+        except ValueError:
+            continue
+        if rel.startswith("..") or os.path.isabs(rel):
+            continue
+        return rel.removesuffix(".py").replace(os.sep, ".")
+    return os.path.basename(file_path).removesuffix(".py")
 
 
 def test_no_inline_imports_in_clean_stub():
@@ -42,13 +60,45 @@ def test_detect_inline_imports_in_stub():
     assert len(result) == 3, f"Expected 3 inline imports in stub_inline_imports.py, found {len(result)}"
 
 
-# TODO(Claude): Remove the test skip decorator and attempt to fix
-@pytest.mark.skip("Skipping inline imports test temporarily")
 def test_inline_imports():
-    """Prebuild test to check that no inline imports exist in function or method bodies."""
+    """Flag inline imports that are not on the permitted list recorded in the expected file.
 
-    # Test that no inline imports exist in source files, error if the check fails
-    InlineImportsUtil.guard_no_inline_imports()
+    Detection uses a heuristic: any import at any nesting level whose line is at or after
+    the first non-import, non-docstring top-level statement is reported. To allow a specific
+    inline import, add its row to the expected file or annotate it with `# noqa`.
+    """
+    project_root = ProjectLayout.get_project_root()
+    abs_package_dirs = [
+        os.path.normpath(os.path.join(project_root, d))
+        for d in ProjectSettings.instance().get_package_dirs()
+    ]
+    # Match the most specific directory first so a nested package dir is not shadowed
+    abs_package_dirs.sort(key=len, reverse=True)
+
+    source_files = SourceUtil.get_abs_source_files(file_exclude_patterns=["stub_inline_imports*"])
+
+    rows: list[tuple[str, str]] = []
+    for file_path in source_files:
+        with open(file_path, "r", encoding="utf-8") as f:
+            source = f.read()
+
+        nodes = InlineImportsUtil._find_inline_imports_after_code_begins(source, file_path)
+        if not nodes:
+            continue
+
+        module = _file_path_to_module(file_path, abs_package_dirs)
+        for node in nodes:
+            for text in InlineImportsUtil._import_node_to_lines(node):
+                rows.append((module, text))
+
+    rows.sort()
+
+    guard = RegressionGuard().build()
+    guard.write("Module,Import")
+    for module, text in rows:
+        guard.write(f"{module},{text}")
+
+    RegressionGuard.verify_all()
 
 
 def test_fix_inline_imports():
