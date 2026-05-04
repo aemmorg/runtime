@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Test runner: shows the currently running test file in-place, prints each failure as soon as it happens
-(file as a clickable OSC 8 link, test name indented underneath), writes detailed error info to run_tests.log,
-and lists failed tests grouped by file at the end.
+"""Test runner: distributes tests across CPU cores via pytest-xdist, shows live pass/fail/skip counts in-place,
+prints each failure as soon as it happens (file as a clickable OSC 8 link, test name indented underneath),
+writes detailed error info to run_tests.log, and lists failed tests grouped by file at the end.
 """
 
 import os
@@ -70,12 +70,13 @@ class ProgressReporter:
     def __init__(self, out, rootpath):
         self.out = out
         self.rootpath = rootpath
-        self.current_file = None
         self.last_len = 0
         self.failures = []
         self.errors = []
         self.passed_count = 0
         self.skipped_count = 0
+        self.total_count = None
+        self.worker_count = None
         self._skipped_seen = set()
         self._last_failed_file = None
 
@@ -84,6 +85,19 @@ class ProgressReporter:
             self.rootpath = str(config.rootpath)
         elif hasattr(config, "rootdir"):
             self.rootpath = str(config.rootdir)
+
+    def pytest_collection_modifyitems(self, config, items):
+        self.total_count = len(items)
+        self._update_progress()
+
+    def pytest_xdist_setupnodes(self, config, specs):
+        self.worker_count = len(specs)
+        self._update_progress()
+
+    def pytest_xdist_node_collection_finished(self, node, ids):
+        if self.total_count is None:
+            self.total_count = len(ids)
+            self._update_progress()
 
     def _abs_file(self, file_part):
         native = file_part.replace("/", os.sep)
@@ -116,12 +130,25 @@ class ProgressReporter:
         self.out.flush()
         self.last_len = len(msg)
 
-    def _restore_running(self):
-        if self.current_file:
-            running = f"  Running: {self.current_file}"
-            self.out.write(running)
-            self.out.flush()
-            self.last_len = len(running)
+    def _progress_msg(self):
+        done = self.passed_count + self.skipped_count + len(self.failures) + len(self.errors)
+        parts = [f"passed={self.passed_count}"]
+        if self.failures:
+            parts.append(f"failed={len(self.failures)}")
+        if self.errors:
+            parts.append(f"errors={len(self.errors)}")
+        if self.skipped_count:
+            parts.append(f"skipped={self.skipped_count}")
+        if self.total_count:
+            head = f"  Progress: {done}/{self.total_count}"
+        else:
+            head = f"  Progress: {done}"
+        if self.worker_count:
+            head += f" [{self.worker_count} workers]"
+        return f"{head} ({', '.join(parts)})"
+
+    def _update_progress(self):
+        self._write_inplace(self._progress_msg())
 
     def _print_failure(self, resolved_nodeid, kind):
         file_part, test_part = split_nodeid(resolved_nodeid)
@@ -137,31 +164,24 @@ class ProgressReporter:
             self.out.write(f"    {test_part}\n")
 
         self.out.flush()
-        self._restore_running()
+        self._update_progress()
 
     def pytest_collectstart(self, collector):
-        if self.current_file is None:
+        if self.total_count is None and self.last_len == 0:
             self._write_inplace("  Collecting tests...")
-
-    def pytest_runtest_logstart(self, nodeid, location):
-        file_part = location[0] if location and location[0] else nodeid.split("::")[0]
-        abs_file = self._abs_file(file_part)
-        display = self._display(abs_file)
-        if display != self.current_file:
-            self.current_file = display
-            self._last_failed_file = None
-            self._write_inplace(f"  Running: {display}")
 
     def pytest_runtest_logreport(self, report):
         if report.skipped:
             if report.nodeid not in self._skipped_seen:
                 self._skipped_seen.add(report.nodeid)
                 self.skipped_count += 1
+                self._update_progress()
             return
 
         if report.when == "call":
             if report.passed:
                 self.passed_count += 1
+                self._update_progress()
             elif report.failed:
                 resolved = self._resolve(report.nodeid)
                 if resolved not in self.failures:
@@ -226,7 +246,10 @@ def run_submodule(name, real_stdout, log_file):
     saved_stdout, saved_stderr = sys.stdout, sys.stderr
     sys.stdout, sys.stderr = log_file, log_file
     try:
-        pytest.main([test_dir, "--color=no", "--tb=long"], plugins=[reporter])
+        pytest.main(
+            [test_dir, "-n", "auto", "--dist=loadfile", "--color=no", "--tb=long"],
+            plugins=[reporter],
+        )
     finally:
         sys.stdout, sys.stderr = saved_stdout, saved_stderr
 
@@ -245,10 +268,22 @@ def main():
     submodules = ["runtime", "convince", "admin", "resume"]
     log_path = os.path.join(REPO_ROOT, "run_tests.log")
 
-    for sub in submodules:
-        path = os.path.join(REPO_ROOT, sub)
+    # Build the list of paths needed by both the controller process and xdist worker subprocesses.
+    # REPO_ROOT is required so cross-submodule imports like `from resume.cl.resume...` resolve when
+    # one submodule's source references another by its top-level package name.
+    extra_paths = [REPO_ROOT] + [os.path.join(REPO_ROOT, sub) for sub in submodules]
+
+    # In-process sys.path for the controller (also affects serial pytest runs without xdist).
+    for path in extra_paths:
         if path not in sys.path:
             sys.path.insert(0, path)
+
+    # PYTHONPATH for xdist worker subprocesses, which do not inherit in-process sys.path edits.
+    existing_pythonpath = os.environ.get("PYTHONPATH", "")
+    pythonpath_parts = [p for p in extra_paths if p not in existing_pythonpath.split(os.pathsep)]
+    if existing_pythonpath:
+        pythonpath_parts.append(existing_pythonpath)
+    os.environ["PYTHONPATH"] = os.pathsep.join(pythonpath_parts)
 
     real_stdout = sys.stdout
 
