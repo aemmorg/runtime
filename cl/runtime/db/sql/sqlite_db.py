@@ -64,6 +64,12 @@ class SqliteDb(Db):
         table_count = len([x for x in table_names if not x.startswith("sqlite_")])
         return table_count == 0
 
+    def is_nested(self) -> bool:
+        return False
+
+    def is_temporal(self) -> bool:
+        return False
+
     def load_many(
         self,
         key_type: type[KeyMixin],

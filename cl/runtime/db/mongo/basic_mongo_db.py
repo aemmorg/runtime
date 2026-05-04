@@ -122,6 +122,12 @@ class BasicMongoDb(Db):
         mongo_db = self._get_mongo_db()
         return len(mongo_db.list_collection_names()) == 0
 
+    def is_nested(self) -> bool:
+        return False
+
+    def is_temporal(self) -> bool:
+        return False
+
     def load_many(
         self,
         key_type: type[KeyMixin],

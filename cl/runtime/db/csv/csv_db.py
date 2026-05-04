@@ -64,6 +64,12 @@ class CsvDb(Db):
         csv_files = [f for f in os.listdir(self.csv_dir) if f.endswith(".csv")]
         return len(csv_files) == 0
 
+    def is_nested(self) -> bool:
+        return False
+
+    def is_temporal(self) -> bool:
+        return False
+
     def load_many(
         self,
         key_type: type[KeyMixin],

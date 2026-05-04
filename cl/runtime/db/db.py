@@ -46,6 +46,14 @@ class Db(DbKey, RecordMixin, ABC):
         """Return true if the database contains no collections."""
 
     @abstractmethod
+    def is_nested(self) -> bool:
+        """True if the database can contain the same key in different datasets."""
+
+    @abstractmethod
+    def is_temporal(self) -> bool:
+        """True if the database is transaction-time temporal (i.e., can be queried as of the specified time)."""
+
+    @abstractmethod
     def load_many(
         self,
         key_type: type[KeyMixin],

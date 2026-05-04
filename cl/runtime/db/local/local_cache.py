@@ -43,6 +43,12 @@ class LocalCache(Db):
         """Return true if the cache dict is empty."""
         return len(self.__cache) == 0
 
+    def is_nested(self) -> bool:
+        return False
+
+    def is_temporal(self) -> bool:
+        return False
+
     def load_many(
         self,
         key_type: type[KeyMixin],

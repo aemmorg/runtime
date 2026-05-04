@@ -126,6 +126,12 @@ class BasicCouchDb(Db):
         except NotFound:
             return True
 
+    def is_nested(self) -> bool:
+        return False
+
+    def is_temporal(self) -> bool:
+        return False
+
     def load_many(
         self,
         key_type: type[KeyMixin],
