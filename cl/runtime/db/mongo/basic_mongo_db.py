@@ -373,11 +373,6 @@ class BasicMongoDb(Db):
         for record in records:
             # Serialize key
             serialized_key = _KEY_SERIALIZER.serialize(record.get_key())
-            key_dict = {
-                "_dataset": dataset,
-                "_key": serialized_key,
-                "_tenant": tenant,
-            }
 
             # Serialize record
             serialized_record = _RECORD_SERIALIZER.serialize(record)
@@ -388,7 +383,13 @@ class BasicMongoDb(Db):
             if save_policy == SavePolicy.INSERT:
                 collection.insert_one(serialized_record)
             elif save_policy == SavePolicy.REPLACE:
-                collection.replace_one(key_dict, serialized_record, upsert=True)
+                # Filter by (_key, _tenant) only, not _dataset, because a key
+                # can only be in one dataset at a time and replace may move it
+                key_filter = {
+                    "_key": serialized_key,
+                    "_tenant": tenant,
+                }
+                collection.replace_one(key_filter, serialized_record, upsert=True)
             else:
                 ErrorUtil.enum_value_error(save_policy, SavePolicy)
 
