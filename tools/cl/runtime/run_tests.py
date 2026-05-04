@@ -17,9 +17,17 @@ prints each failure as soon as it happens (file as a clickable OSC 8 link, test 
 writes detailed error info to run_tests.log, and lists failed tests grouped by file at the end.
 """
 
+import importlib.util
 import os
 import pathlib
 import sys
+
+if importlib.util.find_spec("xdist") is None:
+    sys.stderr.write(
+        "ERROR: pytest-xdist is required by run_tests.py for parallel execution but is not installed.\n"
+        "Install it with:  pip install pytest-xdist\n"
+    )
+    sys.exit(2)
 
 import pytest
 
@@ -231,39 +239,6 @@ def print_grouped(nodeids):
             print(f"    {test}")
 
 
-def run_submodule(name, real_stdout, log_file):
-    submodule_dir = os.path.join(REPO_ROOT, name)
-    test_dir = os.path.join(submodule_dir, "tests")
-    if not os.path.isdir(test_dir):
-        real_stdout.write(f"Submodule: {name} (no tests dir)\n")
-        real_stdout.flush()
-        return [], [], (0, 0, 0)
-
-    real_stdout.write(f"Submodule: {name}\n")
-    real_stdout.flush()
-
-    reporter = ProgressReporter(real_stdout, rootpath=submodule_dir)
-    saved_stdout, saved_stderr = sys.stdout, sys.stderr
-    sys.stdout, sys.stderr = log_file, log_file
-    try:
-        pytest.main(
-            [test_dir, "-n", "auto", "--dist=loadfile", "--color=no", "--tb=long"],
-            plugins=[reporter],
-        )
-    finally:
-        sys.stdout, sys.stderr = saved_stdout, saved_stderr
-
-    reporter.finalize()
-
-    succeeded = reporter.passed_count
-    failed = len(reporter.failures) + len(reporter.errors)
-    skipped = reporter.skipped_count
-    real_stdout.write(f"  {format_stats(failed, succeeded, skipped)}\n")
-    real_stdout.flush()
-
-    return reporter.failures, reporter.errors, (succeeded, failed, skipped)
-
-
 def main():
     submodules = ["runtime", "convince", "admin", "resume"]
     log_path = os.path.join(REPO_ROOT, "run_tests.log")
@@ -285,44 +260,50 @@ def main():
         pythonpath_parts.append(existing_pythonpath)
     os.environ["PYTHONPATH"] = os.pathsep.join(pythonpath_parts)
 
-    real_stdout = sys.stdout
+    test_dirs = []
+    for sub in submodules:
+        test_dir = os.path.join(REPO_ROOT, sub, "tests")
+        if os.path.isdir(test_dir):
+            test_dirs.append(test_dir)
 
-    total_succeeded = 0
-    total_failed = 0
-    total_skipped = 0
-    all_failures = []
-    all_errors = []
+    real_stdout = sys.stdout
+    reporter = ProgressReporter(real_stdout, rootpath=REPO_ROOT)
 
     log_file = open(log_path, "w", encoding="utf-8")
+    saved_stdout, saved_stderr = sys.stdout, sys.stderr
+    sys.stdout, sys.stderr = log_file, log_file
     try:
-        for sub in submodules:
-            f, e, (s, fa, sk) = run_submodule(sub, real_stdout, log_file)
-            all_failures.extend(f)
-            all_errors.extend(e)
-            total_succeeded += s
-            total_failed += fa
-            total_skipped += sk
+        pytest.main(
+            [*test_dirs, "-n", "auto", "--dist=loadfile", "--rootdir", REPO_ROOT, "--color=no", "--tb=long"],
+            plugins=[reporter],
+        )
     finally:
+        sys.stdout, sys.stderr = saved_stdout, saved_stderr
         log_file.close()
 
-    print("Project:")
-    print(f"  {format_stats(total_failed, total_succeeded, total_skipped)}")
+    reporter.finalize()
 
-    if all_failures or all_errors:
-        if all_failures:
+    succeeded = reporter.passed_count
+    failed = len(reporter.failures) + len(reporter.errors)
+    skipped = reporter.skipped_count
+    print("Project:")
+    print(f"  {format_stats(failed, succeeded, skipped)}")
+
+    if reporter.failures or reporter.errors:
+        if reporter.failures:
             print("Failed tests:")
-            print_grouped(all_failures)
-        if all_errors:
+            print_grouped(reporter.failures)
+        if reporter.errors:
             print("Errors:")
-            print_grouped(all_errors)
+            print_grouped(reporter.errors)
         print(f"See {link_file(log_path)} for detailed error information.")
+        sys.exit(1)
     else:
         try:
             os.remove(log_path)
         except OSError:
             pass
-
-    sys.exit(0 if not (all_failures or all_errors) else 1)
+        sys.exit(0)
 
 
 if __name__ == "__main__":
