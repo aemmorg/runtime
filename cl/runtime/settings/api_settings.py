@@ -83,6 +83,8 @@ class ApiSettings(Settings):
             if self.api_allow_origins is None:
                 # Allow both localhost and loopback IP because the users consider them interchangeable
                 self.api_allow_origins = ["localhost", "127.0.0.1"]
+            if self.api_allow_origin_regex is None:
+                self.api_allow_origin_regex = r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$"
             if self.api_allow_credentials is None:
                 self.api_allow_credentials = True
             if self.api_allow_methods is None:
