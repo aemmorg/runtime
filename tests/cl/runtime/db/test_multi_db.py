@@ -16,6 +16,7 @@ import pytest
 import time
 from cl.runtime.contexts.context_manager import active
 from cl.runtime.db.data_source import DataSource
+from cl.runtime.db.db import Db
 from cl.runtime.db.sort_order import SortOrder
 from cl.runtime.db.tenant_key import TenantKey
 from cl.runtime.events.event import Event
@@ -530,28 +531,34 @@ def test_dataset_format_validation(default_db_fixture):
 
 
 def test_same_key_different_datasets(default_db_fixture):
-    """Test that the same key can exist in multiple datasets."""
-    ds = active(DataSource)
+    """Test for same key in multiple datasets."""
 
     # Save a record with id="shared" to root dataset
+    ds = active(DataSource)
     ds.insert_one(StubDataclass(id="shared").build(), commit=True)
 
-    # Save a record with the same id="shared" to a different dataset
-    ds.insert_one(StubDataclass(id="shared").build(), datasets=["/Other"], commit=True)
+    if ds.db.cast(Db).is_nested():
+        # Nested DB can store the same key in different datasets, last dataset in ascending order wins
+        # Save a record with the same id="shared" to a different dataset
+        ds.insert_one(StubDataclass(id="shared").build(), datasets=["/Other"], commit=True)
 
-    # Load from root - should get one record
-    loaded = ds.load_all(key_type=StubDataclassKey, datasets=["/"])
-    assert len(loaded) == 1
-    assert loaded[0].id == "shared"
+        # Load from root - should get one record
+        loaded = ds.load_all(key_type=StubDataclassKey, datasets=["/"])
+        assert len(loaded) == 1
+        assert loaded[0].id == "shared"
 
-    # Load from Other - should get one record
-    loaded = ds.load_all(key_type=StubDataclassKey, datasets=["/Other"])
-    assert len(loaded) == 1
-    assert loaded[0].id == "shared"
+        # Load from Other - should get one record
+        loaded = ds.load_all(key_type=StubDataclassKey, datasets=["/Other"])
+        assert len(loaded) == 1
+        assert loaded[0].id == "shared"
 
-    # Load from both - should get two records (same key, different datasets)
-    loaded = ds.load_all(key_type=StubDataclassKey, datasets=["/", "/Other"])
-    assert len(loaded) == 2
+        # Load from both - should get two records (same key, different datasets)
+        loaded = ds.load_all(key_type=StubDataclassKey, datasets=["/", "/Other"])
+        assert len(loaded) == 2
+    else:
+        # Non-nested DB must prevent storing the same key in different datasets
+        with pytest.raises(Exception):
+            ds.insert_one(StubDataclass(id="shared").build(), datasets=["/Other"], commit=True)
 
 
 def test_default_dataset_is_root(default_db_fixture):
