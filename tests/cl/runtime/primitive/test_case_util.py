@@ -459,5 +459,72 @@ def test_any_to_pascal_case():
     assert CaseUtil.any_to_pascal_case("") == ""
 
 
+def test_single_letter_segment():
+    """Prove that single-letter segments round-trip correctly at any position.
+
+    The uppercase-run boundary rule splits XAbc back into X_Abc because the run of
+    uppercase letters (X followed by A) precedes an uppercase+lowercase pair (Ab).
+    This works regardless of whether the single-letter segment is first, middle, or last.
+    """
+
+    test_cases = (
+        # (snake_case, expected_pascal)
+        # Single-letter segment first: X + Abc + Def
+        ("x_abc_def", "XAbcDef"),
+        # Single-letter segment in the middle: Abc + X + Def
+        ("abc_x_def", "AbcXDef"),
+        # Single-letter segment last: Abc + Def + X (no uppercase+lowercase follows X)
+        ("abc_def_x", "AbcDefX"),
+    )
+
+    for snake, expected_pascal in test_cases:
+        pascal = CaseUtil.snake_to_pascal_case(snake)
+        assert pascal == expected_pascal, (
+            f"snake_to_pascal_case({snake!r}) = {pascal!r}, expected {expected_pascal!r}"
+        )
+
+        back = CaseUtil.pascal_to_snake_case(pascal)
+        assert back == snake, (
+            f"pascal_to_snake_case({pascal!r}) = {back!r}, expected {snake!r}"
+        )
+
+
+def test_digit_segment_must_be_last():
+    """Prove that a segment with both digits and letters must be the last segment.
+
+    The all-uppercase pascalization of such a segment merges with the following segment,
+    losing the underscore boundary. This makes the original snake_case invalid because the
+    round-trip produces a different string.
+    """
+
+    test_cases = (
+        # (invalid_snake_case, intermediate_pascal, round_trip_snake_case)
+        # Digit segment '2d' merges with 'ef': Abc + 2D + Ef = Abc2DEf -> abc_2def
+        ("abc_2d_ef", "Abc2DEf", "abc_2def"),
+        # Digit segment '2d' merges with '3': Abc + 2D + 3 = Abc2D3 -> abc_2d3
+        ("abc_2d_3", "Abc2D3", "abc_2d3"),
+        # Digit segment '3dcase' merges with '2': AnotherValid + 3DCASE + 2 = AnotherValid3DCASE2
+        ("another_valid_3dcase_2", "AnotherValid3DCASE2", "another_valid_3dcase2"),
+    )
+
+    for invalid_snake, expected_pascal, expected_round_trip in test_cases:
+        # Step 1: snake_case segments are pascalized and concatenated
+        pascal = CaseUtil._snake_to_pascal_unchecked(invalid_snake)
+        assert pascal == expected_pascal, (
+            f"_snake_to_pascal_unchecked({invalid_snake!r}) = {pascal!r}, expected {expected_pascal!r}"
+        )
+
+        # Step 2: converting back loses the boundary (digit segment merged with next segment)
+        back = CaseUtil._pascal_to_snake_unchecked(pascal)
+        assert back == expected_round_trip, (
+            f"_pascal_to_snake_unchecked({pascal!r}) = {back!r}, expected {expected_round_trip!r}"
+        )
+
+        # Step 3: round-trip mismatch proves the original is invalid snake_case
+        assert back != invalid_snake
+        with pytest.raises(RuntimeError, match="does not round-trip"):
+            CaseUtil.check_snake_case(invalid_snake)
+
+
 if __name__ == "__main__":
     pytest.main([__file__])
