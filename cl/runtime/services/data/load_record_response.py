@@ -27,3 +27,9 @@ class LoadRecordResponse(PydanticMixin):
 
     dependencies: dict[str, Any] | None = None
     """Serialized dependencies for record, actually dict[typename: TypeSpec]."""
+
+    schema: dict[str, Any] | None = None  # TODO: Remove backward compatibility with pre-v2.0.0 frontends
+    """Flattened dict of all type specs keyed by type name (backward compatibility with pre-v2.0.0 frontends)."""
+
+    base_type: str | None = None  # TODO: Remove backward compatibility with pre-v2.0.0 frontends
+    """Root type name (backward compatibility with pre-v2.0.0 frontends)."""

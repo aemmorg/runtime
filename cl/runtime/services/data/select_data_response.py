@@ -30,3 +30,9 @@ class SelectDataResponse(PydanticMixin):
 
     query_schemas: dict[str, dict[str, Any]] | None = None
     """Serialized query type schemas indexed by query type name, None if no query types exist for the table."""
+
+    schema: dict[str, Any] | None = None  # TODO: Remove backward compatibility with pre-v2.0.0 frontends
+    """Flattened dict of all type specs keyed by type name (backward compatibility with pre-v2.0.0 frontends)."""
+
+    base_type: str | None = None  # TODO: Remove backward compatibility with pre-v2.0.0 frontends
+    """Root type name (backward compatibility with pre-v2.0.0 frontends)."""
