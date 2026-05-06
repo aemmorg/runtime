@@ -37,6 +37,12 @@ def run_git(args, cwd):
     return result.returncode, result.stdout.rstrip(), result.stderr.strip()
 
 
+def is_submodule_initialized(sub_path):
+    """Return True if the submodule has a .git file or directory (already checked out)."""
+    git_path = os.path.join(sub_path, ".git")
+    return os.path.isdir(git_path) or os.path.isfile(git_path)
+
+
 def get_submodules():
     """Parse .gitmodules and return a list of submodule paths."""
     gitmodules_path = os.path.join(PROJECT_ROOT, ".gitmodules")
@@ -75,12 +81,24 @@ def has_uncommitted_changes(repo_path, is_root=False):
     return bool(lines), lines
 
 
+def checkout_develop(repo_path, label):
+    """Switch a detached HEAD to develop. Returns True on success."""
+    print(f"  {label}: detached HEAD, checking out develop...")
+    rc, _, err = run_git(["checkout", "develop"], cwd=repo_path)
+    if rc != 0:
+        print(f"  {label}: checkout develop failed - {err}")
+        return False
+    print(f"  {label}: checked out develop")
+    return True
+
+
 def rebase_repo(repo_path, label):
     """Fetch origin, then fast-forward or rebase onto origin/<branch>. Returns True on success."""
     branch = get_current_branch(repo_path)
     if branch is None:
-        print(f"  {label}: skipped (detached HEAD)")
-        return False
+        if not checkout_develop(repo_path, label):
+            return False
+        branch = "develop"
 
     print(f"  {label} ({branch}): fetching...")
     rc, _, err = run_git(["fetch", "origin"], cwd=repo_path)
@@ -132,12 +150,19 @@ def main():
         print("No submodules found in .gitmodules")
         sys.exit(2)
 
-    # Initialize any uninitialized submodules
-    print("Initializing submodules...")
-    rc, _, err = run_git(["submodule", "update", "--init"], cwd=PROJECT_ROOT)
-    if rc != 0:
-        print(f"  submodule init failed - {err}")
-        sys.exit(2)
+    # Initialize only uninitialized submodules (avoid detaching already-initialized ones)
+    uninitialized = [
+        sub for sub in submodules
+        if not is_submodule_initialized(os.path.join(PROJECT_ROOT, sub))
+    ]
+    if uninitialized:
+        print("Initializing submodules...")
+        for sub in uninitialized:
+            rc, _, err = run_git(["submodule", "update", "--init", sub], cwd=PROJECT_ROOT)
+            if rc != 0:
+                print(f"  {sub}: init failed - {err}")
+                sys.exit(2)
+            print(f"  {sub}: initialized")
 
     # Check for uncommitted changes in all repos before doing anything
     dirty = []
@@ -147,9 +172,7 @@ def main():
 
     for sub in submodules:
         sub_path = os.path.join(PROJECT_ROOT, sub)
-        if not os.path.isdir(os.path.join(sub_path, ".git")) and not os.path.isfile(
-            os.path.join(sub_path, ".git")
-        ):
+        if not is_submodule_initialized(sub_path):
             continue
         flag, files = has_uncommitted_changes(sub_path)
         if flag:
@@ -172,9 +195,7 @@ def main():
     print("Submodules:")
     for sub in submodules:
         sub_path = os.path.join(PROJECT_ROOT, sub)
-        if not os.path.isdir(os.path.join(sub_path, ".git")) and not os.path.isfile(
-            os.path.join(sub_path, ".git")
-        ):
+        if not is_submodule_initialized(sub_path):
             print(f"  {sub}: skipped (not initialized)")
             continue
         if rebase_repo(sub_path, sub):
