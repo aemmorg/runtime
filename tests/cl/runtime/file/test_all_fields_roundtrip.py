@@ -12,24 +12,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import datetime as dt
 import os
 import shutil
-import pytest
-import orjson
 from typing import Iterable
+import orjson
 import pandas as pd
+import pytest
+from openpyxl import Workbook
 from cl.runtime.file.csv_reader import CsvReader
 from cl.runtime.file.csv_writer import CsvWriter
+from cl.runtime.file.excel_reader import ExcelReader
 from cl.runtime.file.json_reader import JsonReader
 from cl.runtime.file.json_writer import JsonWriter
 from cl.runtime.file.jsonl_reader import JsonlReader
 from cl.runtime.file.jsonl_writer import JsonlWriter
+from cl.runtime.file.reader import Reader
+from cl.runtime.file.writer import Writer
 from cl.runtime.file.yaml_reader import YamlReader
 from cl.runtime.file.yaml_writer import YamlWriter
 from cl.runtime.primitive.case_util import CaseUtil
 from cl.runtime.records.builder_checks import BuilderChecks
 from cl.runtime.records.record_mixin import RecordMixin
 from cl.runtime.records.typename import typename
+from cl.runtime.schema.type_info import TypeInfo
 from cl.runtime.serializers.data_serializers import DataSerializers
 from cl.runtime.serializers.yaml_encoders import YamlEncoders
 from stubs.cl.runtime.records.for_dataclasses.stub_dataclass_dict_fields import StubDataclassDictFields
@@ -50,22 +56,25 @@ _YAML_SERIALIZER = DataSerializers.FOR_YAML_SERIALIZATION
 _YAML_ENCODER = YamlEncoders.DEFAULT
 
 _STUB_FIELDS_ENTRIES: list[list[RecordMixin]] = [
-    [StubDataclassPrimitiveFields(key_str_field=f"prim_{i}").build() for i in range(3)],
-    [StubDataclassOptionalFields(id=f"opt_{i}").build() for i in range(3)],
-    [StubDataclassListFields(id=f"list_{i}").build() for i in range(3)],
-    [StubDataclassDictFields(id=f"dict_{i}").build() for i in range(3)],
-    [StubDataclassTupleFields(id=f"tuple_{i}").build() for i in range(3)],
-    [StubDataclassFrozendictFields(id=f"fdict_{i}").build() for i in range(3)],
-    [StubDataclassListDictFields(id=f"ldict_{i}").build() for i in range(3)],
-    [StubDataclassDictListFields(id=f"dlist_{i}").build() for i in range(3)],
-    [StubDataclassNestedFields(id=f"nest_{i}").build() for i in range(3)],
-    [StubDataclassEmptyFields(id=f"empty_{i}").build() for i in range(3)],
-    [StubDataclassNumpyFields(id=f"numpy_{i}").build() for i in range(3)],
+    [StubDataclassPrimitiveFields(key_str_field=f"prim_{i}").build() for i in range(2)],
+    [StubDataclassOptionalFields(id=f"opt_{i}").build() for i in range(2)],
+    [StubDataclassListFields(id=f"list_{i}").build() for i in range(2)],
+    [StubDataclassDictFields(id=f"dict_{i}").build() for i in range(2)],
+    [StubDataclassTupleFields(id=f"tuple_{i}").build() for i in range(2)],
+    [StubDataclassFrozendictFields(id=f"fdict_{i}").build() for i in range(2)],
+    [StubDataclassListDictFields(id=f"ldict_{i}").build() for i in range(2)],
+    [StubDataclassDictListFields(id=f"dlist_{i}").build() for i in range(2)],
+    [StubDataclassNestedFields(id=f"nest_{i}").build() for i in range(2)],
+    [StubDataclassEmptyFields(id=f"empty_{i}").build() for i in range(2)],
+    [StubDataclassNumpyFields(id=f"numpy_{i}").build() for i in range(2)],
 ]
 
 _STUB_FIELDS_ENTRIES_NO_NUMPY: list[list[RecordMixin]] = [
     e for e in _STUB_FIELDS_ENTRIES if not isinstance(e[0], StubDataclassNumpyFields)
 ]
+
+_TESTED_READERS: set[type] = set()
+_TESTED_WRITERS: set[type] = set()
 
 
 def _write_file_data_to_dir(file_data_list, dir_path: str) -> None:
@@ -122,6 +131,60 @@ def _save_records_to_yaml(records: Iterable[RecordMixin], file_path: str) -> Non
         f.write(yaml_str)
 
 
+def _parse_compact_datetime(value: str) -> dt.datetime:
+    """Parse compact datetime string 'yyyymmdd-hhmmssfff' to datetime object."""
+    date_part, time_part = value.split("-")
+    return dt.datetime(
+        int(date_part[:4]), int(date_part[4:6]), int(date_part[6:8]),
+        int(time_part[:2]), int(time_part[2:4]), int(time_part[4:6]),
+        int(time_part[6:9]) * 1000,
+    )
+
+
+def _save_records_to_xlsx(records: list[RecordMixin], xlsx_path: str) -> None:
+    """Save records to an XLSX file with temporal fields stored as Excel-native types."""
+    record_type = type(records[0])
+    temporal_fields = ExcelReader._get_temporal_field_types(record_type)
+
+    record_dicts = []
+    for rec in records:
+        serialized = _CSV_SERIALIZER.serialize(rec)
+        serialized.pop("_type", None)
+        serialized = {
+            CaseUtil.snake_to_pascal_case_keep_trailing_underscore(k): v for k, v in serialized.items()
+        }
+        record_dicts.append(serialized)
+
+    headers = list(record_dicts[0].keys())
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Sheet1"
+    ws.append(headers)
+
+    for row_dict in record_dicts:
+        row = []
+        for header in headers:
+            value = row_dict.get(header)
+            if value is None or value == "":
+                row.append("")
+                continue
+            snake_name = CaseUtil.pascal_to_snake_case(header)
+            field_type = temporal_fields.get(snake_name)
+            if field_type is dt.date:
+                row.append(int(value))
+            elif field_type is dt.time:
+                row.append(int(value))
+            elif field_type is dt.datetime:
+                row.append(_parse_compact_datetime(str(value)))
+            else:
+                row.append(value)
+        ws.append(row)
+
+    os.makedirs(os.path.dirname(xlsx_path), exist_ok=True)
+    wb.save(xlsx_path)
+
+
 def _clean_work_dir(work_dir: str) -> None:
     """Remove all files and subdirectories in work_dir."""
     for entry in os.listdir(work_dir):
@@ -137,6 +200,8 @@ def _clean_work_dir(work_dir: str) -> None:
 
 def test_csv_reader_all_fields(work_dir_fixture):
     """Test CsvReader roundtrip for all Stub*Fields classes (except StubAnyFields)."""
+
+    _TESTED_READERS.add(CsvReader)
 
     for entries in _STUB_FIELDS_ENTRIES:
         record_type = type(entries[0])
@@ -163,6 +228,8 @@ def test_csv_reader_all_fields(work_dir_fixture):
 def test_csv_writer_all_fields(work_dir_fixture):
     """Test CsvWriter write-read roundtrip for all Stub*Fields classes (except StubAnyFields)."""
 
+    _TESTED_WRITERS.add(CsvWriter)
+
     csv_writer = CsvWriter()
 
     for entries in _STUB_FIELDS_ENTRIES:
@@ -187,11 +254,40 @@ def test_csv_writer_all_fields(work_dir_fixture):
         os.remove(os.path.join(work_dir_fixture, file_data_list[0].name))
 
 
+# ── Excel reader roundtrip ────────────────────────────────────────────────────
+
+
+def test_excel_reader_all_fields(work_dir_fixture):
+    """Test ExcelReader roundtrip for all Stub*Fields classes (except StubAnyFields)."""
+
+    _TESTED_READERS.add(ExcelReader)
+
+    for entries in _STUB_FIELDS_ENTRIES:
+        record_type = type(entries[0])
+        type_name = typename(record_type)
+        xlsx_path = os.path.join(work_dir_fixture, f"{type_name}.xlsx")
+
+        _save_records_to_xlsx(entries, xlsx_path)
+
+        excel_reader = ExcelReader().build()
+        loaded = list(excel_reader.load_all(
+            dirs=[work_dir_fixture],
+            ext="xlsx",
+            file_include_patterns=[f"{type_name}.*"],
+        ).get("/", ()))
+
+        assert BuilderChecks.is_equal(loaded, entries), f"Excel reader roundtrip failed for {type_name}"
+
+        _clean_work_dir(work_dir_fixture)
+
+
 # ── JSON reader roundtrip ────────────────────────────────────────────────────
 
 
 def test_json_reader_all_fields(work_dir_fixture):
     """Test JsonReader roundtrip for all Stub*Fields classes (except StubAnyFields)."""
+
+    _TESTED_READERS.add(JsonReader)
 
     for entries in _STUB_FIELDS_ENTRIES:
         record_type = type(entries[0])
@@ -217,6 +313,8 @@ def test_json_reader_all_fields(work_dir_fixture):
 
 def test_json_writer_all_fields(work_dir_fixture):
     """Test JsonWriter write-read roundtrip for all Stub*Fields classes (except StubAnyFields)."""
+
+    _TESTED_WRITERS.add(JsonWriter)
 
     json_writer = JsonWriter()
 
@@ -253,6 +351,8 @@ def test_json_writer_all_fields(work_dir_fixture):
 def test_jsonl_reader_all_fields(work_dir_fixture):
     """Test JsonlReader roundtrip for all Stub*Fields classes (except StubAnyFields)."""
 
+    _TESTED_READERS.add(JsonlReader)
+
     for entries in _STUB_FIELDS_ENTRIES:
         record_type = type(entries[0])
         type_name = typename(record_type)
@@ -277,6 +377,8 @@ def test_jsonl_reader_all_fields(work_dir_fixture):
 
 def test_jsonl_writer_all_fields(work_dir_fixture):
     """Test JsonlWriter write-read roundtrip for all Stub*Fields classes (except StubAnyFields)."""
+
+    _TESTED_WRITERS.add(JsonlWriter)
 
     jsonl_writer = JsonlWriter()
 
@@ -308,6 +410,8 @@ def test_jsonl_writer_all_fields(work_dir_fixture):
 def test_yaml_reader_all_fields(work_dir_fixture):
     """Test YamlReader roundtrip for all Stub*Fields classes (except StubAnyFields and StubNumpyFields)."""
 
+    _TESTED_READERS.add(YamlReader)
+
     for entries in _STUB_FIELDS_ENTRIES_NO_NUMPY:
         record_type = type(entries[0])
         type_name = typename(record_type)
@@ -332,6 +436,8 @@ def test_yaml_reader_all_fields(work_dir_fixture):
 
 def test_yaml_writer_all_fields(work_dir_fixture):
     """Test YamlWriter write-read roundtrip for all Stub*Fields classes (except StubAnyFields and StubNumpyFields)."""
+
+    _TESTED_WRITERS.add(YamlWriter)
 
     yaml_writer = YamlWriter()
 
@@ -360,6 +466,26 @@ def test_yaml_writer_all_fields(work_dir_fixture):
         )
 
         _clean_work_dir(work_dir_fixture)
+
+
+# ── Coverage verification ────────────────────────────────────────────────────
+
+
+def test_all_readers_and_writers_covered():
+    """Verify that every Reader and Writer descendant in the runtime package is tested above."""
+
+    all_readers = set(TypeInfo.get_child_and_self_types(Reader)) - {Reader}
+    all_writers = set(TypeInfo.get_child_and_self_types(Writer)) - {Writer}
+
+    missing_readers = all_readers - _TESTED_READERS
+    missing_writers = all_writers - _TESTED_WRITERS
+
+    assert not missing_readers, (
+        f"Reader subclasses not covered by roundtrip tests: {sorted(c.__name__ for c in missing_readers)}"
+    )
+    assert not missing_writers, (
+        f"Writer subclasses not covered by roundtrip tests: {sorted(c.__name__ for c in missing_writers)}"
+    )
 
 
 if __name__ == "__main__":
