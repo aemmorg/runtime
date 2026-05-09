@@ -145,26 +145,18 @@ class DataSerializer(Serializer):
                 if not is_empty(dict_value)
             )
         elif is_ndarray_type(type(data)):
-            # Deserialize ndarray into ndarray, remaining_chain must be None
+            # Serialize ndarray into dict with dtype, shape, and values
             values = tuple(float(x) for x in data.flatten())
+            result = {
+                "dtype": "FLOAT_64",
+                "shape": tuple(data.shape),
+                "values": values,
+            }
             if type_hint is not None:
                 type_hint.validate_for_ndarray()
-                # Type hint is present, do not specify _type
-                return frozendict(
-                    {
-                        "shape": tuple(data.shape),
-                        "values": values,
-                    }
-                )
             else:
-                # Specify _type when type hint is None
-                return frozendict(
-                    {
-                        "_type": "ndarray",
-                        "shape": tuple(data.shape),
-                        "values": tuple(float(x) for x in data.flatten()),
-                    }
-                )
+                result["_type"] = "ndarray"
+            return frozendict(result)
         elif is_data_key_or_record_type(type(data)):
             # Use key serializer for key types if specified
             if self.key_serializer is not None and is_key_type(type(data)):
@@ -349,10 +341,15 @@ class DataSerializer(Serializer):
                     f"Cannot deserialize because schema type {typename(schema_type)} is an ndarray\n"
                     f"but data type {type(data).__name__} is not a mapping."
                 )
-            # Deserialize mapping into ndarray
-            shape = data["shape"]
+            # Deserialize mapping into ndarray using dtype, shape, and values
+            dtype_str = data.get("dtype", "FLOAT_64")
+            dtype_map = {"FLOAT_64": np.float64}
+            np_dtype = dtype_map.get(dtype_str)
+            if np_dtype is None:
+                raise RuntimeError(f"Unsupported numpy dtype '{dtype_str}' during deserialization.")
+            shape = tuple(int(x) for x in data["shape"])
             values = data["values"]
-            return np.array(values, dtype=float).reshape(shape)  # TODO: !!! Support any dtype
+            return np.array(values, dtype=np_dtype).reshape(shape)
         elif isinstance(
             data, str
         ):  # TODO: !! Refactor to use if/else on schema type only like the new PrimitiveSerializer

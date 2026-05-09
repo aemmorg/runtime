@@ -69,10 +69,6 @@ _STUB_FIELDS_ENTRIES: list[list[RecordMixin]] = [
     [StubDataclassNumpyFields(id=f"numpy_{i}").build() for i in range(2)],
 ]
 
-_STUB_FIELDS_ENTRIES_NO_NUMPY: list[list[RecordMixin]] = [
-    e for e in _STUB_FIELDS_ENTRIES if not isinstance(e[0], StubDataclassNumpyFields)
-]
-
 _TESTED_READERS: set[type] = set()
 _TESTED_WRITERS: set[type] = set()
 
@@ -408,11 +404,11 @@ def test_jsonl_writer_all_fields(work_dir_fixture):
 
 
 def test_yaml_reader_all_fields(work_dir_fixture):
-    """Test YamlReader roundtrip for all Stub*Fields classes (except StubAnyFields and StubNumpyFields)."""
+    """Test YamlReader roundtrip for all Stub*Fields classes (except StubAnyFields)."""
 
     _TESTED_READERS.add(YamlReader)
 
-    for entries in _STUB_FIELDS_ENTRIES_NO_NUMPY:
+    for entries in _STUB_FIELDS_ENTRIES:
         record_type = type(entries[0])
         type_name = typename(record_type)
         file_path = os.path.join(work_dir_fixture, f"{type_name}.yaml")
@@ -435,13 +431,13 @@ def test_yaml_reader_all_fields(work_dir_fixture):
 
 
 def test_yaml_writer_all_fields(work_dir_fixture):
-    """Test YamlWriter write-read roundtrip for all Stub*Fields classes (except StubAnyFields and StubNumpyFields)."""
+    """Test YamlWriter write-read roundtrip for all Stub*Fields classes (except StubAnyFields)."""
 
     _TESTED_WRITERS.add(YamlWriter)
 
     yaml_writer = YamlWriter()
 
-    for entries in _STUB_FIELDS_ENTRIES_NO_NUMPY:
+    for entries in _STUB_FIELDS_ENTRIES:
         record_type = type(entries[0])
         type_name = typename(record_type)
 
