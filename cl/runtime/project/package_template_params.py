@@ -85,6 +85,9 @@ class PackageTemplateParams(DataclassMixin):
     isort_sections: Sequence[str] | None = None
     """Complete ordered list of isort sections."""
 
+    formatter_exclude_files: Sequence[str] | None = None
+    """List of file/directory patterns to exclude from formatting via --extend-exclude."""
+
     def to_dict(self) -> dict[str, Any]:
         """Convert all fields to a dict suitable for Jinja2 template rendering."""
         return {f.name: getattr(self, f.name) for f in dataclasses.fields(self)}  # TODO(Claude): Use DataSerializer?

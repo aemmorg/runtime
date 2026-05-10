@@ -96,6 +96,10 @@ default:
     - xmltodict>=0.12.0
 
 
+  # Documented in FormatterSettings class
+  formatter_exclude_files:
+    - stubs/cl/runtime/prebuild/stub_invalid_docstrings.py
+
   package_test_dependencies:
     - autoflake>=2.3.1
     - black>=22.6.0

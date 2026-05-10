@@ -32,6 +32,7 @@ from cl.runtime.prebuild.copyright_util import CopyrightUtil
 from cl.runtime.prebuild.version_util import VersionUtil
 from cl.runtime.project.package_template_params import PackageTemplateParams
 from cl.runtime.project.project_layout import ProjectLayout
+from cl.runtime.settings.formatter_settings import FormatterSettings
 from cl.runtime.settings.package_settings import PackageSettings
 from cl.runtime.settings.project_settings import ProjectSettings
 from cl.runtime.templates.jinja_template_engine import JinjaTemplateEngine
@@ -65,6 +66,7 @@ def build_template_params(
     """
     # Settings for the specified package
     package_settings = PackageSettings.instance(package=package_namespace)
+    formatter_settings = FormatterSettings.instance(package=package_namespace)
     package_root = ProjectLayout.get_package_root(package_namespace)
 
     # Use YAML override for authors if specified, otherwise extract from COPYRIGHT file
@@ -148,6 +150,7 @@ def build_template_params(
         isort_known_packages=isort_known_packages,
         isort_known_stubs=isort_known_stubs,
         isort_sections=sections,
+        formatter_exclude_files=formatter_settings.formatter_exclude_files,
         package_copyright=copyright_text,
     )
 
