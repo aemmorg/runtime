@@ -33,7 +33,7 @@ from cl.runtime.schema.field_decl import primitive_types
 from cl.runtime.serializers.bootstrap_serializers import BootstrapSerializers
 from cl.runtime.serializers.key_serializers import KeySerializers
 
-_supported_extensions = ["txt", "yaml", "html", "png"]
+_supported_extensions = ["txt", "yaml", "html", "png", "csv", "json", "jsonl"]
 """The list of supported output file extensions (formats)."""
 
 _KEY_SERIALIZER = KeySerializers.DELIMITED
@@ -171,7 +171,7 @@ class RegressionGuard(BootstrapMixin):
             # Create the directory if does not exist
             os.makedirs(received_dir)
 
-        if self.ext == "txt" or self.ext == "yaml":
+        if self.ext in ("txt", "yaml", "csv", "json", "jsonl"):
             with open(received_path, "a", encoding="utf-8") as file:
                 file.write(self._format_txt(value))
                 # Flush immediately to ensure all of the output is on disk in the event of test exception
@@ -195,6 +195,48 @@ class RegressionGuard(BootstrapMixin):
             self._error_extension_not_supported(self.ext)
 
         # Return self for method call chaining
+        return self
+
+    def register_external_write(self, file_path: str) -> Self:
+        """Register an externally written file for regression testing by copying it to '{prefix}.received.ext'.
+
+        Works the same as write() but the file content comes from an external file that was
+        written by the caller. The external file is copied to '{prefix}.received.ext' and
+        triggers verification when verify() is called.
+
+        Args:
+            file_path: Path of the file written externally, will be copied to '{prefix}.received.ext'
+
+        Returns:
+            Self for method call chaining, will return delegated to guard in case of delegation
+        """
+        self.check_frozen()
+
+        # Delegate to a previously created guard with the same output_path if it exists
+        if self._delegate_to is not None:
+            return self._delegate_to.register_external_write(file_path)
+
+        received_path = self._get_file_path("received")
+        if self._verified:
+            raise RuntimeError(
+                f"Cannot register external write for RegressionGuard because a difference between\n"
+                f"received and expected file occurred during a previous test for the same file,\n"
+                f"or the expected file was not found. Rerun the test if this occurred during\n"
+                f"the creation of the expected file.\n"
+                f"File path: {received_path}"
+            )
+
+        received_dir = os.path.dirname(received_path)
+        if not os.path.exists(received_dir):
+            os.makedirs(received_dir)
+
+        # Copy the externally written file to '{prefix}.received.ext'
+        file_path_abs = os.path.normpath(os.path.abspath(file_path))
+        received_path_abs = os.path.normpath(os.path.abspath(received_path))
+        if file_path_abs != received_path_abs:
+            with open(file_path, "rb") as src, open(received_path, "wb") as dst:
+                dst.write(src.read())
+
         return self
 
     @classmethod
