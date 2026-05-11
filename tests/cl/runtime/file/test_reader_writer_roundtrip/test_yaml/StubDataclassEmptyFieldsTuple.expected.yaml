@@ -1,0 +1,4 @@
+- _type: StubDataclassEmptyFields
+  id: empty_0
+- _type: StubDataclassEmptyFields
+  id: empty_1

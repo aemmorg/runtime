@@ -1,0 +1,3 @@
+Id,OptionalStr,RequiredListOfOptionalStr,OptionalFloat,RequiredListOfOptionalFloat,RequiredListOfOptionalData,RequiredListOfOptionalKey,RequiredListOfOptionalRecord
+opt_0,xyz,"[""abc"",null]",1.23,"[1.23,null]","[{""_type"":""StubDataclassData"",""str_field"":""abc"",""int_field"":123},null]","[""abc"",null]","[{""_type"":""StubDataclass"",""id"":""abc""},null]"
+opt_1,xyz,"[""abc"",null]",1.23,"[1.23,null]","[{""_type"":""StubDataclassData"",""str_field"":""abc"",""int_field"":123},null]","[""abc"",null]","[{""_type"":""StubDataclass"",""id"":""abc""},null]"
