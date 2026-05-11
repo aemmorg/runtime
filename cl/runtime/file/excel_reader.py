@@ -212,6 +212,9 @@ class ExcelReader(Reader):
         if value is None:
             return ""
 
+        if isinstance(value, str):
+            return value
+
         # Format based on field type from schema
         if field_type is dt.datetime:
             if isinstance(value, dt.datetime):
