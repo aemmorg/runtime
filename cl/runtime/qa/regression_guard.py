@@ -18,6 +18,7 @@ import os
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any
+from typing import Callable
 from typing import ClassVar
 from typing import Self
 from cl.runtime.plots.for_plotly.plotly_util import PlotlyUtil
@@ -33,14 +34,45 @@ from cl.runtime.schema.field_decl import primitive_types
 from cl.runtime.serializers.bootstrap_serializers import BootstrapSerializers
 from cl.runtime.serializers.key_serializers import KeySerializers
 
-_supported_extensions = ["txt", "yaml", "html", "png", "csv", "json", "jsonl"]
-"""The list of supported output file extensions (formats)."""
-
 _KEY_SERIALIZER = KeySerializers.DELIMITED
 """Serializer for keys."""
 
 _YAML_SERIALIZER = BootstrapSerializers.YAML
 """Serializer for classes and containers."""
+
+_SANITIZERS: dict[str, Callable[[str], str]] = {
+    "html": lambda content: (
+        PlotlyUtil.sanitize_plotly_html(content) if PlotlyUtil.is_plotly_html(content) else content
+    ),
+}
+"""Registry of text sanitizers by extension, applied before comparison."""
+
+_COMPARATORS: dict[str, Callable[[str, str], bool]] = {
+    "png": lambda received_path, expected_path: (
+        PngUtil.get_pixel_hash_from_png(received_path) == PngUtil.get_pixel_hash_from_png(expected_path)
+    ),
+}
+"""Registry of binary comparators by extension, returns True if files match."""
+
+def _png_diff_formatter(received_path: str, expected_path: str) -> tuple[str, str]:
+    """Return (diff_file_content, exception_text) for PNG comparison failure."""
+    received_hash = PngUtil.get_pixel_hash_from_png(received_path)
+    expected_hash = PngUtil.get_pixel_hash_from_png(expected_path)
+    diff_content = f"PNG pixel hash mismatch:\n  Expected: {expected_hash}\n  Received: {received_hash}\n"
+    exception_text = (
+        f"\nPNG regression test failed.\n"
+        f"  Expected pixel hash: {expected_hash}\n"
+        f"  Received pixel hash: {received_hash}\n"
+        f"  Expected file: {expected_path}\n"
+        f"  Received file: {received_path}\n"
+    )
+    return diff_content, exception_text
+
+
+_DIFF_FORMATTERS: dict[str, Callable[[str, str], tuple[str, str]]] = {
+    "png": _png_diff_formatter,
+}
+"""Registry of diff formatters by extension, returns (diff_file_content, exception_text)."""
 
 
 @dataclass(slots=True, kw_only=True)
@@ -97,10 +129,7 @@ class RegressionGuard(BootstrapMixin):
             self._output_dir_and_prefix = os.path.join(self._output_dir, "")
 
         if self.ext is not None:
-            # Remove dot prefix if specified
             self.ext = self.ext.removeprefix(".")
-            if self.ext not in _supported_extensions:
-                self._error_extension_not_supported(self.ext)
         else:
             raise RuntimeError("Param 'ext' is not specified in RegressionGuard.")
 
@@ -157,7 +186,7 @@ class RegressionGuard(BootstrapMixin):
             return self._delegate_to.write(value)
 
         received_path = self._get_file_path("received")
-        if self._verified:  # TODO: Improve logic to avoid rerunning in this case
+        if self._verified:
             raise RuntimeError(
                 f"Cannot write to a received file for RegressionGuard because a difference between\n"
                 f"received and expected file occurred during a previous test for the same file,\n"
@@ -168,33 +197,21 @@ class RegressionGuard(BootstrapMixin):
 
         received_dir = os.path.dirname(received_path)
         if not os.path.exists(received_dir):
-            # Create the directory if does not exist
             os.makedirs(received_dir)
 
-        if self.ext in ("txt", "yaml", "csv", "json", "jsonl"):
-            with open(received_path, "a", encoding="utf-8") as file:
-                file.write(self._format_txt(value))
-                # Flush immediately to ensure all of the output is on disk in the event of test exception
-                file.flush()
-        elif self.ext == "html":
-            # For HTML, value must be a string; save as-is (sanitization happens during comparison)
-            if not isinstance(value, str):
-                raise RuntimeError(f"HTML extension requires string value, got {type(value).__name__}")
-            with open(received_path, "w", encoding="utf-8") as file:
-                file.write(value)
-                file.flush()
-        elif self.ext == "png":
-            # For PNG, value must be bytes; save as-is (pixel hash comparison happens during verification)
-            if not isinstance(value, bytes):
-                raise RuntimeError(f"PNG extension requires bytes value, got {type(value).__name__}")
+        if isinstance(value, bytes):
             with open(received_path, "wb") as file:
                 file.write(value)
                 file.flush()
+        elif self.ext in _SANITIZERS and isinstance(value, str):
+            with open(received_path, "w", encoding="utf-8") as file:
+                file.write(value)
+                file.flush()
         else:
-            # Should not be reached here because of a previous check in __init__
-            self._error_extension_not_supported(self.ext)
+            with open(received_path, "a", encoding="utf-8") as file:
+                file.write(self._format_txt(value))
+                file.flush()
 
-        # Return self for method call chaining
         return self
 
     def register_external_write(self, file_path: str) -> Self:
@@ -327,124 +344,46 @@ class RegressionGuard(BootstrapMixin):
         expected_path = self._get_file_path("expected")
         diff_path = self._get_file_path("diff")
 
-        # If received file does not yet exist, return True
         if not os.path.exists(received_path):
-            # Do not set the _verified flag so that verification can be performed again at a later time
             return True
 
         if os.path.exists(expected_path):
-
-            # For PNG files, use pixel hash comparison
-            if self.ext == "png":
-                received_hash = PngUtil.get_pixel_hash_from_png(received_path)
-                expected_hash = PngUtil.get_pixel_hash_from_png(expected_path)
-                content_matches = received_hash == expected_hash
+            if self.ext in _COMPARATORS:
+                content_matches = _COMPARATORS[self.ext](received_path, expected_path)
+            elif self._is_binary_file(received_path):
+                content_matches = self._binary_hash(received_path) == self._binary_hash(expected_path)
             else:
-                # Read both files as text
-                with open(received_path, "r", encoding="utf-8") as received_file:
-                    received_content = received_file.read()
-                with open(expected_path, "r", encoding="utf-8") as expected_file:
-                    expected_content = expected_file.read()
+                received_content = self._read_text(received_path)
+                expected_content = self._read_text(expected_path)
+                sanitizer = _SANITIZERS.get(self.ext)
+                if sanitizer:
+                    received_content = sanitizer(received_content)
+                    expected_content = sanitizer(expected_content)
+                content_matches = received_content == expected_content
 
-                # For HTML files with Plotly content, sanitize in memory for comparison
-                if self.ext == "html" and PlotlyUtil.is_plotly_html(received_content):
-                    received_for_comparison = PlotlyUtil.sanitize_plotly_html(received_content)
-                    expected_for_comparison = PlotlyUtil.sanitize_plotly_html(expected_content)
-                else:
-                    received_for_comparison = received_content
-                    expected_for_comparison = expected_content
-
-                content_matches = received_for_comparison == expected_for_comparison
-
-            # Compare
             if content_matches:
-                # Content matches (after sanitization), delete the received file and diff file
                 os.remove(received_path)
                 if os.path.exists(diff_path):
                     os.remove(diff_path)
-
-                # Return True to indicate verification has been successful
                 return True
             else:
-                # Content differs
-                if self.ext == "png":
-                    # For PNG, write pixel hash comparison to diff file
-                    diff_content = (
-                        f"PNG pixel hash mismatch:\n" f"  Expected: {expected_hash}\n" f"  Received: {received_hash}\n"
-                    )
-                    with open(diff_path, "w", encoding="utf-8") as diff_file:
-                        diff_file.write(diff_content)
-
-                    exception_text = (
-                        f"\nPNG regression test failed.\n"
-                        f"  Expected pixel hash: {expected_hash}\n"
-                        f"  Received pixel hash: {received_hash}\n"
-                        f"  Expected file: {expected_path}\n"
-                        f"  Received file: {received_path}\n"
-                    )
-                else:
-                    # Generate unified diff for text formats (use sanitized content for HTML)
-                    received_lines = received_for_comparison.splitlines(keepends=True)
-                    expected_lines = expected_for_comparison.splitlines(keepends=True)
-
-                    # Convert to list first because the returned object is a generator but
-                    # we will need to iterate over the lines more than once
-                    diff = list(
-                        difflib.unified_diff(
-                            expected_lines, received_lines, fromfile=expected_path, tofile=received_path, n=0
-                        )
-                    )
-
-                    # Write the complete unified diff into to the diff file
-                    with open(diff_path, "w", encoding="utf-8") as diff_file:
-                        diff_file.write("".join(diff))
-
-                    # Truncate to max_lines and surround by begin/end lines for generate exception text
-                    line_len = 120
-                    max_lines = 5
-                    begin_str = "BEGIN REGRESSION TEST UNIFIED DIFF "
-                    end_str = "END REGRESSION TEST UNIFIED DIFF "
-                    begin_sep = "-" * (line_len - len(begin_str))
-                    end_sep = "-" * (line_len - len(end_str))
-                    orig_lines = len(diff)
-                    if orig_lines > max_lines:
-                        diff = diff[:max_lines]
-                        truncate_str = f"(TRUNCATED {orig_lines-max_lines} ADDITIONAL LINES) "
-                        end_sep = end_sep[: -len(truncate_str)]
-                    else:
-                        truncate_str = ""
-                    diff_str = "".join(diff)
-                    exception_text = f"\n{begin_str}{begin_sep}\n" + diff_str
-                    extra_eol = "" if exception_text.endswith("\n") else "\n"
-                    exception_text = exception_text + f"{extra_eol}{end_str}{truncate_str}{end_sep}"
-
-                # Record even if raise_on_fail is False
+                exception_text = self._build_diff(received_path, expected_path, diff_path)
                 self._exception_text = exception_text
-
-                # Set the _verified flag so that verification returns the same result if attempted again
-                # This will prevent further writes to this prefix and extension
                 self._verified = True
 
                 if raise_on_fail:
-                    # Raise exception only when raise_on_fail is True
                     raise RuntimeError(exception_text)
                 else:
                     return False
         else:
-            # Expected file does not exist, copy the data from received to expected
             with open(received_path, "rb") as received_file, open(expected_path, "wb") as expected_file:
                 expected_file.write(received_file.read())
 
-            # Delete the received file and diff file
             os.remove(received_path)
             if os.path.exists(diff_path):
                 os.remove(diff_path)
 
-            # Set the _verified flag so that verification returns the same result if attempted again
-            # This will prevent further writes to this prefix and extension
             self._verified = True
-
-            # Verification is considered successful if expected file has been created
             return True
 
     def _verify_with_hash(self, *, raise_on_fail: bool) -> bool:
@@ -529,20 +468,94 @@ class RegressionGuard(BootstrapMixin):
             return True
 
     def _read_and_sanitize(self, file_path: str) -> str:
-        """
-        Read file content and apply sanitization for stable comparison.
+        """Read file content and apply sanitization for stable hash comparison."""
+        if self.ext in _COMPARATORS:
+            return self._binary_hash(file_path)
+        content = self._read_text(file_path)
+        sanitizer = _SANITIZERS.get(self.ext)
+        if sanitizer:
+            content = sanitizer(content)
+        return content
 
-        Returns:
-            Content suitable for comparison (sanitized for HTML with Plotly, pixel hash for PNG, etc.)
-        """
-        if self.ext == "png":
-            return PngUtil.get_pixel_hash_from_png(file_path)
+    @classmethod
+    def _is_binary_file(cls, file_path: str) -> bool:
+        """Return True if file contains non-text bytes (null bytes in first 8KB)."""
+        with open(file_path, "rb") as f:
+            chunk = f.read(8192)
+        return b"\x00" in chunk
+
+    @classmethod
+    def _binary_hash(cls, file_path: str) -> str:
+        """Return SHA256 hex digest of file contents."""
+        h = hashlib.sha256()
+        with open(file_path, "rb") as f:
+            for chunk in iter(lambda: f.read(65536), b""):
+                h.update(chunk)
+        return h.hexdigest()
+
+    @classmethod
+    def _read_text(cls, file_path: str) -> str:
+        """Read file as UTF-8 text."""
+        with open(file_path, "r", encoding="utf-8") as f:
+            return f.read()
+
+    def _build_diff(self, received_path: str, expected_path: str, diff_path: str) -> str:
+        """Build diff output and exception text for a failed comparison."""
+
+        if self.ext in _DIFF_FORMATTERS:
+            diff_content, exception_text = _DIFF_FORMATTERS[self.ext](received_path, expected_path)
+            with open(diff_path, "w", encoding="utf-8") as f:
+                f.write(diff_content)
+            return exception_text
+
+        if self._is_binary_file(received_path):
+            received_hash = self._binary_hash(received_path)
+            expected_hash = self._binary_hash(expected_path)
+            diff_content = f"Binary hash mismatch:\n  Expected: {expected_hash}\n  Received: {received_hash}\n"
+            with open(diff_path, "w", encoding="utf-8") as f:
+                f.write(diff_content)
+            return (
+                f"\nBinary regression test failed.\n"
+                f"  Expected hash: {expected_hash}\n"
+                f"  Received hash: {received_hash}\n"
+                f"  Expected file: {expected_path}\n"
+                f"  Received file: {received_path}\n"
+            )
+
+        received_content = self._read_text(received_path)
+        expected_content = self._read_text(expected_path)
+        sanitizer = _SANITIZERS.get(self.ext)
+        if sanitizer:
+            received_content = sanitizer(received_content)
+            expected_content = sanitizer(expected_content)
+
+        received_lines = received_content.splitlines(keepends=True)
+        expected_lines = expected_content.splitlines(keepends=True)
+
+        diff = list(
+            difflib.unified_diff(expected_lines, received_lines, fromfile=expected_path, tofile=received_path, n=0)
+        )
+
+        with open(diff_path, "w", encoding="utf-8") as diff_file:
+            diff_file.write("".join(diff))
+
+        line_len = 120
+        max_lines = 5
+        begin_str = "BEGIN REGRESSION TEST UNIFIED DIFF "
+        end_str = "END REGRESSION TEST UNIFIED DIFF "
+        begin_sep = "-" * (line_len - len(begin_str))
+        end_sep = "-" * (line_len - len(end_str))
+        orig_lines = len(diff)
+        if orig_lines > max_lines:
+            diff = diff[:max_lines]
+            truncate_str = f"(TRUNCATED {orig_lines-max_lines} ADDITIONAL LINES) "
+            end_sep = end_sep[: -len(truncate_str)]
         else:
-            with open(file_path, "r", encoding="utf-8") as f:
-                content = f.read()
-            if self.ext == "html" and PlotlyUtil.is_plotly_html(content):
-                content = PlotlyUtil.sanitize_plotly_html(content)
-            return content
+            truncate_str = ""
+        diff_str = "".join(diff)
+        exception_text = f"\n{begin_str}{begin_sep}\n" + diff_str
+        extra_eol = "" if exception_text.endswith("\n") else "\n"
+        return exception_text + f"{extra_eol}{end_str}{truncate_str}{end_sep}"
 
     def _format_txt(self, value: Any) -> str:
         """Format text for regression testing."""
@@ -593,9 +606,3 @@ class RegressionGuard(BootstrapMixin):
         result = f"{self._output_dir_and_prefix}{file_type}.sha256"
         return result
 
-    @classmethod
-    def _error_extension_not_supported(cls, ext: str) -> Any:
-        raise RuntimeError(
-            f"Extension {ext} is not supported by RegressionGuard. "
-            f"Supported extensions: {', '.join(_supported_extensions)}"
-        )
