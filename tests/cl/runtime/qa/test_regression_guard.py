@@ -124,5 +124,122 @@ def test_verify_hash():
     assert result is True
 
 
+def test_text_diff_diagnostics(tmp_path):
+    """Verify text comparison failure includes unified diff with file paths and content."""
+
+    expected_path = tmp_path / "text_diff.expected.txt"
+    expected_path.write_text("line one\nline two\n", encoding="utf-8")
+
+    guard = RegressionGuard(prefix="text_diff", ext="txt").build()
+    guard._output_dir = str(tmp_path)
+    guard._output_dir_and_prefix = os.path.join(str(tmp_path), "text_diff.")
+
+    received_path = tmp_path / "text_diff.received.txt"
+    received_path.write_text("line one\nline CHANGED\n", encoding="utf-8")
+
+    with pytest.raises(RuntimeError) as exc_info:
+        guard.verify()
+
+    msg = str(exc_info.value)
+    assert "BEGIN REGRESSION TEST UNIFIED DIFF" in msg
+    assert "END REGRESSION TEST UNIFIED DIFF" in msg
+    assert str(expected_path) in msg
+    assert str(received_path) in msg
+    assert "-line two" in msg
+    assert "+line CHANGED" in msg
+
+    diff_path = tmp_path / "text_diff.diff.txt"
+    assert diff_path.exists()
+
+
+def test_binary_diff_diagnostics(tmp_path):
+    """Verify generic binary comparison failure includes SHA256 hashes and file paths."""
+
+    expected_path = tmp_path / "bin_test.expected.bin"
+    expected_path.write_bytes(b"\x00\x01\x02\x03")
+
+    guard = RegressionGuard(prefix="bin_test", ext="bin").build()
+    guard._output_dir = str(tmp_path)
+    guard._output_dir_and_prefix = os.path.join(str(tmp_path), "bin_test.")
+
+    received_path = tmp_path / "bin_test.received.bin"
+    received_path.write_bytes(b"\x00\x01\x02\xFF")
+
+    with pytest.raises(RuntimeError) as exc_info:
+        guard.verify()
+
+    msg = str(exc_info.value)
+    assert "Binary regression test failed" in msg
+    assert "Expected hash:" in msg
+    assert "Received hash:" in msg
+    assert str(expected_path) in msg
+    assert str(received_path) in msg
+
+    diff_path = tmp_path / "bin_test.diff.bin"
+    assert diff_path.exists()
+
+
+def test_png_diff_diagnostics(tmp_path):
+    """Verify PNG comparison failure includes pixel hashes and file paths."""
+    from PIL import Image
+    import io
+
+    def make_png(color):
+        img = Image.new("RGB", (2, 2), color)
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
+        return buf.getvalue()
+
+    expected_path = tmp_path / "img.expected.png"
+    expected_path.write_bytes(make_png((255, 0, 0)))
+
+    guard = RegressionGuard(prefix="img", ext="png").build()
+    guard._output_dir = str(tmp_path)
+    guard._output_dir_and_prefix = os.path.join(str(tmp_path), "img.")
+
+    received_path = tmp_path / "img.received.png"
+    received_path.write_bytes(make_png((0, 0, 255)))
+
+    with pytest.raises(RuntimeError) as exc_info:
+        guard.verify()
+
+    msg = str(exc_info.value)
+    assert "PNG regression test failed" in msg
+    assert "Expected pixel hash:" in msg
+    assert "Received pixel hash:" in msg
+    assert str(expected_path) in msg
+    assert str(received_path) in msg
+
+    diff_path = tmp_path / "img.diff.png"
+    assert diff_path.exists()
+
+
+def test_hash_mode_diff_diagnostics(tmp_path):
+    """Verify use_hash=True comparison failure includes SHA256 hashes and file paths."""
+
+    guard = RegressionGuard(prefix="hash_fail", ext="txt", use_hash=True).build()
+    guard._output_dir = str(tmp_path)
+    guard._output_dir_and_prefix = os.path.join(str(tmp_path), "hash_fail.")
+
+    received_path = tmp_path / "hash_fail.received.txt"
+    received_path.write_text("new content\n", encoding="utf-8")
+
+    expected_hash_path = tmp_path / "hash_fail.expected.sha256"
+    expected_hash_path.write_text("0000000000000000000000000000000000000000000000000000000000000000", encoding="utf-8")
+
+    with pytest.raises(RuntimeError) as exc_info:
+        guard.verify()
+
+    msg = str(exc_info.value)
+    assert "SHA256 hash regression test failed" in msg
+    assert "Expected hash:" in msg
+    assert "Received hash:" in msg
+    assert str(expected_hash_path) in msg
+    assert str(received_path) in msg
+
+    received_hash_path = tmp_path / "hash_fail.received.sha256"
+    assert received_hash_path.exists()
+
+
 if __name__ == "__main__":
     pytest.main([__file__])
