@@ -52,6 +52,7 @@ from cl.runtime.settings.dynaconf_loader import ENVVAR_PREFIX
 from cl.runtime.settings.env_kind import EnvKind
 from cl.runtime.settings.env_settings import EnvSettings
 from cl.runtime.settings.frontend_settings import FrontendSettings
+from cl.runtime.settings.vite_settings import ViteSettings
 from cl.runtime.tasks.celery.celery_queue import CeleryQueue
 from cl.runtime.schema.type_info import TypeInfo
 
@@ -131,7 +132,7 @@ def _start_celery_quietly() -> str | None:
             root_logger.addHandler(h)
 
 
-def run_backend(*, interactive: bool = False) -> None:
+def run_backend(*, interactive: bool = False, vite: bool = False) -> None:
     """Run REST backend, request user approvals if required and interactive is true."""
 
     # Set up logging config
@@ -168,25 +169,26 @@ def run_backend(*, interactive: bool = False) -> None:
         else:
             raise ErrorUtil.enum_value_error(env_kind, EnvKind)
 
-        # Ask about frontend installation before Celery setup to prevent setup messages from hiding the prompt
-        frontend_settings = FrontendSettings.instance()
+        if not vite:
+            # Ask about frontend installation before Celery setup
+            frontend_settings = FrontendSettings.instance()
 
-        # If frontend is not installed, ask user to install it from GitHub (only in interactive mode)
-        if not frontend_settings.is_frontend_installed():
-            if interactive:
-                print(
-                    f"Static frontend files of version '{frontend_settings.frontend_version}' are not installed. "
-                    f"Do you want to install it from GitHub? (yes/no): "
-                )
-                user_response = input().strip().lower()
-                if user_response == "yes":
-                    # Install static frontend files from GitHub
-                    frontend_settings.install_frontend()
-            else:
-                _LOGGER.warning(
-                    f"Static frontend files of version '{frontend_settings.frontend_version}' are not installed. "
-                    f"Skipping installation prompt in non-interactive mode."
-                )
+            # If frontend is not installed, ask user to install it from GitHub (only in interactive mode)
+            if not frontend_settings.is_frontend_installed():
+                if interactive:
+                    print(
+                        f"Static frontend files of version '{frontend_settings.frontend_version}' are not installed. "
+                        f"Do you want to install it from GitHub? (yes/no): "
+                    )
+                    user_response = input().strip().lower()
+                    if user_response == "yes":
+                        # Install static frontend files from GitHub
+                        frontend_settings.install_frontend()
+                else:
+                    _LOGGER.warning(
+                        f"Static frontend files of version '{frontend_settings.frontend_version}' are not installed. "
+                        f"Skipping installation prompt in non-interactive mode."
+                    )
 
         # Start Celery with console output suppressed (messages go to log file only)
         # TODO: !!! This only works for the Mongo celery backend
@@ -198,19 +200,24 @@ def run_backend(*, interactive: bool = False) -> None:
                     f"Task execution will not be available. Check the log file for details."
                 )
 
-        if frontend_settings.is_frontend_installed():
-            # Mount static frontend files if index.html is found
-            index_file_path = frontend_settings.get_index_file_path()
-            server_app.mount("/", StaticFiles(directory=os.path.dirname(index_file_path), html=True))
-        else:
-            # Otherwise generate the fallback page
-            server_app.mount("/", FallbackStaticFiles())
-            _LOGGER.error("Frontend static directory not found, generating the fallback page.")
+        if not vite:
+            if frontend_settings.is_frontend_installed():
+                # Mount static frontend files if index.html is found
+                index_file_path = frontend_settings.get_index_file_path()
+                server_app.mount("/", StaticFiles(directory=os.path.dirname(index_file_path), html=True))
+            else:
+                # Otherwise generate the fallback page
+                server_app.mount("/", FallbackStaticFiles())
+                _LOGGER.error("Frontend static directory not found, generating the fallback page.")
 
         # Open new browser tab in the default browser using http protocol, will switch to https if cert is present
         # Only open browser in interactive mode
         if interactive:
-            webbrowser.open_new_tab(f"http://{api_settings.api_hostname}:{api_settings.api_port}")
+            if vite:
+                vite_settings = ViteSettings.instance()
+                webbrowser.open_new_tab(f"http://{vite_settings.vite_host}:{vite_settings.vite_port}")
+            else:
+                webbrowser.open_new_tab(f"http://{api_settings.api_hostname}:{api_settings.api_port}")
 
         # Run Uvicorn using hostname and port specified by Dynaconf
         config = uvicorn.Config(
@@ -235,6 +242,13 @@ if __name__ == "__main__":
     """Rebuild type cache once per test session if source files have changed."""
     TypeInfo.update()
 
+    # Parse command line arguments
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Run the CompatibL Runtime backend.")
+    parser.add_argument("--vite", action="store_true", help="Run with Vite dev server, skip static frontend files.")
+    args = parser.parse_args()
+
     # TODO: !!! Refactor to standardize the handling of CL_INTERACTIVE parameter
     # Determine interactive mode from environment variable, default to True for backward compatibility
     # Set CL_INTERACTIVE=false for Docker/non-interactive runs
@@ -242,4 +256,4 @@ if __name__ == "__main__":
     interactive = interactive_env in ("true", "1", "yes", "on")
 
     # Run backend with determined interactive mode
-    run_backend(interactive=interactive)
+    run_backend(interactive=interactive, vite=args.vite)
