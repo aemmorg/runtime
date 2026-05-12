@@ -19,6 +19,7 @@ import numpy as np
 from frozendict import frozendict
 from cl.runtime.exceptions.error_util import ErrorUtil
 from cl.runtime.primitive.case_util import CaseUtil
+from cl.runtime.records.d_type import DType
 from cl.runtime.records.for_dataclasses.extensions import required
 from cl.runtime.records.protocols import is_data_key_or_record_type
 from cl.runtime.records.protocols import is_empty
@@ -148,8 +149,8 @@ class DataSerializer(Serializer):
             # Serialize ndarray into dict with dtype, shape, and values
             values = tuple(float(x) for x in data.flatten())
             result = {
-                "dtype": "FLOAT_64",
-                "shape": tuple(data.shape),
+                "dtype": self.enum_serializer.serialize(DType.FLOAT_64),
+                "shape": tuple(int(x) for x in data.shape),
                 "values": values,
             }
             if type_hint is not None:
@@ -342,11 +343,12 @@ class DataSerializer(Serializer):
                     f"but data type {type(data).__name__} is not a mapping."
                 )
             # Deserialize mapping into ndarray using dtype, shape, and values
-            dtype_str = data.get("dtype", "FLOAT_64")
-            dtype_map = {"FLOAT_64": np.float64}
-            np_dtype = dtype_map.get(dtype_str)
+            dtype_hint = TypeHint.for_type(DType)
+            dtype_enum = self.enum_serializer.deserialize(data.get("dtype", "Float64"), dtype_hint)
+            np_dtype_map = {DType.FLOAT_64: np.float64}
+            np_dtype = np_dtype_map.get(dtype_enum)
             if np_dtype is None:
-                raise RuntimeError(f"Unsupported numpy dtype '{dtype_str}' during deserialization.")
+                raise RuntimeError(f"Unsupported numpy dtype '{dtype_enum}' during deserialization.")
             shape = tuple(int(x) for x in data["shape"])
             values = data["values"]
             return np.array(values, dtype=np_dtype).reshape(shape)

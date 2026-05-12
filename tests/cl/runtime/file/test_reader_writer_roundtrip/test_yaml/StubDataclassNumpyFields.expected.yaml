@@ -1,21 +1,21 @@
 _type: StubDataclassNumpyFields
 id: numpy
 float_array:
-  dtype: FLOAT_64
+  dtype: Float64
   shape:
   - 2
   values:
   - 1.
   - 2.
 float_vector:
-  dtype: FLOAT_64
+  dtype: Float64
   shape:
   - 2
   values:
   - 1.
   - 2.
 float_matrix:
-  dtype: FLOAT_64
+  dtype: Float64
   shape:
   - 2
   - 3
@@ -27,7 +27,7 @@ float_matrix:
   - 5.
   - 6.
 float_cube:
-  dtype: FLOAT_64
+  dtype: Float64
   shape:
   - 2
   - 3

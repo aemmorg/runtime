@@ -1,6 +1,7 @@
 {
   "id": "abc",
   "float_array": {
+    "dtype": "Float64",
     "shape": [
       2
     ],
@@ -10,6 +11,7 @@
     ]
   },
   "float_vector": {
+    "dtype": "Float64",
     "shape": [
       2
     ],
@@ -19,6 +21,7 @@
     ]
   },
   "float_matrix": {
+    "dtype": "Float64",
     "shape": [
       2,
       3
@@ -33,6 +36,7 @@
     ]
   },
   "float_cube": {
+    "dtype": "Float64",
     "shape": [
       2,
       3,
