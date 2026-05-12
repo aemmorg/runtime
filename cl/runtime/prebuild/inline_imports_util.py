@@ -247,12 +247,8 @@ class InlineImportsUtil:
         for stmt in tree.body:
             if isinstance(stmt, (ast.Import, ast.ImportFrom)):
                 continue
-            # Skip module-level docstring (a bare string expression)
-            if (
-                isinstance(stmt, ast.Expr)
-                and isinstance(stmt.value, ast.Constant)
-                and isinstance(stmt.value.value, str)
-            ):
+            # Skip bare expression statements (module docstrings, setup calls like locate.append_sys_path)
+            if isinstance(stmt, ast.Expr):
                 continue
             code_start_line = stmt.lineno
             break
