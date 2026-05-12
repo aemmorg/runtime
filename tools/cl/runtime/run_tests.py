@@ -298,7 +298,7 @@ def main():
     sys.stdout, sys.stderr = log_file, log_file
     try:
         pytest.main(
-            [*test_dirs, "-n", "auto", "--dist=loadfile", "--rootdir", PROJECT_ROOT, "--color=no", "--tb=long"],
+            [*test_dirs, "-n", "8", "--dist=loadfile", "--rootdir", PROJECT_ROOT, "--color=no", "--tb=long"],
             plugins=[reporter],
         )
     finally:
