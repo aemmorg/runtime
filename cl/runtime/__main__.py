@@ -26,6 +26,7 @@ import os
 import sys
 import webbrowser
 import uvicorn
+import traceback
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
@@ -62,13 +63,12 @@ server_app = FastAPI()
 async def handle_exception(request, exc):
     """Create error response."""
 
-    # TODO (Roman): Temporary before introduce sse.
+    # TODO (Roman): Temporary before introducing sse.
     # Return 500 response to avoid exception handler multiple calls.
     # IMPORTANT:
     # - If UserMessage is set it will be shown to the user on toast badge and bell becomes red.
     # - Otherwise default message will be shown.
-    import traceback
-    _LOGGER.error(f"Unhandled exception on {request.method} {request.url.path}: {exc}\n{''.join(traceback.format_exception(type(exc), exc, exc.__traceback__))}")
+    _LOGGER.error(f"Unhandled exception on {request.method} {request.url.path}: {exc}\n{''.join(traceback.format_exception(exc))}")
     user_message = str(exc) if isinstance(exc, UserError) else None
     return JSONResponse({"UserMessage": user_message}, status_code=500)
 
