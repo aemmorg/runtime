@@ -21,6 +21,7 @@ import locate
 locate.append_sys_path("../../..")
 # isort: on
 
+import argparse
 import logging.config
 import os
 import sys
@@ -243,8 +244,6 @@ if __name__ == "__main__":
     TypeInfo.update()
 
     # Parse command line arguments
-    import argparse
-
     parser = argparse.ArgumentParser(description="Run the CompatibL Runtime backend.")
     parser.add_argument("--vite", action="store_true", help="Run with Vite dev server, skip static frontend files.")
     args = parser.parse_args()
