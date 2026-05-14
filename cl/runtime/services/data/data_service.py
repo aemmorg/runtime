@@ -114,16 +114,11 @@ class DataService(PydanticMixin):
             TypeRequest(type_name=typename(common_base_record_type)), include_fields=False,
         )
 
-        
-        # TODO: Remove backward compatibility with pre-v2.0.0 frontends
-        root_type_name = schema_response.type_spec.get("Type", typename(common_base_record_type))
         return SelectDataResponse(
             data=data,
             type_spec=schema_response.type_spec,
             dependencies=schema_response.dependencies,
             query_schemas=None,
-            schema={root_type_name: schema_response.type_spec, **schema_response.dependencies},
-            base_type=root_type_name,
         )
 
     @classmethod
@@ -153,14 +148,11 @@ class DataService(PydanticMixin):
             TypeRequest(type_name=typename(type_)), include_fields=False,
         )
 
-        root_type_name = schema_response.type_spec.get("Type", typename(type_))
         return SelectDataResponse(
             data=data,
             type_spec=schema_response.type_spec,
             dependencies=schema_response.dependencies,
             query_schemas=None,
-            schema={root_type_name: schema_response.type_spec, **schema_response.dependencies},
-            base_type=root_type_name,
         )
 
     @classmethod
@@ -193,12 +185,9 @@ class DataService(PydanticMixin):
         # Get type spec and dependencies in the v2.0.0 response shape
         schema_response = TypeResponse.get_type(TypeRequest(type_name=typenameof(record)))
 
-        root_type_name = schema_response.type_spec.get("Type", typenameof(record))
         return LoadRecordResponse(
             record=data,
             type_spec=schema_response.type_spec,
             dependencies=schema_response.dependencies,
-            schema={root_type_name: schema_response.type_spec, **(schema_response.dependencies or {})},
-            base_type=root_type_name,
         )
 
