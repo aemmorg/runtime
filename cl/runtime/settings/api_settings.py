@@ -29,7 +29,7 @@ class ApiSettings(Settings):
         - For other hostnames, essential CORS parameters become required
     """
 
-    api_hostname: str | None = None
+    api_host: str | None = None
     """REST API hostname or IP address."""
 
     api_port: int | None = None
@@ -60,7 +60,7 @@ class ApiSettings(Settings):
         """Use instead of __init__ in the builder pattern, invoked by the build method in base to derived order."""
 
         # Validate hostname
-        if self.api_hostname is not None and not isinstance(self.api_hostname, str):
+        if self.api_host is not None and not isinstance(self.api_host, str):
             raise RuntimeError(f"{typename(type(self))} field 'hostname' must be a string or None.")
 
         # Convert and validate port
@@ -75,9 +75,9 @@ class ApiSettings(Settings):
             raise RuntimeError(f"{typename(type(self))} field 'port' must be an int or a string.")
 
         # Apply the defaults to the remaining fields when hostname is one of None, localhost or loopback IP address
-        if self.api_hostname in [None, "localhost", "127.0.0.1"]:
-            if self.api_hostname is None:
-                self.api_hostname = "localhost"
+        if self.api_host in [None, "localhost", "127.0.0.1"]:
+            if self.api_host is None:
+                self.api_host = "localhost"
             if self.api_port is None:
                 self.api_port = 7008
             if self.api_allow_origins is None:

@@ -136,7 +136,7 @@ def _write_settings_yaml(project_dir: str, project_name: str, root_package: str,
             "package_source_dirs": package_source_dirs,
             "db_id": f"temp_{project_name.replace('-', '_')}_main",
             **db_settings,
-            "api_hostname": "localhost",
+            "api_host": "localhost",
             "api_port": 7008,
             "api_allow_origins": [
                 "http://localhost:3005",

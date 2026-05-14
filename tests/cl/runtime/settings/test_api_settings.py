@@ -20,7 +20,7 @@ def test_defaults():
     """Test defaults for ApiSettings class."""
 
     api_settings = ApiSettings.instance()
-    assert api_settings.api_hostname == "localhost"
+    assert api_settings.api_host == "localhost"
     assert api_settings.api_port == 7008
     assert api_settings.api_allow_credentials
     assert api_settings.api_allow_methods == ("*",)

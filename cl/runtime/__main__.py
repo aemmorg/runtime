@@ -218,7 +218,7 @@ def run_backend(*, interactive: bool = False, vite: bool = False) -> None:
             try:
                 vite_settings = ViteSettings.instance()
                 vite_env = os.environ.copy()
-                vite_env["CL_API_URL"] = f"http://{api_settings.api_hostname}:{api_settings.api_port}"
+                vite_env["CL_API_URL"] = f"http://{api_settings.api_host}:{api_settings.api_port}"
                 vite_process = subprocess.Popen(
                     ["npm", "--prefix", vite_settings.vite_dir, "run", "client:dev"],
                     cwd=ProjectLayout.get_project_root(),
@@ -243,12 +243,12 @@ def run_backend(*, interactive: bool = False, vite: bool = False) -> None:
                 vite_settings = ViteSettings.instance()
                 webbrowser.open_new_tab(f"http://{vite_settings.vite_host}:{vite_settings.vite_port}")
             else:
-                webbrowser.open_new_tab(f"http://{api_settings.api_hostname}:{api_settings.api_port}")
+                webbrowser.open_new_tab(f"http://{api_settings.api_host}:{api_settings.api_port}")
 
         # Run Uvicorn using hostname and port specified by Dynaconf
         config = uvicorn.Config(
             server_app,
-            host=api_settings.api_hostname,
+            host=api_settings.api_host,
             port=api_settings.api_port,
             log_config=uvicorn_empty_logging_config,
         )

@@ -297,7 +297,7 @@ the prefix are passed to the constructor.
 class ApiSettings(Settings):
     """Configuration for the API server."""
 
-    api_hostname: str = "localhost"
+    api_host: str = "localhost"
     """API server hostname."""
 
     api_port: int = 7008
