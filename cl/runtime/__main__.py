@@ -217,11 +217,14 @@ def run_backend(*, interactive: bool = False, vite: bool = False) -> None:
         else:
             try:
                 vite_settings = ViteSettings.instance()
+                vite_env = os.environ.copy()
+                vite_env["CL_API_URL"] = f"http://{api_settings.api_hostname}:{api_settings.api_port}"
                 vite_process = subprocess.Popen(
                     ["npm", "--prefix", vite_settings.vite_dir, "run", "client:dev"],
                     cwd=ProjectLayout.get_project_root(),
                     shell=(sys.platform == "win32"),
                     stderr=subprocess.PIPE,
+                    env=vite_env,
                 )
                 import time
                 time.sleep(2)
