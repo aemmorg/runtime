@@ -16,7 +16,7 @@ from fastapi import APIRouter
 from starlette import status
 from starlette.responses import HTMLResponse
 from starlette.responses import RedirectResponse
-from cl.runtime.fallback.fallback_static_files import FallbackStaticFiles
+from cl.runtime.fallback.fallback_static_page import FallbackStaticFiles
 from cl.runtime.settings.frontend_settings import FrontendSettings
 
 router = APIRouter()

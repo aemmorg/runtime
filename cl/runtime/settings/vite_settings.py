@@ -14,6 +14,8 @@
 
 from dataclasses import dataclass
 from typing import final
+
+from cl.runtime.records.for_dataclasses.extensions import required
 from cl.runtime.settings.settings import Settings
 
 
@@ -27,3 +29,6 @@ class ViteSettings(Settings):
 
     vite_host: str = "127.0.0.1"
     """Hostname or IP address on which the Vite dev server listens."""
+
+    vite_dir: str = required()
+    """Directory containing the Vite frontend project, relative to the project root."""

@@ -24,6 +24,7 @@ locate.append_sys_path("../../..")
 import argparse
 import logging.config
 import os
+import subprocess
 import sys
 import webbrowser
 import uvicorn
@@ -38,7 +39,9 @@ from cl.runtime.contexts.context_manager import active
 from cl.runtime.db.data_source import DataSource
 from cl.runtime.events.event_broker import EventBroker
 from cl.runtime.exceptions.error_util import ErrorUtil
-from cl.runtime.fallback.fallback_static_files import FallbackStaticFiles
+from cl.runtime.fallback.fallback_static_page import FallbackStaticFiles
+from cl.runtime.project.project_layout import ProjectLayout
+from cl.runtime.fallback.fallback_vite_page import start_fallback_vite_server
 from cl.runtime.log.exceptions.user_error import UserError
 from cl.runtime.log.log_config import logging_config
 from cl.runtime.log.log_config import uvicorn_empty_logging_config
@@ -201,6 +204,7 @@ def run_backend(*, interactive: bool = False, vite: bool = False) -> None:
                     f"Task execution will not be available. Check the log file for details."
                 )
 
+        vite_process = None
         if not vite:
             if frontend_settings.is_frontend_installed():
                 # Mount static frontend files if index.html is found
@@ -210,6 +214,24 @@ def run_backend(*, interactive: bool = False, vite: bool = False) -> None:
                 # Otherwise generate the fallback page
                 server_app.mount("/", FallbackStaticFiles())
                 _LOGGER.error("Frontend static directory not found, generating the fallback page.")
+        else:
+            try:
+                vite_settings = ViteSettings.instance()
+                vite_process = subprocess.Popen(
+                    ["npm", "--prefix", vite_settings.vite_dir, "run", "client:dev"],
+                    cwd=ProjectLayout.get_project_root(),
+                    shell=(sys.platform == "win32"),
+                    stderr=subprocess.PIPE,
+                )
+                import time
+                time.sleep(2)
+                if vite_process.poll() is not None:
+                    error_output = vite_process.stderr.read().decode("utf-8", errors="replace").strip()
+                    raise OSError(error_output or f"npm exited with code {vite_process.returncode}")
+            except OSError as e:
+                vite_process = None
+                start_fallback_vite_server(error_message=str(e))
+                _LOGGER.error("Failed to start Vite dev server, serving fallback page.")
 
         # Open new browser tab in the default browser using http protocol, will switch to https if cert is present
         # Only open browser in interactive mode
@@ -234,6 +256,15 @@ def run_backend(*, interactive: bool = False, vite: bool = False) -> None:
         except KeyboardInterrupt:
             pass
         finally:
+            if vite_process is not None and vite_process.poll() is None:
+                if sys.platform == "win32":
+                    subprocess.run(
+                        ["taskkill", "/T", "/F", "/PID", str(vite_process.pid)],
+                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                    )
+                else:
+                    import signal
+                    os.killpg(os.getpgid(vite_process.pid), signal.SIGTERM)
             if CelerySettings.instance().celery_is_embedded_worker:
                 CeleryQueue.run_stop_queue()
 
