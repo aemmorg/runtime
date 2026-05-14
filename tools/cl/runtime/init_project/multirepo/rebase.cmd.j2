@@ -1,0 +1,9 @@
+@echo off
+
+call activate
+
+set PYTHONPATH={% for package_dir in package_dirs %}.\{{ package_dir }};{% endfor %}%PYTHONPATH%
+
+echo.
+echo Rebase all repos
+python -m tools.cl.runtime.rebase
