@@ -13,32 +13,32 @@
 # limitations under the License.
 
 import pytest
-from cl.runtime.file.jsonl_reader import JsonlReader
-from cl.runtime.settings.preload_settings import PreloadSettings
+from cl.runtime.configurations.preload_configuration import PreloadConfiguration
+from cl.runtime.contexts.context_manager import active
+from cl.runtime.db.data_source import DataSource
 from stubs.cl.runtime.records.for_dataclasses.stub_dataclass import StubDataclass
+from stubs.cl.runtime.records.for_dataclasses.stub_dataclass_key import StubDataclassKey
 
 
-def test_jsonl_preload(default_db_fixture):
+def test_jsonl_preload(default_db_fixture, work_dir_fixture):
     """Test that JSONL preload files from preload directories are loaded correctly.
 
     Verifies that both single-record (StubDataclass.One.jsonl) and multi-record
     (StubDataclass.Many.jsonl) preload files are discovered and deserialized.
     """
 
-    # Get preload directories
-    preload_settings = PreloadSettings.instance()
-    dirs = preload_settings.preload_dirs
+    # Preload JSONL files from the test work directory into the DB
+    PreloadConfiguration(dirs=[work_dir_fixture]).build().run_configure()
 
-    # Load all JSONL files from preload directories
-    jsonl_reader = JsonlReader().build()
-    records = list(jsonl_reader.load_all(dirs=dirs, ext="jsonl").get("/", ()))
+    # Verify the records are present in DB
+    records = active(DataSource).load_by_type(StubDataclassKey, cast_to=StubDataclass)
 
     # Check that StubDataclass.One.jsonl was loaded
-    matching = [r for r in records if isinstance(r, StubDataclass) and r.id == "jsonl_one"]
+    matching = [r for r in records if r.id == "jsonl_one"]
     assert len(matching) == 1, f"Expected to find jsonl_one in loaded records, got {len(matching)}"
 
     # Check that both records from StubDataclass.Many.jsonl were loaded
-    matching = [r for r in records if isinstance(r, StubDataclass) and r.id in ("jsonl_many_1", "jsonl_many_2")]
+    matching = [r for r in records if r.id in ("jsonl_many_1", "jsonl_many_2")]
     assert len(matching) == 2, (
         f"Expected 2 records from JSONL (jsonl_many_1, jsonl_many_2), got {len(matching)}. "
         f"Found ids: {[r.id for r in matching]}"

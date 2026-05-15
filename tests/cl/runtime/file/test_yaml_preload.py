@@ -13,26 +13,28 @@
 # limitations under the License.
 
 import pytest
-from cl.runtime.file.yaml_reader import YamlReader
-from cl.runtime.settings.preload_settings import PreloadSettings
+from cl.runtime.configurations.preload_configuration import PreloadConfiguration
+from cl.runtime.contexts.context_manager import active
+from cl.runtime.db.data_source import DataSource
 from stubs.cl.runtime.records.for_dataclasses.stub_dataclass import StubDataclass
+from stubs.cl.runtime.records.for_dataclasses.stub_dataclass_key import StubDataclassKey
 
 
-def test_yaml_preload(default_db_fixture):
+def test_yaml_preload(default_db_fixture, work_dir_fixture):
     """Test that a single-document YAML preload file is loaded correctly."""
 
-    preload_settings = PreloadSettings.instance()
-    dirs = preload_settings.preload_dirs
+    # Preload YAML files from the test work directory into the DB
+    PreloadConfiguration(dirs=[work_dir_fixture]).build().run_configure()
 
-    yaml_reader = YamlReader().build()
-    records = list(yaml_reader.load_all(dirs=dirs, ext="yaml").get("/", ()))
+    # Verify the records are present in DB
+    records = active(DataSource).load_by_type(StubDataclassKey, cast_to=StubDataclass)
 
     # Check that StubDataclass;One.yaml was loaded
-    matching = [r for r in records if isinstance(r, StubDataclass) and r.id == "yaml_one"]
+    matching = [r for r in records if r.id == "yaml_one"]
     assert len(matching) == 1, f"Expected to find yaml_one in loaded records, got {len(matching)}"
 
     # Check that both records from StubDataclass;Many.yaml were loaded
-    matching = [r for r in records if isinstance(r, StubDataclass) and r.id in ("yaml_many_1", "yaml_many_2")]
+    matching = [r for r in records if r.id in ("yaml_many_1", "yaml_many_2")]
     assert len(matching) == 2, (
         f"Expected 2 records from multi-document YAML (yaml_many_1, yaml_many_2), got {len(matching)}. "
         f"Found ids: {[r.id for r in matching]}"
