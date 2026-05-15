@@ -15,6 +15,7 @@
 import logging
 import socket
 import threading
+import html as html_module
 from http.server import BaseHTTPRequestHandler
 from http.server import HTTPServer
 from cl.runtime.settings.vite_settings import ViteSettings
@@ -142,7 +143,6 @@ def start_fallback_vite_server(error_message: str | None = None) -> None:
         _LOGGER.info(f"Vite dev server is already running on {host}:{port}, skipping fallback.")
         return
 
-    import html as html_module
     if error_message is not None:
         escaped_message = html_module.escape(error_message)
         error_section = _ERROR_SECTION_HTML.format(error_message=escaped_message)

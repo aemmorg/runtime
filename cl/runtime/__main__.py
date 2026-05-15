@@ -25,9 +25,11 @@ import argparse
 import logging.config
 import os
 import subprocess
+import signal
 import sys
 import webbrowser
 import uvicorn
+import time
 import traceback
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
@@ -226,7 +228,6 @@ def run_backend(*, interactive: bool = False, vite: bool = False) -> None:
                     stderr=subprocess.PIPE,
                     env=vite_env,
                 )
-                import time
                 time.sleep(2)
                 if vite_process.poll() is not None:
                     error_output = vite_process.stderr.read().decode("utf-8", errors="replace").strip()
@@ -266,7 +267,6 @@ def run_backend(*, interactive: bool = False, vite: bool = False) -> None:
                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                     )
                 else:
-                    import signal
                     os.killpg(os.getpgid(vite_process.pid), signal.SIGTERM)
             if CelerySettings.instance().celery_is_embedded_worker:
                 CeleryQueue.run_stop_queue()
