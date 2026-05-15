@@ -93,9 +93,9 @@ def checkout_develop(repo_path, label):
 
 
 def rebase_repo(repo_path, label):
-    """Fetch origin, then fast-forward or rebase onto origin/<branch>. Returns True on success."""
+    """Fetch origin, then fast-forward or rebase onto origin/develop. Returns True on success."""
     branch = get_current_branch(repo_path)
-    if branch is None:
+    if branch is None or branch != "develop":
         if not checkout_develop(repo_path, label):
             return False
         branch = "develop"
