@@ -25,6 +25,7 @@ from typing import Dict
 from typing import Optional
 from cl.runtime.log.log_config import celery_worker_logging_config
 from cl.runtime.settings.celery_settings import CelerySettings
+from cl.runtime.settings.env_settings import EnvSettings
 from cl.runtime.tasks.celery.worker_metrics import WorkerMetrics
 
 # Windows Job Object support
@@ -137,8 +138,8 @@ class WorkerProcessManager:
 
     def _start_single_worker(self, worker_id: int) -> None:
         """Start a single worker process."""
-        # Include main PID in worker name as unique marker
-        worker_name = f"celery-worker-{worker_id}-{self._main_pid}"
+        env_id = EnvSettings.instance().env_id
+        worker_name = f"celery-{env_id}-worker-{worker_id}-{self._main_pid}"
 
         # Create process with modified celery arguments
         worker_process = multiprocessing.Process(

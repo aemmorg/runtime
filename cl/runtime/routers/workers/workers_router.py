@@ -15,6 +15,7 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 from cl.runtime.settings.celery_settings import CelerySettings
+from cl.runtime.settings.env_settings import EnvSettings
 from cl.runtime.tasks.celery.worker_metrics import WorkerMetrics
 from cl.runtime.tasks.celery.worker_process_manager import WorkerProcessManager
 
@@ -63,7 +64,7 @@ async def get_workers_status() -> WorkersStatusResponse:
         WorkerStatus(
             worker_id=worker_id,
             is_alive=is_alive,
-            hostname=f"celery-worker-{worker_id}",
+            hostname=f"celery-{EnvSettings.instance().env_id}-worker-{worker_id}",
             pid=pids.get(worker_id),
         )
         for worker_id, is_alive in status.items()

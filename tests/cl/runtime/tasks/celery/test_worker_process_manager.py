@@ -81,13 +81,13 @@ class TestWorkerProcessManager:
         mock_process_class.assert_called_once()
         call_kwargs = mock_process_class.call_args[1]
         assert call_kwargs["target"] == manager._worker_target
-        # Worker name now includes main PID: celery-worker-0-{main_pid}
-        assert call_kwargs["name"].startswith("celery-worker-0-")
+        # Worker name includes env_id, worker_id and main PID: celery-{env_id}-worker-0-{main_pid}
+        assert "-worker-0-" in call_kwargs["name"]
         assert call_kwargs["daemon"] is True
         assert "worker_id" in call_kwargs["kwargs"]
         assert call_kwargs["kwargs"]["worker_id"] == 0
-        # Worker name in kwargs also includes main PID
-        assert call_kwargs["kwargs"]["worker_name"].startswith("celery-worker-0-")
+        # Worker name in kwargs also includes env_id and main PID
+        assert "-worker-0-" in call_kwargs["kwargs"]["worker_name"]
 
         # Verify process was started and registered
         mock_process.start.assert_called_once()

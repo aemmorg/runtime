@@ -46,7 +46,8 @@ default:
       - preloads/stubs
 
   # Documented in CelerySettings class
-  celery_broker_uri: sqlalchemy+sqlite:///{project_dir}/celery-{context_id}.db
+  celery_broker: sqlite
+  celery_broker_uri: sqlalchemy+sqlite:///{project_dir}/celery-{env_id}.db
   celery_multiprocess_pool: true  # Enable multiprocess worker pool
   celery_workers: 8  # Number of worker processes
   celery_pool_type: solo  # Each worker uses solo pool

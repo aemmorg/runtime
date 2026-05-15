@@ -38,6 +38,7 @@ from cl.runtime.log.log_config import celery_empty_logging_config
 from cl.runtime.log.log_config import celery_worker_logging_config
 from cl.runtime.server.env import Env
 from cl.runtime.settings.celery_settings import CelerySettings
+from cl.runtime.settings.env_settings import EnvSettings
 from cl.runtime.tasks.task import Task
 from cl.runtime.tasks.task_key import TaskKey
 from cl.runtime.tasks.task_query import TaskQuery
@@ -116,7 +117,7 @@ class CeleryQueue(TaskQueue):
 
         if celery_settings.celery_broker == "mongodb":
             # Parse MongoDB URI to extract database name
-            # Format: mongodb://localhost:27017/celery-{context_id}
+            # Format: mongodb://localhost:27017/celery-{env_id}
             try:
                 # Delete stuck RUNNING/PENDING tasks from previous backend runs
                 all_tasks: tuple[Task, ...] = active(DataSource).load_all(key_type=TaskKey)
@@ -193,11 +194,13 @@ class CeleryQueue(TaskQueue):
         # Setup logging config from the main process.
         logging.config.dictConfig(log_config)
 
+        env_id = EnvSettings.instance().env_id
         celery_app.worker_main(
             argv=[
                 "-A",
                 "cl.runtime.tasks.celery.celery_queue",
                 "worker",
+                f"--hostname=celery-{env_id}-embedded@%h",
                 "--loglevel=info",
                 f"--pool={celery_settings.celery_pool_type}",
                 f"--concurrency={celery_settings.celery_workers}",

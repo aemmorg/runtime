@@ -23,6 +23,7 @@ from cl.runtime.log.task_log import TaskLog
 from cl.runtime.primitive.datetime_util import DatetimeUtil
 from cl.runtime.primitive.timestamp import Timestamp
 from cl.runtime.project.project_layout import ProjectLayout
+from cl.runtime.settings.env_settings import EnvSettings
 from cl.runtime.settings.log_settings import LogSettings
 
 max_log_file_size_bytes = 1024 * 1024 * 10  # 10MB
@@ -131,6 +132,9 @@ def _make_filter_add_contextual_info(default_empty=None):
         # Human-readable time
         record.readable_time = DatetimeUtil.to_iso_str(Timestamp.to_datetime(record.timestamp))
 
+        # Environment identifier for multi-instance isolation
+        record.env_id = EnvSettings.instance().env_id
+
         # PID of process
         record.pid = os.getpid()
 
@@ -213,8 +217,8 @@ logging_config = {
     "disable_existing_loggers": False,
     "formatters": {
         "file_formatter": {
-            "format": "%(readable_time)s - PID=%(pid)s - %(host)s - %(name)s - %(type)s - %(handler)s - %(key)s - "
-            "%(task_run_id)s - %(levelname)s - %(message)s",
+            "format": "%(readable_time)s - %(env_id)s - PID=%(pid)s - %(host)s - %(name)s - %(type)s - "
+            "%(handler)s - %(key)s - %(task_run_id)s - %(levelname)s - %(message)s",
         },
         "console_formatter": {
             "()": "uvicorn.logging.DefaultFormatter",

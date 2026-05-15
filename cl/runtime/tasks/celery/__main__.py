@@ -15,6 +15,7 @@
 import logging.config
 from cl.runtime.log.log_config import logging_config
 from cl.runtime.settings.celery_settings import CelerySettings
+from cl.runtime.settings.env_settings import EnvSettings
 from cl.runtime.tasks.celery.celery_queue import celery_app
 
 celery_settings = CelerySettings.instance()
@@ -23,11 +24,13 @@ celery_settings = CelerySettings.instance()
 if __name__ == "__main__":
     logging.config.dictConfig(logging_config)
 
+    env_id = EnvSettings.instance().env_id
     celery_app.worker_main(
         argv=[
             "-A",
             "cl.runtime.tasks.celery.celery_queue",
             "worker",
+            f"--hostname=celery-{env_id}-standalone@%h",
             "-E",
             "--loglevel=info",
             f"--pool={celery_settings.celery_pool_type}",
