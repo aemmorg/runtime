@@ -54,6 +54,7 @@ _COMPARATORS: dict[str, Callable[[str, str], bool]] = {
 }
 """Registry of binary comparators by extension, returns True if files match."""
 
+
 def _png_diff_formatter(received_path: str, expected_path: str) -> tuple[str, str]:
     """Return (diff_file_content, exception_text) for PNG comparison failure."""
     received_hash = PngUtil.get_pixel_hash_from_png(received_path)
@@ -605,4 +606,3 @@ class RegressionGuard(BootstrapMixin):
             raise RuntimeError(f"Unknown file type {file_type}, supported types are: {', '.join(file_types)}")
         result = f"{self._output_dir_and_prefix}{file_type}.sha256"
         return result
-

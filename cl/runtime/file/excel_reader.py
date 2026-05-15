@@ -26,11 +26,11 @@ from typing import get_origin
 from typing import get_type_hints
 from frozendict import frozendict
 from openpyxl import load_workbook
+from cl.runtime.file.csv_reader import CsvReader
 from cl.runtime.file.file_util import FileUtil
 from cl.runtime.file.reader import Reader
 from cl.runtime.primitive.case_util import CaseUtil
 from cl.runtime.records.record_mixin import RecordMixin
-from cl.runtime.file.csv_reader import CsvReader
 
 _INVALID_SHEET_NAME_RE = re.compile(r'[/\\<>:"|?*\x00\n]')
 _SENTINEL = "sep=,"
@@ -149,9 +149,7 @@ class ExcelReader(Reader):
                 )
                 writer.writerow(headers)
                 for row in data_rows:
-                    writer.writerow(
-                        [cls._format_cell_value(cell, column_types.get(i)) for i, cell in enumerate(row)]
-                    )
+                    writer.writerow([cls._format_cell_value(cell, column_types.get(i)) for i, cell in enumerate(row)])
 
             csv_paths.append(csv_path)
 

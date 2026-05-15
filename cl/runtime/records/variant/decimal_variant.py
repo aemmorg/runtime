@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from decimal import Decimal
 from dataclasses import dataclass
+from decimal import Decimal
 from cl.runtime.records.variant.primitive_variant import PrimitiveVariant
 
 

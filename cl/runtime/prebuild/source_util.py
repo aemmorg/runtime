@@ -29,7 +29,7 @@ class SourceUtil:
         package: str | None = None,
         file_include_patterns: Sequence[str] | None = None,
         file_exclude_patterns: Sequence[str] | None = None,
-        skip_empty_files: bool = True
+        skip_empty_files: bool = True,
     ) -> tuple[str, ...]:
         """Get list of source file paths across all packages or a single package.
 

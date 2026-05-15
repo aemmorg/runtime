@@ -154,7 +154,9 @@ class BasicCouchDb(Db):
         collection_name = self._get_collection_name(key_type=key_type)
 
         # Query for all records in one call using $in operator
-        keys_filter = self._get_couch_keys_filter(keys, datasets=datasets, tenant=tenant, collection_name=collection_name)
+        keys_filter = self._get_couch_keys_filter(
+            keys, datasets=datasets, tenant=tenant, collection_name=collection_name
+        )
         # Add sort to the Mango query
         sort_list = None
         if sort_order != SortOrder.UNORDERED:

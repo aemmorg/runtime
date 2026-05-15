@@ -15,7 +15,6 @@
 import os
 import threading
 from uuid import UUID
-
 from cl.runtime.primitive.datetime_util import DatetimeUtil
 
 

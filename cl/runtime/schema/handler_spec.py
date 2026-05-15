@@ -13,7 +13,6 @@
 # limitations under the License.
 
 from dataclasses import dataclass
-
 from cl.runtime.primitive.case_util import CaseUtil
 from cl.runtime.records.bootstrap_mixin import BootstrapMixin
 from cl.runtime.schema.handler_param_spec import HandlerParamSpec

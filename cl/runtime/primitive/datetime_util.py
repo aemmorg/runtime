@@ -14,9 +14,9 @@
 
 import datetime as dt
 import re
+import time
 from math import ceil
 from math import floor
-import time
 from typing import Callable
 
 # Compile the regex pattern for datetime in ISO-8601 format yyyy-mm-ddThh:mm:ss.fffZ

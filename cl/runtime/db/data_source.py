@@ -876,7 +876,7 @@ class DataSource(DataSourceKey, RecordMixin):
 
             # Collect (record_type, dataset) pairs for presence tracking
             record_type_dataset_pairs = set()
-            for r, ds in (self._pending_insertions + self._pending_replacements):
+            for r, ds in self._pending_insertions + self._pending_replacements:
                 record_type_dataset_pairs.add((typeof(r), ds))
             if record_type_dataset_pairs:
                 # Add RecordTypePresence type itself
@@ -885,13 +885,13 @@ class DataSource(DataSourceKey, RecordMixin):
                 # it is faster to save all records than to check which already exist
                 record_type_presences = tuple(
                     RecordTypePresence(
-                        record_type=rt, dataset=ds, key_type=rt.get_key_type(),
+                        record_type=rt,
+                        dataset=ds,
+                        key_type=rt.get_key_type(),
                     ).build()
                     for rt, ds in record_type_dataset_pairs
                 )
-                self._pending_replacements.extend(
-                    (r, DatasetUtil.root()) for r in record_type_presences
-                )
+                self._pending_replacements.extend((r, DatasetUtil.root()) for r in record_type_presences)
 
             # Invoke delete_many for all pending deletes grouped by (key_type, datasets)
             if self._pending_deletions:

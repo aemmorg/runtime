@@ -305,9 +305,7 @@ class Db(DbKey, RecordMixin, ABC):
         elif not isinstance(dataset, str):
             raise RuntimeError("Dataset identifier must be a string.")
         elif not dataset.startswith("/"):
-            raise RuntimeError(
-                f"Dataset identifier '{dataset}' must begin with a slash character."
-            )
+            raise RuntimeError(f"Dataset identifier '{dataset}' must begin with a slash character.")
 
     @classmethod
     def _check_datasets(cls, datasets: Sequence[str] | None) -> None:
@@ -326,9 +324,7 @@ class Db(DbKey, RecordMixin, ABC):
             elif not isinstance(dataset, str):
                 raise RuntimeError("Dataset identifier must be a string.")
             elif not dataset.startswith("/"):
-                raise RuntimeError(
-                    f"Dataset identifier '{dataset}' must begin with a slash character."
-                )
+                raise RuntimeError(f"Dataset identifier '{dataset}' must begin with a slash character.")
 
     @classmethod
     def _check_tenant(cls, tenant: str) -> None:

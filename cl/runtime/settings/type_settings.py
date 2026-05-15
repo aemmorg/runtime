@@ -15,9 +15,9 @@
 import re
 from dataclasses import dataclass
 from typing import Mapping
+from typing import final
 from memoization import cached
 from parse import parse
-from typing import final
 from cl.runtime.primitive.case_util import CaseUtil
 from cl.runtime.settings.project_settings import ProjectSettings
 from cl.runtime.settings.settings import Settings
@@ -87,8 +87,7 @@ class TypeSettings(Settings):
             for key, value in settings.type_name_rules.items():
                 if key in seen_keys:
                     raise RuntimeError(
-                        f"Duplicate type_name_rules key '{key}' found in "
-                        f"'{source_name}' and '{seen_keys[key]}'."
+                        f"Duplicate type_name_rules key '{key}' found in " f"'{source_name}' and '{seen_keys[key]}'."
                     )
                 seen_keys[key] = source_name
                 all_rules.append((key, value))

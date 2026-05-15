@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
 import os
 import shutil
 from typing import Iterable
-import pytest
 from cl.runtime.file.csv_reader import CsvReader
 from cl.runtime.file.csv_writer import CsvWriter
 from cl.runtime.file.excel_reader import ExcelReader
@@ -142,11 +142,13 @@ def test_csv(work_dir_fixture):
         os.remove(temp_path)
         guard.verify()
 
-        loaded = list(csv_reader.load_all(
-            dirs=[work_dir_fixture],
-            ext="csv",
-            file_include_patterns=[f"{type_name}.expected.*"],
-        ).get("/", ()))
+        loaded = list(
+            csv_reader.load_all(
+                dirs=[work_dir_fixture],
+                ext="csv",
+                file_include_patterns=[f"{type_name}.expected.*"],
+            ).get("/", ())
+        )
         assert BuilderChecks.is_equal(loaded, entries), f"CSV roundtrip failed for {type_name}"
 
 
@@ -174,11 +176,13 @@ def test_xlsx(work_dir_fixture):
         with open(xlsx_path, "wb") as f:
             f.write(file_data_list[0].file_bytes)
 
-        loaded = list(excel_reader.load_all(
-            dirs=[work_dir_fixture],
-            ext="xlsx",
-            file_include_patterns=[f"{type_name}.*"],
-        ).get("/", ()))
+        loaded = list(
+            excel_reader.load_all(
+                dirs=[work_dir_fixture],
+                ext="xlsx",
+                file_include_patterns=[f"{type_name}.*"],
+            ).get("/", ())
+        )
         assert BuilderChecks.is_equal(loaded, entries), f"XLSX roundtrip failed for {type_name}"
 
         _clean_work_dir(work_dir_fixture)
@@ -211,11 +215,13 @@ def test_json(work_dir_fixture):
         os.remove(temp_path)
         guard.verify()
 
-        loaded = list(json_reader.load_all(
-            dirs=[work_dir_fixture],
-            ext="json",
-            file_include_patterns=[f"{type_name}.expected.*"],
-        ).get("/", ()))
+        loaded = list(
+            json_reader.load_all(
+                dirs=[work_dir_fixture],
+                ext="json",
+                file_include_patterns=[f"{type_name}.expected.*"],
+            ).get("/", ())
+        )
         assert BuilderChecks.is_equal(loaded, entries), f"JSON roundtrip failed for {type_name}"
 
 
@@ -247,11 +253,13 @@ def test_jsonl(work_dir_fixture):
         os.remove(temp_path)
         guard.verify()
 
-        loaded = list(jsonl_reader.load_all(
-            dirs=[work_dir_fixture],
-            ext="jsonl",
-            file_include_patterns=[f"{type_name}.expected.*"],
-        ).get("/", ()))
+        loaded = list(
+            jsonl_reader.load_all(
+                dirs=[work_dir_fixture],
+                ext="jsonl",
+                file_include_patterns=[f"{type_name}.expected.*"],
+            ).get("/", ())
+        )
         assert BuilderChecks.is_equal(loaded, entries), f"JSONL roundtrip failed for {type_name}"
 
 
@@ -283,14 +291,16 @@ def test_yaml(work_dir_fixture):
         os.remove(temp_path)
         guard.verify()
 
-        loaded = list(yaml_reader.load_all(
-            dirs=[work_dir_fixture],
-            ext="yaml",
-            file_include_patterns=[f"{type_name}.expected.*"],
-        ).get("/", ()))
-        assert BuilderChecks.is_equal(sorted(loaded, key=str), sorted(entries, key=str)), (
-            f"YAML single-record roundtrip failed for {type_name}"
+        loaded = list(
+            yaml_reader.load_all(
+                dirs=[work_dir_fixture],
+                ext="yaml",
+                file_include_patterns=[f"{type_name}.expected.*"],
+            ).get("/", ())
         )
+        assert BuilderChecks.is_equal(
+            sorted(loaded, key=str), sorted(entries, key=str)
+        ), f"YAML single-record roundtrip failed for {type_name}"
 
     # Multi-record YAML (list format) — tests reader's list parsing
     for entries in _MULTI_RECORD_ENTRIES:
@@ -304,11 +314,13 @@ def test_yaml(work_dir_fixture):
         os.remove(temp_path)
         guard.verify()
 
-        loaded = list(yaml_reader.load_all(
-            dirs=[work_dir_fixture],
-            ext="yaml",
-            file_include_patterns=[f"{type_name}Tuple.expected.*"],
-        ).get("/", ()))
+        loaded = list(
+            yaml_reader.load_all(
+                dirs=[work_dir_fixture],
+                ext="yaml",
+                file_include_patterns=[f"{type_name}Tuple.expected.*"],
+            ).get("/", ())
+        )
         assert BuilderChecks.is_equal(loaded, entries), f"YAML multi-record roundtrip failed for {type_name}"
 
 
@@ -357,12 +369,12 @@ def test_all_readers_and_writers_covered():
     missing_readers = all_readers - _TESTED_READERS
     missing_writers = all_writers - _TESTED_WRITERS
 
-    assert not missing_readers, (
-        f"Reader subclasses not covered by roundtrip tests: {sorted(c.__name__ for c in missing_readers)}"
-    )
-    assert not missing_writers, (
-        f"Writer subclasses not covered by roundtrip tests: {sorted(c.__name__ for c in missing_writers)}"
-    )
+    assert (
+        not missing_readers
+    ), f"Reader subclasses not covered by roundtrip tests: {sorted(c.__name__ for c in missing_readers)}"
+    assert (
+        not missing_writers
+    ), f"Writer subclasses not covered by roundtrip tests: {sorted(c.__name__ for c in missing_writers)}"
 
 
 if __name__ == "__main__":

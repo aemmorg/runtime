@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
 import os
 import shutil
 from typing import Iterable
 import orjson
-import pytest
 from cl.runtime.file.jsonl_reader import JsonlReader
 from cl.runtime.qa.qa_util import QaUtil
 from cl.runtime.records.builder_checks import BuilderChecks
@@ -96,11 +96,13 @@ def test_roundtrip_with_type_field():
             # Load from JSONL
             jsonl_reader = JsonlReader().build()
             record_type_pattern = f"{typename(record_type)}.*"
-            records_from_jsonl = list(jsonl_reader.load_all(
-                dirs=[dir_path],
-                ext="jsonl",
-                file_include_patterns=[record_type_pattern],
-            ).get("/", ()))
+            records_from_jsonl = list(
+                jsonl_reader.load_all(
+                    dirs=[dir_path],
+                    ext="jsonl",
+                    file_include_patterns=[record_type_pattern],
+                ).get("/", ())
+            )
 
             # Verify
             assert BuilderChecks.is_equal(records_from_jsonl, expected_records)
@@ -130,11 +132,13 @@ def test_roundtrip_without_type_field():
             # Load from JSONL - should infer type from filename
             jsonl_reader = JsonlReader().build()
             record_type_pattern = f"{typename(record_type)}.*"
-            records_from_jsonl = list(jsonl_reader.load_all(
-                dirs=[dir_path],
-                ext="jsonl",
-                file_include_patterns=[record_type_pattern],
-            ).get("/", ()))
+            records_from_jsonl = list(
+                jsonl_reader.load_all(
+                    dirs=[dir_path],
+                    ext="jsonl",
+                    file_include_patterns=[record_type_pattern],
+                ).get("/", ())
+            )
 
             # Verify
             assert BuilderChecks.is_equal(records_from_jsonl, expected_records)

@@ -48,7 +48,9 @@ class CaseSettings(Settings):
                 continue
             source = f"package '{package}'" if package is not None else "project settings"
             for snake, pascal in settings.case_conversion_rules.items():
-                cls._add_rule(snake, pascal, source, snake_to_pascal, pascal_to_snake, snake_to_source, pascal_to_source)
+                cls._add_rule(
+                    snake, pascal, source, snake_to_pascal, pascal_to_snake, snake_to_source, pascal_to_source
+                )
 
         return snake_to_pascal, pascal_to_snake
 

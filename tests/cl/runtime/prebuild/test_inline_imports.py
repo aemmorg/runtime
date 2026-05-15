@@ -69,8 +69,7 @@ def test_inline_imports():
     """
     project_root = ProjectLayout.get_project_root()
     abs_package_dirs = [
-        os.path.normpath(os.path.join(project_root, d))
-        for d in ProjectSettings.instance().get_package_dirs()
+        os.path.normpath(os.path.join(project_root, d)) for d in ProjectSettings.instance().get_package_dirs()
     ]
     # Match the most specific directory first so a nested package dir is not shadowed
     abs_package_dirs.sort(key=len, reverse=True)

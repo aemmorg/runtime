@@ -14,12 +14,6 @@
 
 import pytest
 from cl.runtime.settings.type_settings import TypeSettings
-from stubs.cl.runtime.records.for_dataclasses.stub_dataclass_with_custom_name import (
-    StubDataclassWithCustomName as StubDataclassWithCustomNameOriginal,
-)
-from stubs.cl.runtime.records.for_dataclasses.stub_dataclass_with_custom_name_override import (
-    StubDataclassWithCustomName as StubDataclassWithCustomNameOverride,
-)
 
 
 def test_type_settings():
@@ -37,8 +31,7 @@ def test_type_settings():
     settings = TypeSettings.instance(package="cl.runtime")
     assert settings.type_name_rules is not None
     assert (
-        "stubs.cl.runtime.records.for_dataclasses.{module_name}.StubDataclassWithCustomName"
-        in settings.type_name_rules
+        "stubs.cl.runtime.records.for_dataclasses.{module_name}.StubDataclassWithCustomName" in settings.type_name_rules
     )
 
     # Verify get_type_name_rules includes the rule from cl.runtime

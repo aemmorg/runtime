@@ -16,15 +16,15 @@ from collections import defaultdict
 from dataclasses import dataclass
 from itertools import chain
 from typing import Sequence
-from more_itertools import consume
 from typing import final
+from more_itertools import consume
 from cl.runtime.configurations.configuration import Configuration
 from cl.runtime.contexts.context_manager import active
 from cl.runtime.db.data_source import DataSource
 from cl.runtime.file.csv_reader import CsvReader
+from cl.runtime.file.excel_reader import ExcelReader
 from cl.runtime.file.json_reader import JsonReader
 from cl.runtime.file.jsonl_reader import JsonlReader
-from cl.runtime.file.excel_reader import ExcelReader
 from cl.runtime.file.yaml_reader import YamlReader
 from cl.runtime.settings.preload_settings import PreloadSettings
 
@@ -104,9 +104,7 @@ class PreloadConfiguration(Configuration):
             all_records = list(chain.from_iterable(records_by_dataset.values()))
             for dataset, group_records in records_by_dataset.items():
                 if not dataset.startswith("/"):
-                    raise RuntimeError(
-                        f"Dataset identifier '{dataset}' must begin with a slash character."
-                    )
+                    raise RuntimeError(f"Dataset identifier '{dataset}' must begin with a slash character.")
                 ds.insert_many(group_records, dataset=dataset, commit=True)
 
             # Execute run_configure on all preloaded Configuration records with autorun=True

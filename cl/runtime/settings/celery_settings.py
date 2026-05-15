@@ -87,4 +87,3 @@ class CelerySettings(Settings):
                 raise RuntimeError("Celery broker queue is not specified for broker.")
         else:
             raise RuntimeError(f"Unsupported Celery broker: {self.celery_broker}")
-

@@ -21,14 +21,10 @@ from cl.runtime.primitive.crockford_util import CrockfordUtil
 _TEXT_EXTENSIONS = (".py", ".csv", ".yaml", ".yml", ".json", ".jsonl", ".txt")
 """File extensions treated as text files for timestamp format checking."""
 
-_ISO_DELIMITED_RE = re.compile(
-    r"(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})\.(\d{3})Z-([a-fA-F0-9]{20})"
-)
+_ISO_DELIMITED_RE = re.compile(r"(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})\.(\d{3})Z-([a-fA-F0-9]{20})")
 """Regex for the ISO-delimited legacy format: yyyy-MM-ddThh:mm:ss.fffZ-hex(20)."""
 
-_LEGACY_DASH_RE = re.compile(
-    r"(\d{4})-(\d{2})-(\d{2})-(\d{2})-(\d{2})-(\d{2})-(\d{3})-([a-fA-F0-9]{20})"
-)
+_LEGACY_DASH_RE = re.compile(r"(\d{4})-(\d{2})-(\d{2})-(\d{2})-(\d{2})-(\d{2})-(\d{3})-([a-fA-F0-9]{20})")
 """Regex for the dash-delimited legacy format: yyyy-MM-dd-hh-mm-ss-fff-hex(20)."""
 
 
@@ -123,8 +119,11 @@ class TimestampFormatUtil:
             for root, dirnames, filenames in os.walk(dir_path):
                 # Skip hidden, special, and explicitly excluded directories
                 dirnames[:] = [
-                    d for d in dirnames
-                    if not d.startswith(".") and not d.startswith("__") and d != "logs"
+                    d
+                    for d in dirnames
+                    if not d.startswith(".")
+                    and not d.startswith("__")
+                    and d != "logs"
                     and not any(fnmatch(d, pat) for pat in dir_exclude_patterns)
                 ]
 

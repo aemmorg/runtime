@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
 import ast
 import os
-import pytest
 from cl.runtime.prebuild.source_util import SourceUtil
 from cl.runtime.primitive.case_util import CaseUtil
 from cl.runtime.project.project_layout import ProjectLayout

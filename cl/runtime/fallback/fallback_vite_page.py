@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import html as html_module
 import logging
 import socket
 import threading
-import html as html_module
 from http.server import BaseHTTPRequestHandler
 from http.server import HTTPServer
 from cl.runtime.settings.vite_settings import ViteSettings
@@ -150,7 +150,9 @@ def start_fallback_vite_server(error_message: str | None = None) -> None:
         error_section = ""
 
     html_bytes = _FALLBACK_HTML.format(
-        vite_host=host, vite_port=port, error_section=error_section,
+        vite_host=host,
+        vite_port=port,
+        error_section=error_section,
     ).encode("utf-8")
 
     class _Handler(BaseHTTPRequestHandler):

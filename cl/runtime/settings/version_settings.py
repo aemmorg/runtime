@@ -14,8 +14,8 @@
 
 from dataclasses import dataclass
 from typing import Mapping
-from frozendict import frozendict
 from typing import final
+from frozendict import frozendict
 from cl.runtime.prebuild.version_format import VersionFormat
 from cl.runtime.records.protocols import is_mapping_type
 from cl.runtime.settings.settings import Settings

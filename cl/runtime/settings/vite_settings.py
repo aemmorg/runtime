@@ -14,7 +14,6 @@
 
 from dataclasses import dataclass
 from typing import final
-
 from cl.runtime.records.for_dataclasses.extensions import required
 from cl.runtime.settings.settings import Settings
 

@@ -65,9 +65,7 @@ class PydanticMixin(BaseModel, DataMixin, ABC):
             type_=cls,
             fields=fields,
             interactive=True if is_interactive_type(cls) else None,
-            display_kind=(
-                "Dashboard" if is_dashboard_type(cls) else "Singleton" if is_singleton_type(cls) else None
-            ),
+            display_kind=("Dashboard" if is_dashboard_type(cls) else "Singleton" if is_singleton_type(cls) else None),
         ).build()
 
     @classmethod

@@ -479,14 +479,10 @@ def test_single_letter_segment():
 
     for snake, expected_pascal in test_cases:
         pascal = CaseUtil.snake_to_pascal_case(snake)
-        assert pascal == expected_pascal, (
-            f"snake_to_pascal_case({snake!r}) = {pascal!r}, expected {expected_pascal!r}"
-        )
+        assert pascal == expected_pascal, f"snake_to_pascal_case({snake!r}) = {pascal!r}, expected {expected_pascal!r}"
 
         back = CaseUtil.pascal_to_snake_case(pascal)
-        assert back == snake, (
-            f"pascal_to_snake_case({pascal!r}) = {back!r}, expected {snake!r}"
-        )
+        assert back == snake, f"pascal_to_snake_case({pascal!r}) = {back!r}, expected {snake!r}"
 
 
 def test_digit_segment_must_be_last():
@@ -510,15 +506,15 @@ def test_digit_segment_must_be_last():
     for invalid_snake, expected_pascal, expected_round_trip in test_cases:
         # Step 1: snake_case segments are pascalized and concatenated
         pascal = CaseUtil._snake_to_pascal_unchecked(invalid_snake)
-        assert pascal == expected_pascal, (
-            f"_snake_to_pascal_unchecked({invalid_snake!r}) = {pascal!r}, expected {expected_pascal!r}"
-        )
+        assert (
+            pascal == expected_pascal
+        ), f"_snake_to_pascal_unchecked({invalid_snake!r}) = {pascal!r}, expected {expected_pascal!r}"
 
         # Step 2: converting back loses the boundary (digit segment merged with next segment)
         back = CaseUtil._pascal_to_snake_unchecked(pascal)
-        assert back == expected_round_trip, (
-            f"_pascal_to_snake_unchecked({pascal!r}) = {back!r}, expected {expected_round_trip!r}"
-        )
+        assert (
+            back == expected_round_trip
+        ), f"_pascal_to_snake_unchecked({pascal!r}) = {back!r}, expected {expected_round_trip!r}"
 
         # Step 3: round-trip mismatch proves the original is invalid snake_case
         assert back != invalid_snake

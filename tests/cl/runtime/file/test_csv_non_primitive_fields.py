@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
 import csv
 import json
 import os
 import shutil
 import tempfile
-import pytest
 from cl.runtime.file.csv_reader import CsvReader
 from cl.runtime.file.csv_writer import CsvWriter
 from cl.runtime.records.builder_checks import BuilderChecks
@@ -73,9 +73,9 @@ def test_nested_fields_csv_format():
     # Nested data fields must be JSON documents in single cells
     for col_name in ("BaseField", "DerivedField", "DoubleDerivedField", "PolymorphicField", "PolymorphicDerivedField"):
         assert col_name in row, f"Column '{col_name}' not found in CSV"
-        assert _is_json_str(row[col_name]), (
-            f"Column '{col_name}' should contain a JSON document but got: {row[col_name]}"
-        )
+        assert _is_json_str(
+            row[col_name]
+        ), f"Column '{col_name}' should contain a JSON document but got: {row[col_name]}"
 
 
 def test_dict_fields_csv_format():
@@ -93,13 +93,13 @@ def test_dict_fields_csv_format():
     # All dict fields must be JSON documents in single cells
     for col_name in ("StrDict", "FloatDict", "DateDict", "DataDict", "KeyDict", "RecordDict", "DerivedDict"):
         assert col_name in row, f"Column '{col_name}' not found in CSV"
-        assert _is_json_str(row[col_name]), (
-            f"Column '{col_name}' should contain a JSON document but got: {row[col_name]}"
-        )
+        assert _is_json_str(
+            row[col_name]
+        ), f"Column '{col_name}' should contain a JSON document but got: {row[col_name]}"
         # Dict fields must serialize as JSON objects (not arrays)
-        assert row[col_name].strip().startswith("{"), (
-            f"Column '{col_name}' should be a JSON object but got: {row[col_name]}"
-        )
+        assert (
+            row[col_name].strip().startswith("{")
+        ), f"Column '{col_name}' should be a JSON object but got: {row[col_name]}"
 
 
 def test_list_fields_csv_format():
@@ -117,13 +117,11 @@ def test_list_fields_csv_format():
     # All list fields must be JSON arrays in single cells
     for col_name in ("StrList", "FloatList", "DateList", "DataList", "KeyList", "RecordList", "DerivedList"):
         assert col_name in row, f"Column '{col_name}' not found in CSV"
-        assert _is_json_str(row[col_name]), (
-            f"Column '{col_name}' should contain a JSON array but got: {row[col_name]}"
-        )
+        assert _is_json_str(row[col_name]), f"Column '{col_name}' should contain a JSON array but got: {row[col_name]}"
         # List fields must serialize as JSON arrays (not objects)
-        assert row[col_name].strip().startswith("["), (
-            f"Column '{col_name}' should be a JSON array but got: {row[col_name]}"
-        )
+        assert (
+            row[col_name].strip().startswith("[")
+        ), f"Column '{col_name}' should be a JSON array but got: {row[col_name]}"
 
 
 def test_dict_list_fields_csv_format():
@@ -141,12 +139,10 @@ def test_dict_list_fields_csv_format():
     # Dict-list fields must be JSON arrays of objects in single cells
     for col_name in ("FloatDictList", "DateDictList", "RecordDictList", "DerivedDictList"):
         assert col_name in row, f"Column '{col_name}' not found in CSV"
-        assert _is_json_str(row[col_name]), (
-            f"Column '{col_name}' should contain a JSON array but got: {row[col_name]}"
-        )
-        assert row[col_name].strip().startswith("["), (
-            f"Column '{col_name}' should be a JSON array but got: {row[col_name]}"
-        )
+        assert _is_json_str(row[col_name]), f"Column '{col_name}' should contain a JSON array but got: {row[col_name]}"
+        assert (
+            row[col_name].strip().startswith("[")
+        ), f"Column '{col_name}' should be a JSON array but got: {row[col_name]}"
 
 
 def test_nested_fields_roundtrip(default_db_fixture):
@@ -195,16 +191,18 @@ def _assert_csv_roundtrip(records):
         _write_file_data_to_dir(first_write, tmp_dir)
 
         csv_reader = CsvReader().build()
-        loaded_records = list(csv_reader.load_all(
-            dirs=[tmp_dir],
-            ext="csv",
-            file_include_patterns=[f"{type_name}*"],
-        ).get("/", ()))
+        loaded_records = list(
+            csv_reader.load_all(
+                dirs=[tmp_dir],
+                ext="csv",
+                file_include_patterns=[f"{type_name}*"],
+            ).get("/", ())
+        )
 
         # Verify loaded records match originals
-        assert BuilderChecks.is_equal(loaded_records, records), (
-            f"Loaded records do not match original records for {type_name}"
-        )
+        assert BuilderChecks.is_equal(
+            loaded_records, records
+        ), f"Loaded records do not match original records for {type_name}"
 
         # Second write from loaded records
         second_write = list(csv_writer.to_files(loaded_records))
@@ -222,9 +220,7 @@ def _assert_csv_roundtrip(records):
             if len(first_lines) != len(second_lines):
                 diffs.append(f"  Line count: first={len(first_lines)}, second={len(second_lines)}")
             diff_msg = "\n".join(diffs)
-            raise AssertionError(
-                f"Write-read-write roundtrip produced different CSV for {type_name}:\n{diff_msg}"
-            )
+            raise AssertionError(f"Write-read-write roundtrip produced different CSV for {type_name}:\n{diff_msg}")
     finally:
         shutil.rmtree(tmp_dir)
 

@@ -37,9 +37,7 @@ class CrockfordUtil:
     def validate(cls, value: str, length: int) -> None:
         """Validate that the string is a valid Crockford Base32 encoding of the given length."""
         if len(value) != length:
-            raise ValueError(
-                f"Crockford Base32 string '{value}' has length {len(value)}, expected {length}."
-            )
+            raise ValueError(f"Crockford Base32 string '{value}' has length {len(value)}, expected {length}.")
         for ch in value:
             try:
                 base32_crockford.decode(ch)

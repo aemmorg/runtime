@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
 import json
 import zipfile
 from io import BytesIO
-import pytest
 from cl.runtime.file.jsonl_writer import JsonlWriter
 from cl.runtime.qa.regression_guard import RegressionGuard
 from stubs.cl.runtime.records.for_dataclasses.stub_dataclass_composite import StubDataclassComposite

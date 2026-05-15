@@ -584,14 +584,10 @@ def test_dataset_sort_order(default_db_fixture):
     ds = active(DataSource)
 
     # Save to dataset /B
-    ds.insert_many(
-        [StubDataclass(id="b2").build(), StubDataclass(id="b1").build()], dataset="/B", commit=True
-    )
+    ds.insert_many([StubDataclass(id="b2").build(), StubDataclass(id="b1").build()], dataset="/B", commit=True)
 
     # Save to dataset /A
-    ds.insert_many(
-        [StubDataclass(id="a2").build(), StubDataclass(id="a1").build()], dataset="/A", commit=True
-    )
+    ds.insert_many([StubDataclass(id="a2").build(), StubDataclass(id="a1").build()], dataset="/A", commit=True)
 
     # Load from both datasets with ASC sort
     loaded = ds.load_all(key_type=StubDataclassKey, datasets=["/A", "/B"], sort_order=SortOrder.ASC)

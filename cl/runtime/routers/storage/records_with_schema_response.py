@@ -34,4 +34,6 @@ class RecordsWithSchemaResponse(BaseModel):
     @classmethod
     def _get_schema_dict(cls, type_: type | None) -> dict[str, dict]:
         """Create schema dict for type. If 'type_' is None - return empty dict."""
-        return TypeResponse.get_type(TypeRequest(type_name=type_.__name__)).dependencies if type_ is not None else dict()
+        return (
+            TypeResponse.get_type(TypeRequest(type_name=type_.__name__)).dependencies if type_ is not None else dict()
+        )

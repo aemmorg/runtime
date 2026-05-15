@@ -104,11 +104,13 @@ def test_roundtrip_with_type_field():
             # Load from YAML
             yaml_reader = YamlReader().build()
             record_type_pattern = f"{typename(record_type)}.*"
-            records_from_yaml = list(yaml_reader.load_all(
-                dirs=[dir_path],
-                ext="yaml",
-                file_include_patterns=[record_type_pattern],
-            ).get("/", ()))
+            records_from_yaml = list(
+                yaml_reader.load_all(
+                    dirs=[dir_path],
+                    ext="yaml",
+                    file_include_patterns=[record_type_pattern],
+                ).get("/", ())
+            )
 
             # Verify
             assert BuilderChecks.is_equal(records_from_yaml, expected_records)
@@ -133,11 +135,13 @@ def test_roundtrip_without_type_field():
             # Load from YAML - should infer type from filename
             yaml_reader = YamlReader().build()
             record_type_pattern = f"{typename(record_type)}.*"
-            records_from_yaml = list(yaml_reader.load_all(
-                dirs=[dir_path],
-                ext="yaml",
-                file_include_patterns=[record_type_pattern],
-            ).get("/", ()))
+            records_from_yaml = list(
+                yaml_reader.load_all(
+                    dirs=[dir_path],
+                    ext="yaml",
+                    file_include_patterns=[record_type_pattern],
+                ).get("/", ())
+            )
 
             # Verify
             assert BuilderChecks.is_equal(records_from_yaml, expected_records)
@@ -161,10 +165,12 @@ def test_roundtrip_single_record():
 
         # Load from YAML - should handle single object
         yaml_reader = YamlReader().build()
-        records_from_yaml = list(yaml_reader.load_all(
-            dirs=[dir_path],
-            ext="yaml",
-        ).get("/", ()))
+        records_from_yaml = list(
+            yaml_reader.load_all(
+                dirs=[dir_path],
+                ext="yaml",
+            ).get("/", ())
+        )
 
         # Verify
         assert len(records_from_yaml) == 1
@@ -193,10 +199,12 @@ def test_roundtrip_mixed_types():
 
         # Load from YAML
         yaml_reader = YamlReader().build()
-        records_from_yaml = list(yaml_reader.load_all(
-            dirs=[dir_path],
-            ext="yaml",
-        ).get("/", ()))
+        records_from_yaml = list(
+            yaml_reader.load_all(
+                dirs=[dir_path],
+                ext="yaml",
+            ).get("/", ())
+        )
 
         # Verify all records loaded correctly
         assert len(records_from_yaml) == len(expected_records)

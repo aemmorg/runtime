@@ -104,14 +104,12 @@ class DataService(PydanticMixin):
             common_base_record_type = type_
 
         # Serialize records in UI format and add '_key' attribute
-        data = [
-            {**_UI_SERIALIZER.serialize(x), "_key": _KEY_SERIALIZER.serialize(x.get_key())}
-            for x in records
-        ]
+        data = [{**_UI_SERIALIZER.serialize(x), "_key": _KEY_SERIALIZER.serialize(x.get_key())} for x in records]
 
         # Get type spec + dependencies via v2.0.0 TypeResponse
         schema_response = TypeResponse.get_type(
-            TypeRequest(type_name=typename(common_base_record_type)), include_fields=False,
+            TypeRequest(type_name=typename(common_base_record_type)),
+            include_fields=False,
         )
 
         return SelectDataResponse(
@@ -138,14 +136,12 @@ class DataService(PydanticMixin):
         records = ds.load_by_type(type_, skip=skip, limit=limit)
 
         # Serialize records in UI format and add '_key' attribute
-        data = [
-            {**_UI_SERIALIZER.serialize(x), "_key": _KEY_SERIALIZER.serialize(x.get_key())}
-            for x in records
-        ]
+        data = [{**_UI_SERIALIZER.serialize(x), "_key": _KEY_SERIALIZER.serialize(x.get_key())} for x in records]
 
         # Get type spec + dependencies via v2.0.0 TypeResponse
         schema_response = TypeResponse.get_type(
-            TypeRequest(type_name=typename(type_)), include_fields=False,
+            TypeRequest(type_name=typename(type_)),
+            include_fields=False,
         )
 
         return SelectDataResponse(
@@ -160,8 +156,6 @@ class DataService(PydanticMixin):
         """Select records by filter from DB."""
 
         raise NotImplementedError("Select by filter currently is not supported.")
-
-
 
     @classmethod
     def run_load_record(cls, type_name: str, key: str) -> LoadRecordResponse:
@@ -190,4 +184,3 @@ class DataService(PydanticMixin):
             type_spec=schema_response.type_spec,
             dependencies=schema_response.dependencies,
         )
-

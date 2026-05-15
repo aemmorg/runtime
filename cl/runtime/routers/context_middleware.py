@@ -13,7 +13,6 @@
 # limitations under the License.
 
 from starlette.types import ASGIApp
-
 from cl.runtime.auth.user_secrets import UserSecrets
 from cl.runtime.contexts.context_manager import activate
 from cl.runtime.contexts.context_snapshot import ContextSnapshot

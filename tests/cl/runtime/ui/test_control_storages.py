@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
 from dataclasses import dataclass
 from typing import Any
-import pytest
 from cl.runtime.schema.type_info import TypeInfo
 from cl.runtime.ui.control.button_control import ButtonControl
 from cl.runtime.ui.control.panel_control import PanelControl

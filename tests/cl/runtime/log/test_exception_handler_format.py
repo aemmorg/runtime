@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import traceback
 import pytest
+import traceback
 
 
 def test_format_exception_single_arg():
@@ -34,10 +34,7 @@ def test_exception_handler_log_message():
     try:
         raise RuntimeError("something went wrong")
     except RuntimeError as exc:
-        log_msg = (
-            f"Unhandled exception on POST /api/test: {exc}\n"
-            f"{''.join(traceback.format_exception(exc))}"
-        )
+        log_msg = f"Unhandled exception on POST /api/test: {exc}\n" f"{''.join(traceback.format_exception(exc))}"
 
     assert "Unhandled exception on POST /api/test: something went wrong" in log_msg
     assert "RuntimeError: something went wrong" in log_msg

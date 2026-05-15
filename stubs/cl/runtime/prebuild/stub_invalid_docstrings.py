@@ -23,19 +23,15 @@ class StubWrongDocstrings:
 
             Over-indented continuation line.
         """
-        pass
 
     def triple_single_quotes(self) -> None:
         '''Single quotes instead of double quotes.'''
-        pass
 
     def surrounding_whitespace(self) -> None:
         """ Summary with leading whitespace. """
-        pass
 
     def empty_docstring(self) -> None:
         """"""
-        pass
 
     @classmethod
     def class_method_over_indented(cls) -> None:
@@ -43,4 +39,3 @@ class StubWrongDocstrings:
 
             Over-indented continuation line for a classmethod.
         """
-        pass

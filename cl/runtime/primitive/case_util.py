@@ -496,8 +496,7 @@ class CaseUtil:
             if format_ == "UPPER_CASE" and value.lower() in _SNAKE_TO_PASCAL_DICT:
                 return
             raise RuntimeError(
-                f"String {value} is not {format_} because it does not round-trip "
-                f"losslessly (converts to {back}).",
+                f"String {value} is not {format_} because it does not round-trip " f"losslessly (converts to {back}).",
             )
 
     @classmethod
@@ -521,8 +520,7 @@ class CaseUtil:
     def _snake_to_pascal_unchecked(cls, value: str) -> str:
         """Apply the reverse rule without validation (used by round-trip checks)."""
         return ".".join(
-            "".join(cls._pascalize_segment(segment) for segment in token.split("_"))
-            for token in value.split(".")
+            "".join(cls._pascalize_segment(segment) for segment in token.split("_")) for token in value.split(".")
         )
 
     @classmethod

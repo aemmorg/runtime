@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import re
 import pytest
+import re
 from cl.runtime.prebuild.timestamp_format_util import TimestampFormatUtil
 from cl.runtime.primitive.crockford_util import CrockfordUtil
 
@@ -61,10 +61,7 @@ def test_check_or_fix_text_dash_delimited():
 def test_check_or_fix_text_both_formats():
     """Test that both legacy formats in the same text are detected and converted."""
 
-    text = (
-        "iso: 2024-03-13T12:00:00.500Z-abcdef0123456789abcd\n"
-        "dash: 2025-01-15-08-30-45-123-1234567890abcdef1234\n"
-    )
+    text = "iso: 2024-03-13T12:00:00.500Z-abcdef0123456789abcd\n" "dash: 2025-01-15-08-30-45-123-1234567890abcdef1234\n"
 
     _, count = TimestampFormatUtil.check_or_fix_text(text, fix=False)
     assert count == 2

@@ -163,7 +163,7 @@ def test_binary_diff_diagnostics(tmp_path):
     guard._output_dir_and_prefix = os.path.join(str(tmp_path), "bin_test.")
 
     received_path = tmp_path / "bin_test.received.bin"
-    received_path.write_bytes(b"\x00\x01\x02\xFF")
+    received_path.write_bytes(b"\x00\x01\x02\xff")
 
     with pytest.raises(RuntimeError) as exc_info:
         guard.verify()
@@ -181,8 +181,8 @@ def test_binary_diff_diagnostics(tmp_path):
 
 def test_png_diff_diagnostics(tmp_path):
     """Verify PNG comparison failure includes pixel hashes and file paths."""
-    from PIL import Image
     import io
+    from PIL import Image
 
     def make_png(color):
         img = Image.new("RGB", (2, 2), color)

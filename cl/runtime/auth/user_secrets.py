@@ -15,7 +15,9 @@
 import base64
 import logging
 from dataclasses import dataclass
-from typing import cast, Self, Any
+from typing import Any
+from typing import Self
+from typing import cast
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
@@ -87,7 +89,7 @@ class UserSecrets(DataclassMixin):
         for name, value in raw_headers:
             name_lower = name.lower()
             if name_lower.startswith(prefix):
-                key = name_lower[len(prefix):].decode()
+                key = name_lower[len(prefix) :].decode()
                 user_keys[key] = value.decode()
 
         return UserSecrets(encrypted_secrets=user_keys).build()

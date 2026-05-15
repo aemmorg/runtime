@@ -24,13 +24,13 @@ locate.append_sys_path("../../..")
 import argparse
 import logging.config
 import os
-import subprocess
 import signal
+import subprocess
 import sys
-import webbrowser
-import uvicorn
 import time
 import traceback
+import webbrowser
+import uvicorn
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
@@ -42,14 +42,15 @@ from cl.runtime.db.data_source import DataSource
 from cl.runtime.events.event_broker import EventBroker
 from cl.runtime.exceptions.error_util import ErrorUtil
 from cl.runtime.fallback.fallback_static_page import FallbackStaticFiles
-from cl.runtime.project.project_layout import ProjectLayout
 from cl.runtime.fallback.fallback_vite_page import start_fallback_vite_server
 from cl.runtime.log.exceptions.user_error import UserError
 from cl.runtime.log.log_config import logging_config
 from cl.runtime.log.log_config import uvicorn_empty_logging_config
+from cl.runtime.project.project_layout import ProjectLayout
 from cl.runtime.records.typename import typename
 from cl.runtime.routers.context_middleware import ContextMiddleware
 from cl.runtime.routers.server_util import ServerUtil
+from cl.runtime.schema.type_info import TypeInfo
 from cl.runtime.server.env import Env
 from cl.runtime.server.shutdown_aware_server import ShutdownAwareServer
 from cl.runtime.settings.api_settings import ApiSettings
@@ -60,7 +61,6 @@ from cl.runtime.settings.env_settings import EnvSettings
 from cl.runtime.settings.frontend_settings import FrontendSettings
 from cl.runtime.settings.vite_settings import ViteSettings
 from cl.runtime.tasks.celery.celery_queue import CeleryQueue
-from cl.runtime.schema.type_info import TypeInfo
 
 # Server
 server_app = FastAPI()
@@ -75,7 +75,9 @@ async def handle_exception(request, exc):
     # IMPORTANT:
     # - If UserMessage is set it will be shown to the user on toast badge and bell becomes red.
     # - Otherwise default message will be shown.
-    _LOGGER.error(f"Unhandled exception on {request.method} {request.url.path}: {exc}\n{''.join(traceback.format_exception(exc))}")
+    _LOGGER.error(
+        f"Unhandled exception on {request.method} {request.url.path}: {exc}\n{''.join(traceback.format_exception(exc))}"
+    )
     user_message = str(exc) if isinstance(exc, UserError) else None
     return JSONResponse({"UserMessage": user_message}, status_code=500)
 
@@ -264,7 +266,8 @@ def run_backend(*, interactive: bool = False, vite: bool = False) -> None:
                 if sys.platform == "win32":
                     subprocess.run(
                         ["taskkill", "/T", "/F", "/PID", str(vite_process.pid)],
-                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
                     )
                 else:
                     os.killpg(os.getpgid(vite_process.pid), signal.SIGTERM)

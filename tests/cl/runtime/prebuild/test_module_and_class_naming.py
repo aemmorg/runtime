@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
 import ast
 import os
-import pytest
 from cl.runtime.prebuild.source_util import SourceUtil
 from cl.runtime.primitive.case_util import CaseUtil
 from cl.runtime.project.project_layout import ProjectLayout
@@ -61,16 +61,12 @@ def test_module_and_class_naming():
 
             # Check that module name is valid snake_case
             if not CaseUtil.is_snake_case(module_name):
-                errors.append(
-                    f"Module '{rel_path}': module name '{module_name}' is not valid snake_case"
-                )
+                errors.append(f"Module '{rel_path}': module name '{module_name}' is not valid snake_case")
                 continue
 
             # Check that class name is valid PascalCase
             if not CaseUtil.is_pascal_case(class_name):
-                errors.append(
-                    f"Module '{rel_path}': class name '{class_name}' is not valid PascalCase"
-                )
+                errors.append(f"Module '{rel_path}': class name '{class_name}' is not valid PascalCase")
                 continue
 
             # Check snake_to_pascal_case: module name should convert to the actual class name
@@ -94,9 +90,7 @@ def test_module_and_class_naming():
 
     if errors:
         errors_str = "\n".join(errors)
-        raise RuntimeError(
-            f"Found {len(errors)} module/class naming inconsistencies:\n{errors_str}"
-        )
+        raise RuntimeError(f"Found {len(errors)} module/class naming inconsistencies:\n{errors_str}")
 
 
 if __name__ == "__main__":

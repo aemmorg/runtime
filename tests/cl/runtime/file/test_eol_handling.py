@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import pytest
+import os
 from cl.runtime.file.csv_reader import CsvReader
 from cl.runtime.file.csv_writer import CsvWriter
 from cl.runtime.file.json_reader import JsonReader
@@ -24,10 +24,7 @@ from cl.runtime.file.yaml_reader import YamlReader
 from cl.runtime.file.yaml_writer import YamlWriter
 from stubs.cl.runtime.records.for_dataclasses.stub_dataclass_derived import StubDataclassDerived
 
-_SAMPLE_RECORDS = [
-    StubDataclassDerived(id=f"eol_id_{i}", derived_str_field=f"value_{i}").build()
-    for i in range(1, 4)
-]
+_SAMPLE_RECORDS = [StubDataclassDerived(id=f"eol_id_{i}", derived_str_field=f"value_{i}").build() for i in range(1, 4)]
 """Three sample records used by all EOL tests."""
 
 
@@ -35,9 +32,7 @@ def _assert_no_cr_in_fields(records):
     """Assert that no deserialized field value contains a carriage return character."""
     for record in records:
         assert "\r" not in record.id, f"CR found in id field: {record.id!r}"
-        assert "\r" not in record.derived_str_field, (
-            f"CR found in derived_str_field: {record.derived_str_field!r}"
-        )
+        assert "\r" not in record.derived_str_field, f"CR found in derived_str_field: {record.derived_str_field!r}"
 
 
 # ---------------------------------------------------------------------------
@@ -96,23 +91,23 @@ def test_csv_writer_uses_os_linesep():
 # ---------------------------------------------------------------------------
 
 _JSON_LF = (
-    '[\n'
-    '  {\n'
+    "[\n"
+    "  {\n"
     '    "_type": "StubDataclassDerived",\n'
     '    "derived_str_field": "value_1",\n'
     '    "id": "eol_id_1"\n'
-    '  },\n'
-    '  {\n'
+    "  },\n"
+    "  {\n"
     '    "_type": "StubDataclassDerived",\n'
     '    "derived_str_field": "value_2",\n'
     '    "id": "eol_id_2"\n'
-    '  },\n'
-    '  {\n'
+    "  },\n"
+    "  {\n"
     '    "_type": "StubDataclassDerived",\n'
     '    "derived_str_field": "value_3",\n'
     '    "id": "eol_id_3"\n'
-    '  }\n'
-    ']'
+    "  }\n"
+    "]"
 )
 _JSON_CRLF = _JSON_LF.replace("\n", "\r\n")
 
@@ -210,11 +205,7 @@ def test_jsonl_writer_uses_os_linesep():
 #  YAML
 # ---------------------------------------------------------------------------
 
-_YAML_LF = (
-    "_type: StubDataclassDerived\n"
-    "derived_str_field: value_1\n"
-    "id: eol_id_1\n"
-)
+_YAML_LF = "_type: StubDataclassDerived\n" "derived_str_field: value_1\n" "id: eol_id_1\n"
 _YAML_CRLF = _YAML_LF.replace("\n", "\r\n")
 
 

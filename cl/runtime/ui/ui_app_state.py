@@ -17,7 +17,6 @@ from typing import Self
 from cl.runtime.contexts.context_manager import active
 from cl.runtime.db.data_source import DataSource
 from cl.runtime.records.record_mixin import RecordMixin
-from cl.runtime.schema.data_spec import DataSpec
 from cl.runtime.ui.tab_info import TabInfo
 from cl.runtime.ui.ui_app_state_key import UiAppStateKey
 from cl.runtime.ui.user_key import UserKey

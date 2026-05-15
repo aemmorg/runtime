@@ -73,7 +73,9 @@ class YamlReader(Reader):
         return frozendict({k: tuple(v) for k, v in records_by_dataset.items()})
 
     @classmethod
-    def _deserialize_object(cls, *, record_type: type | None, object_dict: dict[str, Any]) -> tuple[RecordMixin, str | None]:
+    def _deserialize_object(
+        cls, *, record_type: type | None, object_dict: dict[str, Any]
+    ) -> tuple[RecordMixin, str | None]:
         """Deserialize YAML object into a record with optional dataset.
         Args:
             record_type: Record type hint derived from filename, or None if not available.

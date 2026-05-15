@@ -98,11 +98,7 @@ class SelectResponse(RecordsWithSchemaResponse):
             CaseUtil.snake_to_pascal_case_keep_trailing_underscore(slot)
             for slot in all_slots
             if (slot_v := getattr(record, slot)) is not None
-            and (
-                is_primitive_type(typeof(slot_v))
-                or is_key_type(type(slot_v))
-                or isinstance(slot_v, Enum)
-            )
+            and (is_primitive_type(typeof(slot_v)) or is_key_type(type(slot_v)) or isinstance(slot_v, Enum))
         }
 
         table_dict = {k: v for k, v in DataSerializers.FOR_UI.serialize(record).items() if k in table_fields}

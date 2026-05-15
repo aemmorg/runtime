@@ -12,11 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
 import csv
 import datetime as dt
 import os
-import pytest
-from openpyxl import Workbook
 from cl.runtime.file.excel_reader import ExcelReader
 from stubs.cl.runtime.records.for_dataclasses.stub_dataclass_primitive_fields import StubDataclassPrimitiveFields
 
@@ -63,7 +62,7 @@ def test_multi_sheet_workbook(work_dir_fixture):
     input_filename = "MultiSheetWorkbook.xlsx"
     expected_output_filenames = [
         "MultiSheetWorkbook.SheetOne.generated.csv",
-        "MultiSheetWorkbook.SheetTwo.generated.csv"
+        "MultiSheetWorkbook.SheetTwo.generated.csv",
     ]
     output_filenames = []
     try:
@@ -190,9 +189,7 @@ def test_format_datetime_field():
         ExcelReader._format_cell_value(dt.datetime(2026, 3, 15, 10, 30, 45, 123000), dt.datetime)
         == "2026-03-15T10:30:45.123Z"
     )
-    assert (
-        ExcelReader._format_cell_value(dt.datetime(2003, 5, 1, 0, 0, 0), dt.datetime) == "2003-05-01T00:00:00.000Z"
-    )
+    assert ExcelReader._format_cell_value(dt.datetime(2003, 5, 1, 0, 0, 0), dt.datetime) == "2003-05-01T00:00:00.000Z"
 
 
 def test_format_datetime_field_wrong_type_error():

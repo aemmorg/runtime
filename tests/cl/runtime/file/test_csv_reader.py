@@ -32,13 +32,21 @@ def test_load_all(default_db_fixture):
     env_dir = QaUtil.get_test_dir_from_call_stack()
 
     csv_reader = CsvReader().build()
-    records = list(csv_reader.load_all(dirs=[env_dir], ext="csv", file_include_patterns=["StubDataclassDerived.*"]).get("/", ()))
+    records = list(
+        csv_reader.load_all(dirs=[env_dir], ext="csv", file_include_patterns=["StubDataclassDerived.*"]).get("/", ())
+    )
     active(DataSource).insert_many(records, commit=True)
 
-    records = list(csv_reader.load_all(dirs=[env_dir], ext="csv", file_include_patterns=["StubDataclassNestedFields.*"]).get("/", ()))
+    records = list(
+        csv_reader.load_all(dirs=[env_dir], ext="csv", file_include_patterns=["StubDataclassNestedFields.*"]).get(
+            "/", ()
+        )
+    )
     active(DataSource).insert_many(records, commit=True)
 
-    records = list(csv_reader.load_all(dirs=[env_dir], ext="csv", file_include_patterns=["StubDataclassComposite.*"]).get("/", ()))
+    records = list(
+        csv_reader.load_all(dirs=[env_dir], ext="csv", file_include_patterns=["StubDataclassComposite.*"]).get("/", ())
+    )
     active(DataSource).insert_many(records, commit=True)
 
     # Verify
@@ -133,9 +141,13 @@ def test_load_column_formats(default_db_fixture):
 
     format_names = ["PascalCase", "snake_case", "UPPER_CASE", "Title Case", "camelCase", "kebab-case"]
     for i, fmt in enumerate(format_names, start=1):
-        records = list(csv_reader.load_all(
-            dirs=[env_dir], ext="csv", file_include_patterns=[f"StubDataclassDerived.{fmt}.*"],
-        ).get("/", ()))
+        records = list(
+            csv_reader.load_all(
+                dirs=[env_dir],
+                ext="csv",
+                file_include_patterns=[f"StubDataclassDerived.{fmt}.*"],
+            ).get("/", ())
+        )
         assert len(records) == 1, f"Expected 1 record for {fmt} format, got {len(records)}"
 
         expected = StubDataclassDerived(id=f"col_fmt_{i}", derived_str_field=f"value_{i}").build()
