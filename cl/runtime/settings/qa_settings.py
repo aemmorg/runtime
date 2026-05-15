@@ -28,6 +28,12 @@ class QaSettings(Settings):
     qa_db_types: tuple[str, ...] | None = None  # TODO: !! Refactor
     """Database type names for unit testing."""
 
+    qa_celery_broker_types: tuple[str, ...] | None = None
+    """Celery broker class names for unit testing (e.g. SqliteCeleryBroker, MongoCeleryBroker)."""
+
+    qa_celery_backend_types: tuple[str, ...] | None = None
+    """Celery backend class names for unit testing (e.g. SqliteCeleryBackend, MongoCeleryBackend)."""
+
     qa_dependencies: Sequence[str] | None = None
     """List of dependencies for running the tests (defaults to the standard pytest dependencies)."""
 
@@ -41,6 +47,26 @@ class QaSettings(Settings):
                 settings_type=type(self),
             )
             if self.qa_db_types is not None
+            else tuple()
+        )
+
+        self.qa_celery_broker_types = (
+            SettingsUtil.to_str_tuple(
+                self.qa_celery_broker_types,
+                field_name="qa_celery_broker_types",
+                settings_type=type(self),
+            )
+            if self.qa_celery_broker_types is not None
+            else tuple()
+        )
+
+        self.qa_celery_backend_types = (
+            SettingsUtil.to_str_tuple(
+                self.qa_celery_backend_types,
+                field_name="qa_celery_backend_types",
+                settings_type=type(self),
+            )
+            if self.qa_celery_backend_types is not None
             else tuple()
         )
 

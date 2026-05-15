@@ -22,14 +22,9 @@ from logging.config import dictConfig
 from typing import ClassVar
 from typing import Dict
 from typing import Final
-from urllib.parse import urlparse
-import pika
-import redis
 from celery import Celery
 from celery.exceptions import Reject
 from celery.signals import setup_logging
-from pika.exceptions import ChannelClosedByBroker
-from pymongo import MongoClient
 from cl.runtime.contexts.context_manager import activate
 from cl.runtime.contexts.context_manager import active
 from cl.runtime.contexts.context_snapshot import ContextSnapshot
@@ -39,6 +34,7 @@ from cl.runtime.log.log_config import celery_worker_logging_config
 from cl.runtime.server.env import Env
 from cl.runtime.settings.celery_settings import CelerySettings
 from cl.runtime.settings.env_settings import EnvSettings
+from cl.runtime.tasks.celery.broker.celery_broker import CeleryBroker
 from cl.runtime.tasks.task import Task
 from cl.runtime.tasks.task_key import TaskKey
 from cl.runtime.tasks.task_query import TaskQuery
@@ -106,82 +102,8 @@ class CeleryQueue(TaskQueue):
     @classmethod
     def delete_existing_tasks(cls) -> None:
         """Delete the existing Celery tasks (will exit when the current process exits)."""
-
-        # Remove sqlite file of celery broker if exists
-        if celery_settings.celery_broker == "sqlite":
-            celery_file = celery_settings.celery_broker_uri.split("sqlite:///")[1]
-
-            # Remove sqlite file of celery broker if exists
-            if os.path.exists(celery_file):
-                os.remove(celery_file)
-
-        if celery_settings.celery_broker == "mongodb":
-            # Parse MongoDB URI to extract database name
-            # Format: mongodb://localhost:27017/celery-{env_id}
-            try:
-                # Delete stuck RUNNING/PENDING tasks from previous backend runs
-                all_tasks: tuple[Task, ...] = active(DataSource).load_all(key_type=TaskKey)
-                stuck_tasks = [task for task in all_tasks if task.status in (TaskStatus.RUNNING, TaskStatus.PENDING)]
-
-                if stuck_tasks:
-                    logging.getLogger(__name__).warning(
-                        "Deleting %s stuck tasks from previous backend run", len(stuck_tasks)
-                    )
-                    active(DataSource).delete_many([task.get_key() for task in stuck_tasks], commit=True)
-
-                # Clear Celery broker database
-                mongo_client = MongoClient(celery_settings.celery_broker_uri)
-                db_name = celery_settings.celery_broker_uri.split("/")[-1]
-                mongo_db = mongo_client[db_name]
-
-                for collection_name in mongo_db.list_collection_names():
-                    mongo_db.drop_collection(collection_name)
-
-                mongo_client.close()
-                logging.getLogger(__name__).info("Cleared MongoDB Celery broker database: %s", db_name)
-
-            except Exception as e:
-                logging.getLogger(__name__).warning("Failed to clear MongoDB Celery broker: %s", e)
-
-        if celery_settings.celery_broker == "redis":
-            # Parse the URI
-            parsed_uri = urlparse(celery_settings.celery_broker_uri)
-            host = parsed_uri.hostname
-            port = parsed_uri.port
-            db = parsed_uri.path.lstrip("/")
-
-            # Connect to Redis
-            redis_client = redis.StrictRedis(host=host, port=port, db=db)
-
-            # Clear the Celery queue and result backend
-            redis_client.delete(celery_settings.celery_broker_queue)
-            redis_client.flushdb()
-
-        if celery_settings.celery_broker == "rabbitmq":
-            # Parse the URI
-            parsed_uri = urlparse(celery_settings.celery_broker_uri)
-            user, password = parsed_uri.netloc.split("@")[0].split(":")
-
-            # Connect to RabbitMQ
-            connection = pika.BlockingConnection(
-                pika.ConnectionParameters(
-                    host=parsed_uri.hostname, port=parsed_uri.port, credentials=pika.PlainCredentials(user, password)
-                )
-            )
-            channel = connection.channel()
-
-            try:
-                # Check if the queue exists (passive=True) if not raise ChannelClosedByBroker
-                channel.queue_declare(queue=celery_settings.celery_broker_queue, passive=True)
-
-                # Purge all messages in the queue
-                channel.queue_purge(queue=celery_settings.celery_broker_queue)
-
-            except ChannelClosedByBroker:
-                pass
-
-            finally:
-                connection.close()
+        broker = CeleryBroker.create(celery_settings.celery_broker_type)
+        broker.delete_existing_tasks(celery_settings.celery_broker_uri, celery_settings.celery_broker_queue)
 
     @classmethod
     def _start_queue_callable(cls, *, log_config: Dict) -> None:
@@ -312,20 +234,13 @@ class CeleryQueue(TaskQueue):
                 except Exception as e:
                     logger.warning("Failed to kill worker %d: %s", worker_id, e)
 
-            # Purge MongoDB queue
-            if celery_settings.celery_broker == "mongodb":
-                try:
-                    mongo_client = MongoClient(celery_settings.celery_broker_uri)
-                    db_name = celery_settings.celery_broker_uri.split("/")[-1]
-                    mongo_db = mongo_client[db_name]
-
-                    for collection_name in mongo_db.list_collection_names():
-                        mongo_db.drop_collection(collection_name)
-
-                    logger.info("Purged MongoDB queue")
-                    mongo_client.close()
-                except Exception as e:
-                    logger.warning("Failed to purge queue: %s", e)
+            # Purge broker queue
+            try:
+                broker = CeleryBroker.create(celery_settings.celery_broker_type)
+                broker.delete_existing_tasks(celery_settings.celery_broker_uri, celery_settings.celery_broker_queue)
+                logger.info("Purged broker queue")
+            except Exception as e:
+                logger.warning("Failed to purge queue: %s", e)
 
             # Revoke in Celery
             celery_app.control.revoke(task_ids, terminate=True)

@@ -46,7 +46,7 @@ default:
       - preloads/stubs
 
   # Documented in CelerySettings class
-  celery_broker: sqlite
+  celery_broker_type: SqliteCeleryBroker
   celery_broker_uri: sqlalchemy+sqlite:///{project_dir}/celery-{env_id}.db
   celery_multiprocess_pool: true  # Enable multiprocess worker pool
   celery_workers: 8  # Number of worker processes
@@ -67,6 +67,11 @@ testing:
   qa_db_types:
     - SqliteDb
     - BasicMongoMockDb
+
+  # Documented in QaSettings class
+  qa_celery_broker_types:
+    - SqliteCeleryBroker
+    - MongoCeleryBroker
 
   # Documented in LogSettings class
   log_filename_prefix: tests

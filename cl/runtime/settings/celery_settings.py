@@ -12,10 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 from dataclasses import dataclass
 from typing import final
-from cl.runtime.project.resources_util import ResourcesUtil
 from cl.runtime.records.for_dataclasses.extensions import required
 from cl.runtime.settings.env_settings import EnvSettings
 from cl.runtime.settings.settings import Settings
@@ -29,14 +27,20 @@ class CelerySettings(Settings):
     celery_is_embedded_worker: bool = True
     """Flag that indicates whether the Celery worker runs embedded within the backend process."""
 
-    celery_broker: str = required()
-    """Celery broker type (e.g. sqlite, mongodb, redis, rabbitmq, sqs). Must be set in settings.yaml."""
+    celery_broker_type: str = required()
+    """Celery broker class name (e.g. SqliteCeleryBroker, MongoCeleryBroker). Must be set in settings.yaml."""
 
-    celery_broker_uri: str = required()
-    """Celery broker URI. Supports {env_id} template variable for per-instance isolation."""
+    celery_broker_uri: str | None = None
+    """Celery broker URI template. Supports {env_id} placeholder for per-instance isolation."""
 
     celery_broker_queue: str = "celery-{env_id}"
-    """Celery broker queue. Supports {env_id} template variable for per-instance isolation."""
+    """Celery broker queue name. Supports {env_id} placeholder for per-instance isolation."""
+
+    celery_backend_type: str | None = None
+    """Celery result backend class name (e.g. SqliteCeleryBackend, MongoCeleryBackend). Optional."""
+
+    celery_backend_uri: str | None = None
+    """Celery result backend URI template. Supports {env_id} placeholder for per-instance isolation."""
 
     celery_workers: int = 2
     """Maximum number of workers for Celery."""
@@ -70,34 +74,26 @@ class CelerySettings(Settings):
     If None or False (default), wipe the celery DB on launch so stale tasks do not execute."""
 
     def __init(self) -> None:
-        if not self.celery_broker:
-            raise RuntimeError("Celery broker is not specified in settings. Set 'celery_broker' in settings.yaml.")
+        if not self.celery_broker_type:
+            raise RuntimeError(
+                "Celery broker type is not specified in settings. Set 'celery_broker_type' in settings.yaml."
+            )
 
         env_id = EnvSettings.instance().env_id
 
-        template_vars = {
-            "env_id": env_id,
-            "context_id": env_id,
-        }
+        from cl.runtime.tasks.celery.broker.celery_broker import CeleryBroker
 
-        if self.celery_broker == "sqlite":
-            if self.celery_broker_uri is None or "{" in self.celery_broker_uri:
-                celery_root = ResourcesUtil.get_celery_root()
-                celery_file = os.path.join(celery_root, f"celery.{env_id.lower()}.sqlite")
-                os.makedirs(celery_root, exist_ok=True)
-                self.celery_broker_uri = f"sqlalchemy+sqlite:///{celery_file}"
-        elif self.celery_broker in ["redis", "rabbitmq", "sqs", "mongodb"]:
-            if not self.celery_broker_uri:
-                raise RuntimeError(
-                    f"Celery broker URI is not specified for broker '{self.celery_broker}'. "
-                    f"Set 'celery_broker_uri' in settings.yaml."
-                )
-            if "{" in self.celery_broker_uri:
-                self.celery_broker_uri = self.celery_broker_uri.format(**template_vars)
-        else:
-            raise RuntimeError(f"Unsupported Celery broker: {self.celery_broker}")
+        broker = CeleryBroker.create(self.celery_broker_type)
+        self.celery_broker_uri = broker.resolve_uri(self.celery_broker_uri, env_id)
 
+        template_vars = {"env_id": env_id, "context_id": env_id}
         if self.celery_broker_queue and "{" in self.celery_broker_queue:
             self.celery_broker_queue = self.celery_broker_queue.format(**template_vars)
         if not self.celery_broker_queue:
             self.celery_broker_queue = f"celery-{env_id.lower()}"
+
+        if self.celery_backend_type:
+            from cl.runtime.tasks.celery.backend.celery_backend import CeleryBackend
+
+            backend = CeleryBackend.create(self.celery_backend_type)
+            self.celery_backend_uri = backend.resolve_uri(self.celery_backend_uri, env_id)

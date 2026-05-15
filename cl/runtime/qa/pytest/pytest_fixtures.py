@@ -34,6 +34,8 @@ from cl.runtime.settings.db_settings import DbSettings
 from cl.runtime.settings.env_kind import EnvKind
 from cl.runtime.settings.qa_settings import QaSettings
 from cl.runtime.settings.sse_settings import SseSettings
+from cl.runtime.settings.celery_settings import CelerySettings
+from cl.runtime.settings.env_settings import EnvSettings
 from cl.runtime.tasks.celery.celery_queue import CeleryQueue
 from cl.runtime.tasks.celery.celery_queue import celery_app
 
@@ -213,3 +215,80 @@ def celery_queue_fixture():
 
     CeleryQueue.delete_existing_tasks()
     print("Stopping celery workers and cleaning up tasks.")
+
+
+@pytest.fixture(scope="function", params=QaSettings.instance().qa_celery_broker_types or [])
+def multi_celery_broker_fixture(request: FixtureRequest, default_db_fixture, event_broker_fixture):
+    """Pytest function fixture to run celery tests against each broker type listed in qa_celery_broker_types."""
+
+    from cl.runtime.tasks.celery.broker.celery_broker import CeleryBroker
+
+    broker_type_name = request.param
+    celery_settings = CelerySettings.instance()
+    env_id = EnvSettings.instance().env_id
+
+    original_broker_type = celery_settings.celery_broker_type
+    original_broker_uri = celery_settings.celery_broker_uri
+    original_broker_queue = celery_settings.celery_broker_queue
+
+    broker = CeleryBroker.create(broker_type_name)
+    celery_settings.celery_broker_type = broker_type_name
+    celery_settings.celery_broker_uri = broker.resolve_uri(None, env_id)
+    celery_settings.celery_broker_queue = f"celery-test-{broker_type_name}"
+
+    celery_app.conf.update(
+        task_always_eager=True,
+        task_eager_propagates=True,
+        broker_url=celery_settings.celery_broker_uri,
+        task_default_queue=celery_settings.celery_broker_queue,
+    )
+
+    CeleryQueue.delete_existing_tasks()
+
+    with activate(CeleryQueue(queue_id=f"Test Queue {broker_type_name}").build()):
+        yield broker_type_name
+
+    CeleryQueue.delete_existing_tasks()
+
+    celery_settings.celery_broker_type = original_broker_type
+    celery_settings.celery_broker_uri = original_broker_uri
+    celery_settings.celery_broker_queue = original_broker_queue
+
+    celery_app.conf.update(
+        broker_url=original_broker_uri,
+        task_default_queue=original_broker_queue,
+    )
+
+
+@pytest.fixture(scope="function", params=QaSettings.instance().qa_celery_backend_types or [])
+def multi_celery_backend_fixture(request: FixtureRequest, default_db_fixture, event_broker_fixture):
+    """Pytest function fixture to run celery tests against each backend type listed in qa_celery_backend_types."""
+
+    from cl.runtime.tasks.celery.backend.celery_backend import CeleryBackend
+
+    backend_type_name = request.param
+    celery_settings = CelerySettings.instance()
+    env_id = EnvSettings.instance().env_id
+
+    original_backend_type = celery_settings.celery_backend_type
+    original_backend_uri = celery_settings.celery_backend_uri
+
+    backend = CeleryBackend.create(backend_type_name)
+    celery_settings.celery_backend_type = backend_type_name
+    celery_settings.celery_backend_uri = backend.resolve_uri(None, env_id)
+
+    celery_app.conf.update(
+        task_always_eager=True,
+        task_eager_propagates=True,
+        result_backend=celery_settings.celery_backend_uri,
+    )
+
+    with activate(CeleryQueue(queue_id=f"Test Queue Backend {backend_type_name}").build()):
+        yield backend_type_name
+
+    celery_settings.celery_backend_type = original_backend_type
+    celery_settings.celery_backend_uri = original_backend_uri
+
+    celery_app.conf.update(
+        result_backend=original_backend_uri,
+    )
