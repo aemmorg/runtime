@@ -71,6 +71,22 @@ def test_api(default_db_fixture, celery_queue_fixture, event_broker_fixture):
     Task.wait_for_completion(task_key)
 
 
+def test_method_multi_broker_backend(multi_celery_broker_fixture, multi_celery_backend_fixture):
+    """Test calling 'CeleryQueue.run_task' across every broker x backend combination."""
+
+    queue_id = f"test_celery_queue.test_method_multi_broker_backend"
+    queue = CeleryQueue(queue_id=queue_id).build()
+    active(DataSource).replace_one(queue, commit=True)
+
+    task_key = _create_task(queue.get_key())
+
+    context_snapshot_data = ContextSnapshot.capture_active().to_json()
+    celery_run_task(task_key.task_id, context_snapshot_data)
+
+    loaded_task = active(DataSource).load_one(task_key, cast_to=Task)
+    assert loaded_task.status.name == "COMPLETED"
+
+
 def test_reached_tenant_limit(default_db_fixture):
     """Test reached tenant limit of tasks."""
     context_snapshot_json = ContextSnapshot.capture_active().to_json()

@@ -71,7 +71,10 @@ testing:
   # Documented in QaSettings class
   qa_celery_broker_types:
     - SqliteCeleryBroker
-    - MongoCeleryBroker
+
+  # Documented in QaSettings class
+  qa_celery_backend_types:
+    - SqliteCeleryBackend
 
   # Documented in LogSettings class
   log_filename_prefix: tests
