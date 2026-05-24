@@ -65,7 +65,7 @@ def test_inline_imports():
 
     Detection uses a heuristic: any import at any nesting level whose line is at or after
     the first non-import, non-docstring top-level statement is reported. To allow a specific
-    inline import, add its row to the expected file or annotate it with `# noqa`.
+    inline import, add its row to the expected file.
     """
     project_root = ProjectLayout.get_project_root()
     abs_package_dirs = [

@@ -38,7 +38,7 @@ class MongoCeleryBroker(CeleryBroker):
 
     def delete_existing_tasks(self, uri: str, queue: str) -> None:
         """Clear all collections in the MongoDB Celery broker database."""
-        from pymongo import MongoClient  # noqa
+        from pymongo import MongoClient
 
         try:
             all_tasks: tuple[Task, ...] = active(DataSource).load_all(key_type=TaskKey)

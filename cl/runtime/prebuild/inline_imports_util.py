@@ -179,18 +179,6 @@ class InlineImportsUtil:
                 print("No inline imports found.")
 
     @classmethod
-    def _has_noqa(cls, line: str) -> bool:
-        """Check whether a source line has a noqa directive in its comment.
-
-        Args:
-            line: A single source line
-        """
-        if "#" not in line:
-            return False
-        comment = line.split("#", 1)[1]
-        return "noqa" in comment
-
-    @classmethod
     def _import_node_to_lines(cls, node: ast.Import | ast.ImportFrom) -> list[str]:
         """Convert an AST import node to top-level import statement strings.
 
@@ -228,8 +216,7 @@ class InlineImportsUtil:
 
         Heuristic: scans top-level statements to find the first one that is not an import
         or a module docstring, then flags any import at any nesting level whose line number
-        is at or after that point. Imports marked with `# noqa` on any of their lines are
-        skipped so intentional inline imports can opt out.
+        is at or after that point.
 
         Args:
             source: File source code
@@ -256,16 +243,11 @@ class InlineImportsUtil:
         if code_start_line is None:
             return []
 
-        source_lines = source.split("\n")
         inline_imports: list[ast.Import | ast.ImportFrom] = []
         for node in ast.walk(tree):
             if not isinstance(node, (ast.Import, ast.ImportFrom)):
                 continue
             if node.lineno < code_start_line:
-                continue
-            end_line = node.end_lineno or node.lineno
-            import_lines = source_lines[node.lineno - 1 : end_line]
-            if any(cls._has_noqa(line) for line in import_lines):
                 continue
             inline_imports.append(node)
 
@@ -302,7 +284,6 @@ class InlineImportsUtil:
             return []
 
         # Find import nodes whose line numbers fall within a function range
-        source_lines = source.split("\n")
         inline_imports: list[tuple[ast.Import | ast.ImportFrom, int, int]] = []
         for node in ast.walk(tree):
             if not isinstance(node, (ast.Import, ast.ImportFrom)):
@@ -310,10 +291,6 @@ class InlineImportsUtil:
             for func_start, func_end in func_ranges:
                 if func_start <= node.lineno <= func_end:
                     end_line = node.end_lineno or node.lineno
-                    # Skip imports marked with # noqa in a comment on any of their lines
-                    import_lines = source_lines[node.lineno - 1 : end_line]
-                    if any(cls._has_noqa(line) for line in import_lines):
-                        break
                     inline_imports.append((node, node.lineno, end_line))
                     break
 
