@@ -52,6 +52,7 @@ if _RUNTIME_SRC not in sys.path:
     sys.path.insert(0, _RUNTIME_SRC)
 
 from cl.runtime.project.project_layout import ProjectLayout  # noqa: E402
+from cl.runtime.settings.project_settings import ProjectSettings  # noqa: E402
 
 PROJECT_ROOT = ProjectLayout.get_project_root()
 
@@ -246,7 +247,7 @@ def print_grouped(nodeids):
 
 
 def main():
-    all_submodules = ["runtime", "convince", "admin", "resume"]
+    all_submodules = list(ProjectSettings.instance().get_package_dirs())
 
     # Optional positional args: subset of submodule names to run (default: all).
     requested = sys.argv[1:]
