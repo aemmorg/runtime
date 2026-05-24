@@ -36,6 +36,8 @@ from cl.runtime.settings.qa_settings import QaSettings
 from cl.runtime.settings.sse_settings import SseSettings
 from cl.runtime.settings.celery_settings import CelerySettings
 from cl.runtime.settings.env_settings import EnvSettings
+from cl.runtime.tasks.celery.backend.celery_backend import CeleryBackend
+from cl.runtime.tasks.celery.broker.celery_broker import CeleryBroker
 from cl.runtime.tasks.celery.celery_queue import CeleryQueue
 from cl.runtime.tasks.celery.celery_queue import celery_app
 
@@ -247,8 +249,6 @@ def _celery_broker_fixture_impl(
 ):
     """Shared implementation for default and multi celery broker fixtures."""
 
-    from cl.runtime.tasks.celery.broker.celery_broker import CeleryBroker
-
     celery_settings = CelerySettings.instance()
     env_id = EnvSettings.instance().env_id
 
@@ -288,8 +288,6 @@ def _celery_broker_fixture_impl(
 
 def _celery_backend_fixture_impl(backend_type_name: str):
     """Shared implementation for default and multi celery backend fixtures."""
-
-    from cl.runtime.tasks.celery.backend.celery_backend import CeleryBackend
 
     celery_settings = CelerySettings.instance()
     env_id = EnvSettings.instance().env_id

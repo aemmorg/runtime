@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import os
+from cl.runtime.project.resources_util import ResourcesUtil
 from cl.runtime.tasks.celery.broker.celery_broker import CeleryBroker
 
 
@@ -23,8 +24,6 @@ class SqliteCeleryBroker(CeleryBroker):
         """Resolve the broker URI, building a default SQLite path when the template is absent or unresolved."""
         if uri_template is not None and "{" not in uri_template:
             return uri_template
-
-        from cl.runtime.project.resources_util import ResourcesUtil
 
         celery_root = ResourcesUtil.get_celery_root()
         os.makedirs(celery_root, exist_ok=True)

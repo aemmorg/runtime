@@ -23,11 +23,11 @@ def _child_settings_only(env_id: str, result_queue: multiprocessing.Queue) -> No
     """Child process that verifies CelerySettings resolve to env_id-specific values."""
     os.environ["CL_ENV_ID"] = env_id
 
-    from cl.runtime.settings.settings import Settings
+    from cl.runtime.settings.settings import Settings  # noqa
 
     Settings._Settings__settings_dict.clear()
 
-    from cl.runtime.settings.celery_settings import CelerySettings
+    from cl.runtime.settings.celery_settings import CelerySettings  # noqa
 
     settings = CelerySettings.instance()
 
@@ -49,28 +49,28 @@ def _child_run_task(
     try:
         os.environ["CL_ENV_ID"] = env_id
 
-        from cl.runtime.settings.settings import Settings
+        from cl.runtime.settings.settings import Settings  # noqa
 
         Settings._Settings__settings_dict.clear()
 
-        from cl.runtime.contexts.context_manager import activate
-        from cl.runtime.contexts.context_manager import active
-        from cl.runtime.contexts.context_snapshot import ContextSnapshot
-        from cl.runtime.db.data_source import DataSource
-        from cl.runtime.db.db import Db
-        from cl.runtime.events.event_broker import EventBroker
-        from cl.runtime.schema.type_info import TypeInfo
-        from cl.runtime.server.env import Env
-        from cl.runtime.settings.celery_settings import CelerySettings
-        from cl.runtime.settings.env_kind import EnvKind
-        from cl.runtime.settings.sse_settings import SseSettings
-        from cl.runtime.tasks.celery.celery_queue import CeleryQueue
-        from cl.runtime.tasks.celery.celery_queue import celery_app
-        from cl.runtime.tasks.celery.celery_queue import celery_run_task
-        from cl.runtime.tasks.class_method_task import ClassMethodTask
-        from cl.runtime.tasks.task import Task
-        from cl.runtime.tasks.task_key import TaskKey
-        from stubs.cl.runtime.records.for_dataclasses.stub_dataclass_handlers import StubHandlers
+        from cl.runtime.contexts.context_manager import activate  # noqa
+        from cl.runtime.contexts.context_manager import active  # noqa
+        from cl.runtime.contexts.context_snapshot import ContextSnapshot  # noqa
+        from cl.runtime.db.data_source import DataSource  # noqa
+        from cl.runtime.db.db import Db  # noqa
+        from cl.runtime.events.event_broker import EventBroker  # noqa
+        from cl.runtime.schema.type_info import TypeInfo  # noqa
+        from cl.runtime.server.env import Env  # noqa
+        from cl.runtime.settings.celery_settings import CelerySettings  # noqa
+        from cl.runtime.settings.env_kind import EnvKind  # noqa
+        from cl.runtime.settings.sse_settings import SseSettings  # noqa
+        from cl.runtime.tasks.celery.celery_queue import CeleryQueue  # noqa
+        from cl.runtime.tasks.celery.celery_queue import celery_app  # noqa
+        from cl.runtime.tasks.celery.celery_queue import celery_run_task  # noqa
+        from cl.runtime.tasks.class_method_task import ClassMethodTask  # noqa
+        from cl.runtime.tasks.task import Task  # noqa
+        from cl.runtime.tasks.task_key import TaskKey  # noqa
+        from stubs.cl.runtime.records.for_dataclasses.stub_dataclass_handlers import StubHandlers  # noqa
 
         celery_settings = CelerySettings.instance()
 

@@ -31,7 +31,7 @@ class RedisCeleryBroker(CeleryBroker):
 
     def delete_existing_tasks(self, uri: str, queue: str) -> None:
         """Flush the Redis database used by the Celery broker."""
-        import redis
+        import redis  # noqa
 
         parsed_uri = urlparse(uri)
         redis_client = redis.StrictRedis(

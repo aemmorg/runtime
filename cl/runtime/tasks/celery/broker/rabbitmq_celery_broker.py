@@ -31,8 +31,8 @@ class RabbitmqCeleryBroker(CeleryBroker):
 
     def delete_existing_tasks(self, uri: str, queue: str) -> None:
         """Purge all messages from the RabbitMQ queue."""
-        import pika
-        from pika.exceptions import ChannelClosedByBroker
+        import pika  # noqa
+        from pika.exceptions import ChannelClosedByBroker  # noqa
 
         parsed_uri = urlparse(uri)
         user, password = parsed_uri.netloc.split("@")[0].split(":")

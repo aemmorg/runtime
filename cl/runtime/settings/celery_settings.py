@@ -17,6 +17,8 @@ from typing import final
 from cl.runtime.records.for_dataclasses.extensions import required
 from cl.runtime.settings.env_settings import EnvSettings
 from cl.runtime.settings.settings import Settings
+from cl.runtime.tasks.celery.backend.celery_backend import CeleryBackend
+from cl.runtime.tasks.celery.broker.celery_broker import CeleryBroker
 
 
 @dataclass(slots=True, kw_only=True)
@@ -81,8 +83,6 @@ class CelerySettings(Settings):
 
         env_id = EnvSettings.instance().env_id
 
-        from cl.runtime.tasks.celery.broker.celery_broker import CeleryBroker
-
         broker = CeleryBroker.create(self.celery_broker_type)
         self.celery_broker_uri = broker.resolve_uri(self.celery_broker_uri, env_id)
 
@@ -93,7 +93,5 @@ class CelerySettings(Settings):
             self.celery_broker_queue = f"celery-{env_id.lower()}"
 
         if self.celery_backend_type:
-            from cl.runtime.tasks.celery.backend.celery_backend import CeleryBackend
-
             backend = CeleryBackend.create(self.celery_backend_type)
             self.celery_backend_uri = backend.resolve_uri(self.celery_backend_uri, env_id)

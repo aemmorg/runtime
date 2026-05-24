@@ -13,7 +13,12 @@
 # limitations under the License.
 
 import logging
+from cl.runtime.contexts.context_manager import active
+from cl.runtime.db.data_source import DataSource
 from cl.runtime.tasks.celery.broker.celery_broker import CeleryBroker
+from cl.runtime.tasks.task import Task
+from cl.runtime.tasks.task_key import TaskKey
+from cl.runtime.tasks.task_status import TaskStatus
 
 _logger = logging.getLogger(__name__)
 
@@ -33,15 +38,9 @@ class MongoCeleryBroker(CeleryBroker):
 
     def delete_existing_tasks(self, uri: str, queue: str) -> None:
         """Clear all collections in the MongoDB Celery broker database."""
-        from pymongo import MongoClient
+        from pymongo import MongoClient  # noqa
 
         try:
-            from cl.runtime.contexts.context_manager import active
-            from cl.runtime.db.data_source import DataSource
-            from cl.runtime.tasks.task import Task
-            from cl.runtime.tasks.task_key import TaskKey
-            from cl.runtime.tasks.task_status import TaskStatus
-
             all_tasks: tuple[Task, ...] = active(DataSource).load_all(key_type=TaskKey)
             stuck_tasks = [task for task in all_tasks if task.status in (TaskStatus.RUNNING, TaskStatus.PENDING)]
 
