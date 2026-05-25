@@ -151,10 +151,12 @@ class SettingsResponse(BaseModel):
         s = AppFeatureSettings.instance()
         features = AppFeatures(
             ai_chat=s.app_feature_ai_chat,
+            bi_tools=s.app_feature_bi_tools,
             data_env_support=s.app_feature_data_env_support,
             dataset_support=s.app_feature_dataset_support,
             db_tools=s.app_feature_db_tools,
             demo_mode=s.app_feature_demo_mode,
+            display_local_time=s.app_feature_display_local_time,
             internal_apps_support=s.app_feature_internal_apps_support,
             search_tables=s.app_feature_search_tables,
             show_user_id=s.app_feature_show_user_id,

@@ -30,6 +30,9 @@ class AppFeatureSettings(Settings):
     app_feature_ai_chat: bool | None = None
     """Maps to AppFeatures.ai_chat."""
 
+    app_feature_bi_tools: bool | None = True
+    """Maps to AppFeatures.bi_tools."""
+
     app_feature_data_env_support: bool | None = False
     """Maps to AppFeatures.data_env_support."""
 
@@ -41,6 +44,9 @@ class AppFeatureSettings(Settings):
 
     app_feature_demo_mode: bool | None = None
     """Maps to AppFeatures.demo_mode."""
+
+    app_feature_display_local_time: bool | None = None
+    """Maps to AppFeatures.display_local_time."""
 
     app_feature_internal_apps_support: bool | None = False
     """Maps to AppFeatures.internal_apps_support."""

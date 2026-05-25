@@ -36,8 +36,14 @@ class AppFeatures(BaseModel):
     Dynamically resolved from the active data source in get_response().
     """
 
+    bi_tools: bool | None = True
+    """Controls visibility of Business Intelligence features (charts, pivot grids, dashboard builder)."""
+
     db_tools: bool | None = True
     """Enables database tools (Export Database, Import Database) in the UI."""
+
+    display_local_time: bool | None = None
+    """When True, datetime fields render in the user's local timezone and convert back to UTC on submit."""
 
     demo_mode: bool | None = None
     """
