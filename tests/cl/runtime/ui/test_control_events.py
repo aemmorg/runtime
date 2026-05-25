@@ -76,7 +76,7 @@ def test_partial_value_update_event(default_db_fixture, type_info_fixture):
         StrVariant(metadata=None, value="Val3"),
     )
 
-    em = EventManager(resolver=ControlTargetResolver(key=_STUB_KEY, viewer_name="TestPanel"))
+    em = EventManager(resolver=ControlTargetResolver(key="Something", type_name="StubViewers", viewer_name="TestPanel"))
     events = em.dispatch(
         {
             "_t": "ValueUpdateEvent",
@@ -139,7 +139,7 @@ def test_nested_partial_value_update_event(default_db_fixture, type_info_fixture
     assert tree_table.control_path == "root.tree_table"
     assert tree_table.data[1].data == ("val0", "val1", "val2")
 
-    em = EventManager(resolver=ControlTargetResolver(key=_STUB_KEY, viewer_name="TestPanel"))
+    em = EventManager(resolver=ControlTargetResolver(key="Something", type_name="StubViewers", viewer_name="TestPanel"))
     events = em.dispatch(
         {
             "_t": "ValueUpdateEvent",
@@ -196,7 +196,7 @@ def test_value_update_event(default_db_fixture, type_info_fixture):
     assert loaded[1].control_path == "root.text"
     assert loaded[1].value == "Hello"
 
-    em = EventManager(resolver=ControlTargetResolver(key=_STUB_KEY, viewer_name="TestPanel"))
+    em = EventManager(resolver=ControlTargetResolver(key="Something", type_name="StubViewers", viewer_name="TestPanel"))
     events = em.dispatch(
         {
             "_t": "ValueUpdateEvent",
@@ -242,7 +242,7 @@ def test_control_update_event(default_db_fixture, type_info_fixture):
     assert loaded[1].control_path == "root.text"
     assert loaded[1].value == "Hello"
 
-    em = EventManager(resolver=ControlTargetResolver(key=_STUB_KEY, viewer_name="TestPanel"))
+    em = EventManager(resolver=ControlTargetResolver(key="Something", type_name="StubViewers", viewer_name="TestPanel"))
     events = em.dispatch(
         {
             "_t": "ValueUpdateEvent",

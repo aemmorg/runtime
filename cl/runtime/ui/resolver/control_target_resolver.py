@@ -17,7 +17,9 @@ from dataclasses import dataclass
 from cl.runtime.contexts.context_manager import active
 from cl.runtime.db.data_source import DataSource
 from cl.runtime.records.for_dataclasses.extensions import required
-from cl.runtime.records.key_mixin import KeyMixin
+from cl.runtime.schema.type_hint import TypeHint
+from cl.runtime.schema.type_info import TypeInfo
+from cl.runtime.serializers.key_serializers import KeySerializers
 from cl.runtime.ui.control import Control
 from cl.runtime.ui.control.control_key import ControlKey
 from cl.runtime.ui.resolver.target_resolver import TargetResolver
@@ -26,10 +28,13 @@ from cl.runtime.ui.storage.control_loader import ControlLoader
 
 @dataclass(slots=True, kw_only=True)
 class ControlTargetResolver(TargetResolver[Control]):
-    """Resolves Controls by ControlPath via ControlLoader."""
+    """Resolves Controls by ControlPath via ControlLoader, given a raw delimited key string."""
 
-    key: KeyMixin = required()
-    """Key of the record for which the control is displayed."""
+    key: str = required()
+    """Raw delimited key string of the record for which the control is displayed."""
+
+    type_name: str = required()
+    """Record type name; used to resolve the key type for deserialization."""
 
     viewer_name: str = required()
     """Viewer name for ControlKey."""
@@ -52,7 +57,10 @@ class ControlTargetResolver(TargetResolver[Control]):
     def _ensure_root_node(self) -> None:
         """Load root node on first call."""
         if self._root_node is None:
-            root_key = ControlKey(view_for=self.key, view_name=self.viewer_name, control_path="root")
+            record_type = TypeInfo.from_type_name(self.type_name)
+            key_type = record_type.get_key_type()
+            key_obj = KeySerializers.DELIMITED.deserialize(self.key, TypeHint.for_type(key_type)).build()
+            root_key = ControlKey(view_for=key_obj, view_name=self.viewer_name, control_path="root")
             self._root_node = active(DataSource).load_one_or_none(root_key.build())
             if self._root_node is None:
                 raise RuntimeError("Root node is missing")

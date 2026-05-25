@@ -107,7 +107,7 @@ def test_create_new_tab_dynamic(default_db_fixture, type_info_fixture):
     ControlSaver(root_node=p.build()).save()
 
     # Simulate button press to add a new tab
-    em = EventManager(resolver=ControlTargetResolver(key=_STUB_KEY, viewer_name="TestPanel"))
+    em = EventManager(resolver=ControlTargetResolver(key="TabTest", type_name="StubViewers", viewer_name="TestPanel"))
     events = em.dispatch(
         {
             "_t": "ValueUpdateEvent",

@@ -467,17 +467,16 @@ High-level orchestrator:
 
 **Connection Flow:**
 1. Accept WebSocket connection
-2. Deserialize the `key` query parameter into a `KeyMixin` instance for `type`
-3. Choose the resolver based on `viewer_name`:
-   - `viewer_name` set → `ControlTargetResolver(key=key_obj, viewer_name=viewer_name)`
-   - `viewer_name` empty → `RecordTargetResolver(key=key_obj, type_name=type)`
-4. Create `EventManager(resolver=resolver)`
-5. Enter message loop:
+2. Choose the resolver based on `viewer_name` (each resolver owns its own key deserialization):
+   - `viewer_name` set → `ControlTargetResolver(key=key, type_name=type, viewer_name=viewer_name)`
+   - `viewer_name` empty → `RecordTargetResolver(key=key, type_name=type)` (empty `key` = not-yet-created record)
+3. Create `EventManager(resolver=resolver)`
+4. Enter message loop:
    - Receive text message
    - Dispatch via `event_manager.dispatch(event_dict)`
    - Serialize response events
    - Send JSON response
-6. Handle disconnect/errors gracefully
+5. Handle disconnect/errors gracefully
 
 **ConnectionManager** (singleton) tracks active connections per key, enabling broadcast to multiple clients viewing the same control tree.
 

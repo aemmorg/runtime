@@ -27,7 +27,7 @@ _STUB_KEY = StubViewersKey(stub_id="A").build()
 def test_dispatch_event_success(default_db_fixture):
     node = TextControl(view_for=_STUB_KEY, view_name="V", control_path="root", value="Start")
     ControlManager(root_node=node.build()).save()
-    em = EventManager(resolver=ControlTargetResolver(key=_STUB_KEY, viewer_name="V"))
+    em = EventManager(resolver=ControlTargetResolver(key="A", type_name="StubViewers", viewer_name="V"))
     event = {"Key": "root", "Field": "Value", "Value": "Changed", "_t": "ValueUpdateEvent"}
     out_events = em.dispatch(event)
     assert isinstance(out_events[0], ValueUpdateEvent)
@@ -43,7 +43,7 @@ def test_dispatch_event_success(default_db_fixture):
 def test_not_supported_event(default_db_fixture):
     node = TextControl(view_for=_STUB_KEY, view_name="V", control_path="root", value="Start")
     ControlManager(root_node=node.build()).save()
-    em = EventManager(resolver=ControlTargetResolver(key=_STUB_KEY, viewer_name="V"))
+    em = EventManager(resolver=ControlTargetResolver(key="A", type_name="StubViewers", viewer_name="V"))
     event = {
         "Key": "root",
         "Control": {"ControlPath": "Root", "ViewFor": "A", "ViewName": "V", "Value": "Changed", "_t": "TextControl"},
@@ -58,7 +58,7 @@ def test_not_supported_event(default_db_fixture):
 def test_event_without_key(default_db_fixture):
     node = TextControl(view_for=_STUB_KEY, view_name="V", control_path="root", value="Start")
     ControlManager(root_node=node.build()).save()
-    em = EventManager(resolver=ControlTargetResolver(key=_STUB_KEY, viewer_name="V"))
+    em = EventManager(resolver=ControlTargetResolver(key="A", type_name="StubViewers", viewer_name="V"))
     event_without_key = {
         "Control": {"ControlPath": "Root", "ViewFor": "A", "ViewName": "V", "Value": "Changed", "_t": "TextControl"},
         "_t": "ControlUpdateEvent",

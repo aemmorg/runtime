@@ -21,10 +21,7 @@ from fastapi import WebSocketDisconnect
 from cl.runtime.backend.dependencies.ui_events import get_ui_events_connection_manager
 from cl.runtime.contexts.context_manager import active
 from cl.runtime.db.data_source import DataSource
-from cl.runtime.schema.type_hint import TypeHint
-from cl.runtime.schema.type_info import TypeInfo
 from cl.runtime.serializers.bootstrap_serializers import BootstrapSerializers
-from cl.runtime.serializers.key_serializers import KeySerializers
 from cl.runtime.ui.event.event_manager import EventManager
 from cl.runtime.ui.resolver.control_target_resolver import ControlTargetResolver
 from cl.runtime.ui.resolver.record_target_resolver import RecordTargetResolver
@@ -56,16 +53,13 @@ async def ui_events_websocket_endpoint(
     try:
         await manager.connect(connection_id, websocket)
 
-        # Deserialize the key string into a KeyMixin object
-        record_type = TypeInfo.from_type_name(type)
-        key_type = record_type.get_key_type()
-        key_obj = KeySerializers.DELIMITED.deserialize(key, TypeHint.for_type(key_type)).build()
-
-        # Use ControlTargetResolver for viewer-based Controls, RecordTargetResolver for InteractiveMixin records
+        # Use ControlTargetResolver for viewer-based Controls, RecordTargetResolver for InteractiveMixin records.
+        # Each resolver owns its own key deserialization; RecordTargetResolver also accepts an empty key
+        # to support not-yet-created records (e.g. validating user input during a creation form flow).
         if viewer_name:
-            resolver = ControlTargetResolver(key=key_obj, viewer_name=viewer_name)
+            resolver = ControlTargetResolver(key=key, type_name=type, viewer_name=viewer_name)
         else:
-            resolver = RecordTargetResolver(key=key_obj, type_name=type)
+            resolver = RecordTargetResolver(key=key, type_name=type)
 
         event_manager = EventManager(resolver=resolver)
 

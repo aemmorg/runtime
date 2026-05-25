@@ -81,7 +81,7 @@ def test_record_value_update(default_db_fixture, type_info_fixture):
     active(DataSource).replace_one(record, commit=True)
 
     resolver = RecordTargetResolver(
-        key=StubInteractiveRecordKey(id="test_id").build(), type_name="StubInteractiveRecord"
+        key="test_id", type_name="StubInteractiveRecord"
     )
     em = EventManager(resolver=resolver)
     events = em.dispatch(
@@ -108,7 +108,7 @@ def test_record_resolve_not_interactive(default_db_fixture, type_info_fixture):
     active(DataSource).replace_one(record, commit=True)
 
     resolver = RecordTargetResolver(
-        key=StubNonInteractiveRecordKey(id="test_id").build(), type_name="StubNonInteractiveRecord"
+        key="test_id", type_name="StubNonInteractiveRecord"
     )
     em = EventManager(resolver=resolver)
     events = em.dispatch(
@@ -129,7 +129,7 @@ def test_record_resolve_missing_key(default_db_fixture, type_info_fixture):
     _register_types()
 
     resolver = RecordTargetResolver(
-        key=StubInteractiveRecordKey(id="nonexistent").build(), type_name="StubInteractiveRecord"
+        key="nonexistent", type_name="StubInteractiveRecord"
     )
     em = EventManager(resolver=resolver)
     events = em.dispatch(
