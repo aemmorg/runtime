@@ -23,6 +23,7 @@ from cl.runtime.records.for_dataclasses.extensions import optional
 from cl.runtime.routers.settings.app_features import AppFeatures
 from cl.runtime.routers.settings.env_info import EnvInfo
 from cl.runtime.server.env import Env
+from cl.runtime.settings.app_feature_settings import AppFeatureSettings
 from cl.runtime.settings.dynaconf_loader import ENVVAR_PREFIX
 from cl.runtime.settings.dynaconf_loader import DynaconfLoader
 from cl.runtime.settings.project_settings import ProjectSettings
@@ -55,7 +56,7 @@ class SettingsResponse(BaseModel):
     contract_version: str = VersionUtil.get_module_version(module="cl.runtime.routers")
     """Version of the backend-frontend API contract. Used to ensure compatibility between backend and frontend."""
 
-    app_features: AppFeatures | None = AppFeatures()
+    features: AppFeatures | None = AppFeatures()
     """Application feature flags that control which UI features are enabled."""
 
     application_name: str | None = optional(
@@ -147,4 +148,16 @@ class SettingsResponse(BaseModel):
     @classmethod
     def get_response(cls) -> Self:
         """Return settings response."""
-        return cls()
+        s = AppFeatureSettings.instance()
+        features = AppFeatures(
+            ai_chat=s.app_feature_ai_chat,
+            data_env_support=s.app_feature_data_env_support,
+            dataset_support=s.app_feature_dataset_support,
+            db_tools=s.app_feature_db_tools,
+            demo_mode=s.app_feature_demo_mode,
+            internal_apps_support=s.app_feature_internal_apps_support,
+            search_tables=s.app_feature_search_tables,
+            show_user_id=s.app_feature_show_user_id,
+            simplified_ui=s.app_feature_simplified_ui,
+        )
+        return cls(features=features)

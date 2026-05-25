@@ -50,3 +50,12 @@ class AppFeatures(BaseModel):
 
     data_env_support: bool | None = None
     """Enables the Data Environments header dropdown in the UI."""
+
+    search_tables: bool | None = None
+    """When True, the header search dropdown shows the Tables section alongside Types."""
+
+    show_user_id: bool | None = True
+    """When True, the user info popup displays the ID field."""
+
+    simplified_ui: bool | None = None
+    """When True, the UI enters a simplified mode that hides developer-oriented controls."""
