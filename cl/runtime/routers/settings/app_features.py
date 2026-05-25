@@ -45,5 +45,8 @@ class AppFeatures(BaseModel):
     May limit error reporting functionality.
     """
 
-    envs_support: bool | None = True
-    """Enables environment management features in the UI."""
+    internal_apps_support: bool | None = False
+    """Enables the Internal Apps header dropdown in the UI."""
+
+    data_env_support: bool | None = None
+    """Enables the Data Environments header dropdown in the UI."""

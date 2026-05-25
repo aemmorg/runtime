@@ -12,4 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__version__ = "2.2.0"
+from cl.runtime.records.for_pydantic.pydantic_mixin import PydanticMixin
+from cl.runtime.services.app.internal_app_descriptor import InternalAppDescriptor
+
+
+class InternalApps(PydanticMixin):
+    """Internal apps configuration with the active internal app and the list of apps."""
+
+    id: str | None = "default"
+    """Singleton identifier; reserved for forward compatibility with the persisted variant."""
+
+    active_app_name: str | None = None
+    """Name of the active internal app."""
+
+    apps: list[InternalAppDescriptor] | None = None
+    """List of internal app descriptors."""
