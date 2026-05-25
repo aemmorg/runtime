@@ -327,11 +327,7 @@ def multi_celery_broker_fixture(request: FixtureRequest, default_db_fixture, eve
 @pytest.fixture(scope="function")
 def default_celery_backend_fixture():
     """Pytest function fixture to set up celery backend using the type from CelerySettings."""
-    backend_type = CelerySettings.instance().celery_backend_type
-    if not backend_type:
-        yield None
-        return
-    yield from _celery_backend_fixture_impl(backend_type)
+    yield from _celery_backend_fixture_impl(CelerySettings.instance().celery_backend_type)
 
 
 @pytest.fixture(scope="function", params=QaSettings.instance().qa_celery_backend_types or [])

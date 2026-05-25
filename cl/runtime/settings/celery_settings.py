@@ -12,13 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 from dataclasses import dataclass
 from typing import final
-from cl.runtime.records.for_dataclasses.extensions import required
 from cl.runtime.settings.env_settings import EnvSettings
 from cl.runtime.settings.settings import Settings
 from cl.runtime.tasks.celery.backend.celery_backend import CeleryBackend
 from cl.runtime.tasks.celery.broker.celery_broker import CeleryBroker
+
+_logger = logging.getLogger(__name__)
 
 
 @dataclass(slots=True, kw_only=True)
@@ -29,8 +31,8 @@ class CelerySettings(Settings):
     celery_is_embedded_worker: bool = True
     """Flag that indicates whether the Celery worker runs embedded within the backend process."""
 
-    celery_broker_type: str = required()
-    """Celery broker class name (e.g. SqliteCeleryBroker, MongoCeleryBroker). Must be set in settings.yaml."""
+    celery_broker_type: str = "SqliteCeleryBroker"
+    """Celery broker class name (e.g. SqliteCeleryBroker, MongoCeleryBroker)."""
 
     celery_broker_uri: str | None = None
     """Celery broker URI template. Supports {env_id} placeholder for per-instance isolation."""
@@ -38,8 +40,8 @@ class CelerySettings(Settings):
     celery_broker_queue: str = "celery-{env_id}"
     """Celery broker queue name. Supports {env_id} placeholder for per-instance isolation."""
 
-    celery_backend_type: str | None = None
-    """Celery result backend class name (e.g. SqliteCeleryBackend, MongoCeleryBackend). Optional."""
+    celery_backend_type: str = "SqliteCeleryBackend"
+    """Celery result backend class name (e.g. SqliteCeleryBackend, MongoCeleryBackend)."""
 
     celery_backend_uri: str | None = None
     """Celery result backend URI template. Supports {env_id} placeholder for per-instance isolation."""
@@ -76,11 +78,6 @@ class CelerySettings(Settings):
     If None or False (default), wipe the celery DB on launch so stale tasks do not execute."""
 
     def __init(self) -> None:
-        if not self.celery_broker_type:
-            raise RuntimeError(
-                "Celery broker type is not specified in settings. Set 'celery_broker_type' in settings.yaml."
-            )
-
         env_id = EnvSettings.instance().env_id
 
         broker = CeleryBroker.create(self.celery_broker_type)
@@ -92,6 +89,18 @@ class CelerySettings(Settings):
         if not self.celery_broker_queue:
             self.celery_broker_queue = f"celery-{env_id.lower()}"
 
-        if self.celery_backend_type:
-            backend = CeleryBackend.create(self.celery_backend_type)
-            self.celery_backend_uri = backend.resolve_uri(self.celery_backend_uri, env_id)
+        backend = CeleryBackend.create(self.celery_backend_type)
+        self.celery_backend_uri = backend.resolve_uri(self.celery_backend_uri, env_id)
+
+        if self.celery_workers > 1:
+            uses_sqlite = (
+                self.celery_broker_type == "SqliteCeleryBroker"
+                or self.celery_backend_type == "SqliteCeleryBackend"
+            )
+            if uses_sqlite:
+                _logger.warning(
+                    "SQLite does not support concurrent writes from multiple processes. "
+                    "With celery_workers=%d, use a server-based broker/backend "
+                    "(e.g. MongoCeleryBroker, RedisCeleryBroker) for production workloads.",
+                    self.celery_workers,
+                )
