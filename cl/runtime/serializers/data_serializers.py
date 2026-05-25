@@ -88,6 +88,23 @@ class DataSerializers:
     ).build()
     """Default bidirectional data serializer settings for UI."""
 
+    FOR_UI_DRAFT = DataSerializer(
+        primitive_serializer=PrimitiveSerializers.FOR_UI,
+        enum_serializer=EnumSerializers.DEFAULT,
+        key_serializer=KeySerializers.DELIMITED,
+        null_inclusion=NullInclusion.OMIT,
+        type_inclusion=TypeInclusion.ALWAYS,
+        type_field="_t",
+        pascalize_keys=True,
+        control_field=True,
+    ).build()
+    """Data serializer for UI used to echo draft (creation-form) candidates back to the frontend.
+
+    Behaves like ``FOR_UI`` but with ``null_inclusion=OMIT`` so that not-yet-filled required
+    fields (``None`` during a creation flow) are skipped silently instead of triggering
+    required-field validation. Complex (nested) fields are preserved.
+    """
+
     FOR_CSV = DataSerializer(
         primitive_serializer=PrimitiveSerializers.FOR_CSV,
         enum_serializer=EnumSerializers.DEFAULT,

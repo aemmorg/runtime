@@ -20,6 +20,8 @@ from cl.runtime.records.typename import typename
 from cl.runtime.serializers.bootstrap_serializers import BootstrapSerializers
 from cl.runtime.ui.event.partial_value_update_event import PartialValueUpdateEvent
 from cl.runtime.ui.event.partial_value_update_event_handler import PartialValueUpdateEventHandler
+from cl.runtime.ui.event.record_update_event import RecordUpdateEvent
+from cl.runtime.ui.event.record_update_event_handler import RecordUpdateEventHandler
 from cl.runtime.ui.event.runtime_error_event import RuntimeErrorEvent
 from cl.runtime.ui.event.ui_event import UiEvent
 from cl.runtime.ui.event.user_error_event import UserErrorEvent
@@ -30,6 +32,7 @@ from cl.runtime.ui.resolver.target_resolver import TargetResolver
 SUPPORTED_EVENT_HANDLERS = {
     typename(ValueUpdateEvent): ValueUpdateEventHandler,
     typename(PartialValueUpdateEvent): PartialValueUpdateEventHandler,
+    typename(RecordUpdateEvent): RecordUpdateEventHandler,
 }
 
 
@@ -74,7 +77,7 @@ class EventManager:
             return []
 
         target_id = event_dict.get("Key")
-        if target_id is None:
+        if event_dict.get("_t") is None:
             return []
 
         try:

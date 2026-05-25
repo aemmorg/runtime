@@ -55,17 +55,17 @@ def test_not_supported_event(default_db_fixture):
     assert out_events[0].error == "Unknown event ControlUpdateEvent"
 
 
-def test_event_without_key(default_db_fixture):
+def test_event_without_t(default_db_fixture):
     node = TextControl(view_for=_STUB_KEY, view_name="V", control_path="root", value="Start")
     ControlManager(root_node=node.build()).save()
     em = EventManager(resolver=ControlTargetResolver(key="A", type_name="StubViewers", viewer_name="V"))
-    event_without_key = {
+    event_without_t = {
+        "Key": "A",
         "Control": {"ControlPath": "Root", "ViewFor": "A", "ViewName": "V", "Value": "Changed", "_t": "TextControl"},
-        "_t": "ControlUpdateEvent",
     }
-    out_events_without_key = em.dispatch(event_without_key)
+    out_events_without_t = em.dispatch(event_without_t)
 
-    assert out_events_without_key == []
+    assert out_events_without_t == []
 
 
 if __name__ == "__main__":
