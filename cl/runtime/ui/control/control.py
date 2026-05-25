@@ -86,8 +86,6 @@ class Control(ControlKey, RecordMixin, ABC):
             **kwargs: Keyword arguments with attribute names in snake_case and new values.
         """
 
-        from cl.runtime.ui.event.control_update_event import ControlUpdateEvent
-
         # Update attributes
         for attribute, value in kwargs.items():
             setattr(self, attribute, value)
@@ -96,16 +94,7 @@ class Control(ControlKey, RecordMixin, ABC):
         record = self.clone()
         active(DataSource).replace_one(record.build(), commit=True)
 
-        data_type_spec = ControlUpdateEvent.get_type_spec()
-        field_spec = next((field for field in data_type_spec.fields if field.field_name == "control"), None)
-
-        # Build a ControlUpdateEvent
-        return [
-            ControlUpdateEvent(
-                key=self.control_path,
-                control=DataSerializers.FOR_UI.serialize(self, type_hint=field_spec.field_type_hint),
-            )
-        ]
+        return [self._create_control_update_event()]
 
     def update_value(self, field: str, value: Any) -> list[UiEvent]:
         """
@@ -128,17 +117,8 @@ class Control(ControlKey, RecordMixin, ABC):
         record = self.clone()
         active(DataSource).replace_one(record.build(), commit=True)
 
-        data_type_spec = self.get_type_spec()
-        field_spec = next((f for f in data_type_spec.fields if f.field_name == field), None)
-
         # Build a ValueUpdateEvent
-        result = [
-            ValueUpdateEvent(
-                key=self.control_path,
-                field=CaseUtil.snake_to_pascal_case(field),
-                value=DataSerializers.FOR_UI.serialize(value, type_hint=field_spec.field_type_hint),
-            ),
-        ]
+        result = [self._create_value_update_event(field, value)]
 
         # Notify the parent that the field has changed
         result += self.on_change(self.control_path, field, value)
@@ -178,30 +158,82 @@ class Control(ControlKey, RecordMixin, ABC):
         record = self.clone()
         active(DataSource).replace_one(record.build(), commit=True)
 
-        data_type_spec = self.get_type_spec()
-        field_spec = next((f for f in data_type_spec.fields if f.field_name == field), None)
-
         # Build a PartialValueUpdateEvent
-        events = [
-            PartialValueUpdateEvent(
-                key=self.control_path,
-                field=CaseUtil.snake_to_pascal_case(field),
-                value=DataSerializers.FOR_UI.serialize(
-                    value,
-                    type_hint=self.get_partial_value_type_hint(field_spec.field_type_hint, index, attr),
-                ),
-                index=CaseUtil.snake_to_pascal_case(index) if CaseUtil.is_snake_case(index) else index,
-            ),
-        ]
+        events = [self._create_partial_value_update_event(field, value, index, attr)]
 
         # Notify the parent that the field has changed
         events += self.on_change(self.control_path, field, value, index)
 
         return events
 
+    def _create_control_update_event(self) -> "ControlUpdateEvent":
+        """Create a ControlUpdateEvent for the current control state."""
+        from cl.runtime.ui.event.control_update_event import ControlUpdateEvent
+
+        # Get the field spec of control field
+        data_type_spec = ControlUpdateEvent.get_type_spec()
+        field_spec = next((field for field in data_type_spec.fields if field.field_name == "control"), None)
+        type_hint = field_spec.field_type_hint if field_spec else None
+
+        return ControlUpdateEvent(
+            key=self.control_path,
+            control=DataSerializers.FOR_UI.serialize(self, type_hint=type_hint),
+        )
+
+    def _create_value_update_event(self, field: str, value: Any) -> ValueUpdateEvent:
+        """Create a ValueUpdateEvent for the specified field and value.
+
+        Args:
+            field: Name of the attribute in snake_case.
+            value: New value for the attribute.
+        """
+
+        # Get the field spec of the field
+        data_type_spec = self.get_type_spec()
+        field_spec = next((f for f in data_type_spec.fields if f.field_name == field), None)
+        type_hint = field_spec.field_type_hint if field_spec else None
+
+        field_name = CaseUtil.snake_to_pascal_case(field)
+        return ValueUpdateEvent(
+            key=self.control_path,
+            field=field_name,
+            value=DataSerializers.FOR_UI.serialize(value, type_hint=type_hint),
+        )
+
+    def _create_partial_value_update_event(
+        self, field: str, value: Any, index: str, attr: Any
+    ) -> PartialValueUpdateEvent:
+        """Create a PartialValueUpdateEvent for the specified field, value and index.
+
+        Args:
+            field: Name of the attribute in snake_case.
+            value: New value for the element.
+            index: Index path of the element (supports dot-separated nested paths).
+            attr: The top-level attribute value after the update.
+        """
+
+        # Get the field spec of the field
+        data_type_spec = self.get_type_spec()
+        field_spec = next((f for f in data_type_spec.fields if f.field_name == field), None)
+        type_hint = field_spec.field_type_hint if field_spec else None
+
+        field_name = CaseUtil.snake_to_pascal_case(field)
+        index_name = CaseUtil.snake_to_pascal_case(index) if CaseUtil.is_snake_case(index) else index
+        return PartialValueUpdateEvent(
+            key=self.control_path,
+            field=field_name,
+            value=DataSerializers.FOR_UI.serialize(
+                value,
+                type_hint=self.get_partial_value_type_hint(type_hint, index, attr),
+            ),
+            index=index_name,
+        )
+
     @staticmethod
-    def get_partial_value_type_hint(field_type_hint: TypeHint, index: str, attr: Any) -> TypeHint:
+    def get_partial_value_type_hint(field_type_hint: TypeHint | None, index: str, attr: Any) -> TypeHint:
         """Get type hint for part of control field found by index."""
+        if field_type_hint is None:
+            raise UserError(f"Empty field type hint provided for '{attr}'")
 
         type_hint = field_type_hint
         current = attr

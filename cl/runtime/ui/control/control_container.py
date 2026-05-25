@@ -56,24 +56,26 @@ class ControlContainer(Control, ABC):
         The result contains LayoutUpdateEvent.
         """
 
-        from cl.runtime.ui.event.layout_update_event import LayoutUpdateEvent
-
         # Rebuild the layout
         self._save_changes_in_db()
+        return [self._create_layout_update_event()]
 
+    def _create_layout_update_event(self) -> "LayoutUpdateEvent":
+        """Create a LayoutUpdateEvent for the current container state."""
+        from cl.runtime.ui.event.layout_update_event import LayoutUpdateEvent
+
+        # Get the field spec for added_controls field
         data_type_spec = LayoutUpdateEvent.get_type_spec()
         field_spec = next((field for field in data_type_spec.fields if field.field_name == "added_controls"), None)
+        type_hint = field_spec.field_type_hint if field_spec else None
 
-        # Build a LayoutUpdateEvent
-        return [
-            LayoutUpdateEvent(
-                key=self.control_path,
-                removed_controls=self._removed_controls,
-                added_controls=DataSerializers.FOR_UI.serialize(
-                    self.list_added_controls(self), type_hint=field_spec.field_type_hint
-                ),
+        return LayoutUpdateEvent(
+            key=self.control_path,
+            removed_controls=self._removed_controls or [],
+            added_controls=DataSerializers.FOR_UI.serialize(
+                self.list_added_controls(self), type_hint=type_hint
             ),
-        ]
+        )
 
     @staticmethod
     def list_added_controls(root_control: Control) -> list[Control]:
