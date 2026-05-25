@@ -90,7 +90,6 @@ class LoadResponse(RecordsWithSchemaResponse):
                 all_handlers.append(h.name)
 
         return UiTypeState(
-            user=ui_type_state_requested_key.user,
             type_=ui_type_state_requested_key.type_,
             pinned_handlers=all_handlers,
         )

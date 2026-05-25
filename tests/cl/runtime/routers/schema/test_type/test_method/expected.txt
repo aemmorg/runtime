@@ -2,10 +2,10 @@
 - Type: UiAppState
   TypeKind: Record
   Fields:
-  - FieldName: user
+  - FieldName: id
     FieldTypeHint:
-      SchemaType: UserKey
-      TypeKind: Key
+      SchemaType: str
+      TypeKind: Primitive
     Key: true
   - FieldName: opened_tabs
     FieldTypeHint:
@@ -78,17 +78,7 @@
 
 
 - dependencies
-- UserKey:
-    Type: UserKey
-    TypeKind: Key
-    Fields:
-    - FieldName: username
-      FieldTypeHint:
-        SchemaType: str
-        TypeKind: Primitive
-      Key: true
-    Label: User Key
-  TabInfo:
+- TabInfo:
     Type: TabInfo
     TypeKind: Data
     Fields:

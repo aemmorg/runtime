@@ -19,7 +19,6 @@ from cl.runtime.db.data_source import DataSource
 from cl.runtime.records.record_mixin import RecordMixin
 from cl.runtime.ui.tab_info import TabInfo
 from cl.runtime.ui.ui_app_state_key import UiAppStateKey
-from cl.runtime.ui.user_key import UserKey
 
 
 @dataclass(slots=True, kw_only=True)
@@ -69,10 +68,13 @@ class UiAppState(UiAppStateKey, RecordMixin):
     """Flag indicating whether handlers should be pinned to the toolbar by default."""
 
     def get_key(self) -> UiAppStateKey:
-        return UiAppStateKey(user=self.user).build()
+        return UiAppStateKey(id=self.id).build()
 
     def __init(self) -> None:
         """Use instead of __init__ in the builder pattern, invoked by the build method in base to derived order."""
+        if self.id is None:
+            self.id = "default"
+
         if self.application_theme not in (application_themes := [None, "System", "Dark", "Light", "Blue"]):
             raise RuntimeError(
                 f"Field UiAppState.application_theme has the value of {self.application_theme}\n"
@@ -83,9 +85,7 @@ class UiAppState(UiAppStateKey, RecordMixin):
     def get_global_app_state(cls) -> Self | None:
         """Get the global app state."""
 
-        default_app_state_key = UiAppStateKey(
-            user=UserKey(username="root")
-        ).build()  # TODO: Review the use of root default
+        default_app_state_key = UiAppStateKey().build()
 
         default_app_state = active(DataSource).load_one_or_none(default_app_state_key, cast_to=UiAppState)
         return default_app_state
@@ -94,7 +94,7 @@ class UiAppState(UiAppStateKey, RecordMixin):
     def get_current_user_app_theme(cls) -> str | None:
         """Get the current user's app theme."""
 
-        user_app_state_key = UiAppStateKey(user=UserKey(username=active(DataSource).tenant.tenant_id)).build()
+        user_app_state_key = UiAppStateKey().build()
 
         user_app_state = active(DataSource).load_one_or_none(user_app_state_key, cast_to=UiAppState)
 

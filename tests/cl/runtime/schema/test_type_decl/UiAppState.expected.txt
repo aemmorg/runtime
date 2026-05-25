@@ -10,12 +10,10 @@ inherit:
     module_name: cl
   name: UiAppStateKey
 elements:
-- key:
-    module:
-      module_name: cl
-    name: UserKey
-  name: User
-  comment: A user the app state is applied for.
+- value:
+    type_: String
+  name: Id
+  comment: App state identifier.
 - data:
     module:
       module_name: cl
@@ -85,5 +83,5 @@ elements:
     default.
   optional: true
 keys:
-- User
+- Id
 

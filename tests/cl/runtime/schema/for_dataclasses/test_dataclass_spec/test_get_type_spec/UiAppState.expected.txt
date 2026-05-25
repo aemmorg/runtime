@@ -1,10 +1,10 @@
 type_: UiAppState
 type_kind: Record
 fields:
-- field_name: user
+- field_name: id
   field_type_hint:
-    schema_type: UserKey
-    type_kind: Key
+    schema_type: str
+    type_kind: Primitive
   key: true
 - field_name: opened_tabs
   field_type_hint:

@@ -80,4 +80,4 @@ class UiTypeState(UiTypeStateKey, RecordMixin):
     """Active dataset path for this type (e.g. '\\child', '\\dev\\user1'). None means root dataset."""
 
     def get_key(self) -> UiTypeStateKey:
-        return UiTypeStateKey(type_=self.type_, user=self.user).build()
+        return UiTypeStateKey(type_=self.type_).build()

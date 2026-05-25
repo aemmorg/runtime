@@ -16,15 +16,14 @@ from dataclasses import dataclass
 from cl.runtime.records.for_dataclasses.dataclass_mixin import DataclassMixin
 from cl.runtime.records.for_dataclasses.extensions import required
 from cl.runtime.records.key_mixin import KeyMixin
-from cl.runtime.ui.user_key import UserKey
 
 
 @dataclass(slots=True, eq=False)
 class UiAppStateKey(DataclassMixin, KeyMixin):
     """UiAppState."""
 
-    user: UserKey = required()
-    """A user the app state is applied for."""
+    id: str = required()
+    """App state identifier."""
 
     @classmethod
     def get_key_type(cls) -> type[KeyMixin]:

@@ -17,7 +17,6 @@ from cl.runtime.records.for_dataclasses.dataclass_mixin import DataclassMixin
 from cl.runtime.records.for_dataclasses.extensions import required
 from cl.runtime.records.key_mixin import KeyMixin
 from cl.runtime.schema.type_decl_key import TypeDeclKey
-from cl.runtime.ui.user_key import UserKey
 
 
 @dataclass(slots=True, eq=False)
@@ -26,9 +25,6 @@ class UiTypeStateKey(DataclassMixin, KeyMixin):
 
     type_: TypeDeclKey = required()
     """Type reference."""
-
-    user: UserKey = required()
-    """A user the app state is applied for."""
 
     @classmethod
     def get_key_type(cls) -> type[KeyMixin]:
