@@ -12,4 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__version__ = "2.3.0"
+from cl.runtime.records.for_pydantic.pydantic_mixin import PydanticMixin
+from cl.runtime.services.data.data_env_item import DataEnvItem
+
+
+class DataEnvsResponse(PydanticMixin):
+    """Response for the data environments screen."""
+
+    data_env_items: list[DataEnvItem]
+    """Top-level data environments with nested children."""
+
+    default_env: str | None = None
+    """Name of the default environment; the first root in data_env_items, or None when empty."""

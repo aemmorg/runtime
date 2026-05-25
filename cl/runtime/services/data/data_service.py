@@ -28,6 +28,7 @@ from cl.runtime.schema.type_hint import TypeHint
 from cl.runtime.schema.type_info import TypeInfo
 from cl.runtime.serializers.data_serializers import DataSerializers
 from cl.runtime.serializers.key_serializers import KeySerializers
+from cl.runtime.services.data.data_envs_response import DataEnvsResponse
 from cl.runtime.services.data.load_record_response import LoadRecordResponse
 from cl.runtime.services.data.screens_response import ScreensResponse
 from cl.runtime.services.data.select_data_response import SelectDataResponse
@@ -156,6 +157,23 @@ class DataService(PydanticMixin):
         """Select records by filter from DB."""
 
         raise NotImplementedError("Select by filter currently is not supported.")
+
+    @classmethod
+    def run_data_envs(cls) -> DataEnvsResponse:
+        """Return the data environment hierarchy.
+
+        Contract-stub: this build has no DataEnv records, so the response always carries an
+        empty `data_env_items` list and a null `default_env`. The FE renders the dropdown as
+        empty and skips the active-env switching.
+        """
+        return DataEnvsResponse(data_env_items=[], default_env=None)
+
+    @classmethod
+    def run_set_active_data_env(cls, env_name: str) -> None:
+        """Set the active data environment.
+
+        Contract-stub: no DataEnv records exist, so this is a no-op accepted from the FE.
+        """
 
     @classmethod
     def run_load_record(cls, type_name: str, key: str) -> LoadRecordResponse:

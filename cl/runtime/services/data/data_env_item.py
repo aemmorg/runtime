@@ -12,4 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__version__ = "2.3.0"
+from cl.runtime.records.for_pydantic.pydantic_mixin import PydanticMixin
+
+
+class DataEnvItem(PydanticMixin):
+    """Single data environment screen item with optional nested children."""
+
+    name: str
+    """Data environment name."""
+
+    description: str | None = None
+    """Human-readable description (optional)."""
+
+    server: str | None = None
+    """Server hosting this data environment (optional)."""
+
+    child_data_envs: list["DataEnvItem"] | None = None
+    """Nested child data environments (optional)."""
