@@ -86,7 +86,7 @@ def test_save_ui_app_state_without_user(default_db_fixture):
     assert loaded.application_theme == "Dark"
 
 
-def test_save_ui_app_state_without_user_and_id_defaults_to_default(default_db_fixture):
+def test_save_ui_app_state_with_default(default_db_fixture):
     """A UiAppState payload missing both 'User' and 'Id' is built with id='default' via __init."""
     payload = {
         "_t": "UiAppState",
