@@ -72,8 +72,6 @@ class UiAppState(UiAppStateKey, RecordMixin):
 
     def __init(self) -> None:
         """Use instead of __init__ in the builder pattern, invoked by the build method in base to derived order."""
-        if self.id is None:
-            self.id = "default"
 
         if self.application_theme not in (application_themes := [None, "System", "Dark", "Light", "Blue"]):
             raise RuntimeError(

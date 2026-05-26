@@ -25,6 +25,11 @@ class UiAppStateKey(DataclassMixin, KeyMixin):
     id: str = required()
     """App state identifier."""
 
+    def __init(self) -> None:
+        """Use instead of __init__ in the builder pattern, invoked by the build method in base to derived order."""
+        if self.id is None:
+            self.id = "default"
+
     @classmethod
     def get_key_type(cls) -> type[KeyMixin]:
         return UiAppStateKey
