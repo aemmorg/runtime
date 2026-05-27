@@ -300,7 +300,12 @@ class CaseUtil:
         if cls.is_empty(value):
             return value
 
-        return cls.snake_to_pascal_case(value.removesuffix("_")) + ("_" if value.endswith("_") else "")
+        converted = cls.snake_to_pascal_case(value.removesuffix("_"))
+        # The custom dict mapping (e.g. type_ -> Type) may already inject a trailing underscore;
+        # only re-add one when the conversion stripped it.
+        if value.endswith("_") and not converted.endswith("_"):
+            converted += "_"
+        return converted
 
     @classmethod
     def pascale_to_snake_case_keep_trailing_underscore(cls, value: str | None):
@@ -311,7 +316,12 @@ class CaseUtil:
         if cls.is_empty(value):
             return value
 
-        return cls.pascal_to_snake_case(value.removesuffix("_")) + ("_" if value.endswith("_") else "")
+        converted = cls.pascal_to_snake_case(value.removesuffix("_"))
+        # The custom dict mapping (e.g. Type -> type_) may already inject a trailing underscore;
+        # only re-add one when the conversion stripped it.
+        if value.endswith("_") and not converted.endswith("_"):
+            converted += "_"
+        return converted
 
     @classmethod
     def check_snake_case(cls, value: str | None) -> None:
