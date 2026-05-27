@@ -33,9 +33,7 @@ class CeleryBroker(ABC):
         cls._ensure_registry()
         if broker_type_name not in cls._registry:
             valid = ", ".join(sorted(cls._registry.keys()))
-            raise RuntimeError(
-                f"Unknown Celery broker type: {broker_type_name}. Valid types: {valid}"
-            )
+            raise RuntimeError(f"Unknown Celery broker type: {broker_type_name}. Valid types: {valid}")
         return cls._registry[broker_type_name]()
 
     @classmethod

@@ -22,8 +22,7 @@ class MongoCeleryBackend(CeleryBackend):
         """Resolve {env_id} and {context_id} placeholders in the MongoDB backend URI."""
         if not uri_template:
             raise RuntimeError(
-                "Celery backend URI is not specified for MongoDB backend. "
-                "Set 'celery_backend_uri' in settings.yaml."
+                "Celery backend URI is not specified for MongoDB backend. " "Set 'celery_backend_uri' in settings.yaml."
             )
         if "{" in uri_template:
             return uri_template.format(env_id=env_id, context_id=env_id)

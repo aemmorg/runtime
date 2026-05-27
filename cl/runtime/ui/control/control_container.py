@@ -72,9 +72,7 @@ class ControlContainer(Control, ABC):
         return LayoutUpdateEvent(
             key=self.control_path,
             removed_controls=self._removed_controls or [],
-            added_controls=DataSerializers.FOR_UI.serialize(
-                self.list_added_controls(self), type_hint=type_hint
-            ),
+            added_controls=DataSerializers.FOR_UI.serialize(self.list_added_controls(self), type_hint=type_hint),
         )
 
     @staticmethod

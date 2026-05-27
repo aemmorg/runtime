@@ -97,8 +97,10 @@ class InteractiveMixin(DataMixin, ABC):
             if field_spec.field_type_hint.optional:
                 continue
             if getattr(candidate, field_spec.field_name) is None:
-                errors.append(UserErrorEvent(
-                    error=f"Field '{field_spec.field_name}' is required.",
-                    field=CaseUtil.snake_to_pascal_case(field_spec.field_name),
-                ))
+                errors.append(
+                    UserErrorEvent(
+                        error=f"Field '{field_spec.field_name}' is required.",
+                        field=CaseUtil.snake_to_pascal_case(field_spec.field_name),
+                    )
+                )
         return errors

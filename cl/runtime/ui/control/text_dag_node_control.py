@@ -13,7 +13,6 @@
 # limitations under the License.
 
 from dataclasses import dataclass
-from cl.runtime.records.for_dataclasses.extensions import required
 from cl.runtime.records.variant.variant import Variant
 from cl.runtime.ui.control.dag_node_control import DagNodeControl
 

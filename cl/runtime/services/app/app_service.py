@@ -47,6 +47,4 @@ class AppService(PydanticMixin):
         """Validate that `app_name` matches the only synthesized app; raise otherwise."""
         env_id = active(Env).env_id
         if app_name != env_id:
-            raise RuntimeError(
-                f"Internal app '{app_name}' not found. Available internal apps: {env_id}."
-            )
+            raise RuntimeError(f"Internal app '{app_name}' not found. Available internal apps: {env_id}.")

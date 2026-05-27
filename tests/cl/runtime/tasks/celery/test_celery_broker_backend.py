@@ -14,17 +14,15 @@
 
 """Unit tests for CeleryBroker and CeleryBackend class hierarchies."""
 
-import os
 import pytest
-from cl.runtime.tasks.celery.broker.celery_broker import CeleryBroker
-from cl.runtime.tasks.celery.broker.sqlite_celery_broker import SqliteCeleryBroker
-from cl.runtime.tasks.celery.broker.mongo_celery_broker import MongoCeleryBroker
-from cl.runtime.tasks.celery.broker.redis_celery_broker import RedisCeleryBroker
-from cl.runtime.tasks.celery.broker.rabbitmq_celery_broker import RabbitmqCeleryBroker
 from cl.runtime.tasks.celery.backend.celery_backend import CeleryBackend
-from cl.runtime.tasks.celery.backend.sqlite_celery_backend import SqliteCeleryBackend
 from cl.runtime.tasks.celery.backend.mongo_celery_backend import MongoCeleryBackend
-
+from cl.runtime.tasks.celery.backend.sqlite_celery_backend import SqliteCeleryBackend
+from cl.runtime.tasks.celery.broker.celery_broker import CeleryBroker
+from cl.runtime.tasks.celery.broker.mongo_celery_broker import MongoCeleryBroker
+from cl.runtime.tasks.celery.broker.rabbitmq_celery_broker import RabbitmqCeleryBroker
+from cl.runtime.tasks.celery.broker.redis_celery_broker import RedisCeleryBroker
+from cl.runtime.tasks.celery.broker.sqlite_celery_broker import SqliteCeleryBroker
 
 # --- CeleryBroker registry tests ---
 

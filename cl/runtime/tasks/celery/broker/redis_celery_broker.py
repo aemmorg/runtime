@@ -34,8 +34,6 @@ class RedisCeleryBroker(CeleryBroker):
         import redis
 
         parsed_uri = urlparse(uri)
-        redis_client = redis.StrictRedis(
-            host=parsed_uri.hostname, port=parsed_uri.port, db=parsed_uri.path.lstrip("/")
-        )
+        redis_client = redis.StrictRedis(host=parsed_uri.hostname, port=parsed_uri.port, db=parsed_uri.path.lstrip("/"))
         redis_client.delete(queue)
         redis_client.flushdb()

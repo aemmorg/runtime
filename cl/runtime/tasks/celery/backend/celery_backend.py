@@ -33,9 +33,7 @@ class CeleryBackend(ABC):
         cls._ensure_registry()
         if backend_type_name not in cls._registry:
             valid = ", ".join(sorted(cls._registry.keys()))
-            raise RuntimeError(
-                f"Unknown Celery backend type: {backend_type_name}. Valid types: {valid}"
-            )
+            raise RuntimeError(f"Unknown Celery backend type: {backend_type_name}. Valid types: {valid}")
         return cls._registry[backend_type_name]()
 
     @classmethod

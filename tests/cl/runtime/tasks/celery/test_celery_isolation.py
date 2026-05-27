@@ -31,11 +31,13 @@ def _child_settings_only(env_id: str, result_queue: multiprocessing.Queue) -> No
 
     settings = CelerySettings.instance()
 
-    result_queue.put({
-        "env_id": env_id,
-        "celery_broker_uri": settings.celery_broker_uri,
-        "celery_broker_queue": settings.celery_broker_queue,
-    })
+    result_queue.put(
+        {
+            "env_id": env_id,
+            "celery_broker_uri": settings.celery_broker_uri,
+            "celery_broker_queue": settings.celery_broker_queue,
+        }
+    )
 
 
 def _child_run_task(
@@ -83,9 +85,7 @@ def _child_run_task(
                 try:
                     sse_settings = SseSettings.instance()
                     broker_type = TypeInfo.from_type_name(sse_settings.sse_broker_type)
-                    broker = EventBroker.create(
-                        broker_type=broker_type, broker_id=f"test-isolation-{env_id}"
-                    )
+                    broker = EventBroker.create(broker_type=broker_type, broker_id=f"test-isolation-{env_id}")
                     with activate(broker):
                         queue = CeleryQueue(queue_id=f"isolation-queue-{env_id}").build()
                         active(DataSource).replace_one(queue, commit=True)
@@ -108,16 +108,18 @@ def _child_run_task(
                             )
                             all_tasks = tuple(active(DataSource).load_all(key_type=TaskKey))
 
-                            result_queue.put({
-                                "env_id": env_id,
-                                "celery_broker_uri": celery_settings.celery_broker_uri,
-                                "celery_broker_queue": celery_settings.celery_broker_queue,
-                                "task_id": task.task_id,
-                                "task_status": loaded_task.status.name,
-                                "task_label": loaded_task.label,
-                                "all_task_ids": [t.task_id for t in all_tasks],
-                                "error": None,
-                            })
+                            result_queue.put(
+                                {
+                                    "env_id": env_id,
+                                    "celery_broker_uri": celery_settings.celery_broker_uri,
+                                    "celery_broker_queue": celery_settings.celery_broker_queue,
+                                    "task_id": task.task_id,
+                                    "task_status": loaded_task.status.name,
+                                    "task_label": loaded_task.label,
+                                    "all_task_ids": [t.task_id for t in all_tasks],
+                                    "error": None,
+                                }
+                            )
                 finally:
                     ds.drop_db()
     except Exception as e:

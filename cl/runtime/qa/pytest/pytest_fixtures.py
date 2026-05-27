@@ -30,12 +30,12 @@ from cl.runtime.log.log_config import logging_config
 from cl.runtime.qa.pytest.pytest_util import PytestUtil
 from cl.runtime.schema.type_info import TypeInfo
 from cl.runtime.server.env import Env
+from cl.runtime.settings.celery_settings import CelerySettings
 from cl.runtime.settings.db_settings import DbSettings
 from cl.runtime.settings.env_kind import EnvKind
+from cl.runtime.settings.env_settings import EnvSettings
 from cl.runtime.settings.qa_settings import QaSettings
 from cl.runtime.settings.sse_settings import SseSettings
-from cl.runtime.settings.celery_settings import CelerySettings
-from cl.runtime.settings.env_settings import EnvSettings
 from cl.runtime.tasks.celery.backend.celery_backend import CeleryBackend
 from cl.runtime.tasks.celery.broker.celery_broker import CeleryBroker
 from cl.runtime.tasks.celery.celery_queue import CeleryQueue
