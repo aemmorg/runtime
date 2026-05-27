@@ -50,7 +50,7 @@ def test_non_key_field_not_flagged():
 
     # Pick any record type with non-key fields
     spec = UiAppState.get_type_spec()
-    non_key_fields = [f for f in spec.fields if f.field_name != "user"]  # user is the key
+    non_key_fields = [f for f in spec.fields if f.field_name != "id"]  # id is the key
     # At least one non-key field exists
     assert len(non_key_fields) > 0
     assert all(f.key in (None, False) for f in non_key_fields)
