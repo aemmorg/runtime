@@ -36,7 +36,7 @@ base (e.g., `DataMixin`, `RecordMixin`, `KeyMixin`), regenerate the type cache:
 init_type_info.cmd
 
 # Linux/macOS (from project root)
-PYTHONPATH="runtime;convince;admin;resume" .venv/bin/python -m tools.cl.runtime.init_type_info
+PYTHONPATH="submodule1;submodule2" .venv/bin/python -m tools.cl.runtime.init_type_info
 ```
 
 This updates `resources/bootstrap/TypeInfo.csv` which maps type names to their fully
@@ -49,7 +49,7 @@ qualified module paths.
 init_db.cmd
 
 # Linux/macOS (from project root)
-PYTHONPATH="runtime;convince;admin;resume" .venv/bin/python -m tools.cl.runtime.init_db
+PYTHONPATH="submodule1;submodule2" .venv/bin/python -m tools.cl.runtime.init_db
 ```
 
 ## Development Workflow
