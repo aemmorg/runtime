@@ -1,0 +1,2 @@
+PlotId,Title,Data,XLabel,YLabel,ZLabel
+Stub Samples Configuration.stub_scatter_plots_3d.basic,Sample 3D Scatter,"[{""_type"":""ScatterValues3D"",""x"":[1.0,2.0,3.0],""y"":[4.0,5.0,6.0],""z"":[7.0,8.0,9.0],""legend"":""Points"",""marker_style"":""Circle""}]",X,Y,Z
