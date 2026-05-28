@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import re
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any
@@ -41,6 +42,11 @@ from cl.runtime.serializers.serializer import Serializer
 from cl.runtime.serializers.type_format import TypeFormat
 from cl.runtime.serializers.type_inclusion import TypeInclusion
 from cl.runtime.serializers.type_placement import TypePlacement
+
+# Positional index keys such as "_0", "_1" are used as map keys (panel row/column dimensions,
+# table cell styles, etc.). They are not field names and must bypass PascalCase conversion: a
+# leading underscore before a digit is not valid snake_case and does not round-trip losslessly.
+_POSITIONAL_KEY_RE = re.compile(r"^_\d+$")
 
 
 @dataclass(slots=True, kw_only=True)
@@ -463,17 +469,22 @@ class DataSerializer(Serializer):
 
     def _serialize_key(self, field_key: str) -> str:
         """Transform the field key for use in serialization"""
-        if self.pascalize_keys:
+        if self.pascalize_keys and not self._is_positional_key(field_key):
             return CaseUtil.snake_to_pascal_case_keep_trailing_underscore(field_key)
         else:
             return field_key
 
     def _deserialize_key(self, field_key: str) -> str:
         """Transform the field key for use in deserialization"""
-        if self.pascalize_keys:
+        if self.pascalize_keys and not self._is_positional_key(field_key):
             return CaseUtil.pascale_to_snake_case_keep_trailing_underscore(field_key)
         else:
             return field_key
+
+    @staticmethod
+    def _is_positional_key(field_key: str) -> bool:
+        """True for positional index keys like "_0" that must bypass case conversion."""
+        return isinstance(field_key, str) and _POSITIONAL_KEY_RE.match(field_key) is not None
 
     def _serialize_inner(self, data: Any, type_hint: TypeHint | None = None) -> Any:
         """Use inner_serializer and inner_encoder if specified, otherwise use current serializer and no encoder."""

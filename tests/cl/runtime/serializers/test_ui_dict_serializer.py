@@ -72,5 +72,20 @@ def test_null_fields_inclusion():
     assert [key for key in serialized if serialized[key] is None]
 
 
+def test_positional_dict_keys_preserved():
+    """Positional index keys like "_0" (used by panel layouts, cell styles) must survive UI (de)serialization."""
+    serializer = DataSerializers.FOR_UI
+
+    # Positional keys are passed through unchanged in both directions (a leading underscore before a
+    # digit is not valid snake_case and would otherwise raise during PascalCase conversion).
+    for key in ("_0", "_1", "_12"):
+        assert serializer._serialize_key(key) == key
+        assert serializer._deserialize_key(key) == key
+
+    # Regular field keys are still PascalCase-converted on the wire and back.
+    assert serializer._serialize_key("my_field") == "MyField"
+    assert serializer._deserialize_key("MyField") == "my_field"
+
+
 if __name__ == "__main__":
     pytest.main([__file__])
