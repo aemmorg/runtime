@@ -72,7 +72,7 @@ class LinePlot(MatplotlibPlot):
                 plot_kwargs = {"label": label}
 
                 specific_options = self.line_options.get(label, {}) if self.line_options else {}
-                plot_kwargs.update(specific_options)
+                plot_kwargs.update({k: self._coerce_value(v) for k, v in specific_options.items()})
 
                 if "marker" not in plot_kwargs and not self.hide_markers:
                     if len(self.lines) > 1:

@@ -119,3 +119,12 @@ class MatplotlibPlot(Plot, ABC):
         """Get value to be set as matplotlib.pyplot theme."""
         theme = "dark_background" if cls.is_dark_theme() else "default"
         return theme
+
+    @classmethod
+    def _coerce_value(cls, value: str) -> str | float | int:
+        """Coerce string to int or float when the value is numeric, pass through otherwise."""
+        try:
+            f = float(value)
+            return int(f) if f == int(f) else f
+        except (ValueError, TypeError):
+            return value
