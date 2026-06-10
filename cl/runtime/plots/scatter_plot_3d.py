@@ -18,6 +18,7 @@ import matplotlib
 from matplotlib import pyplot as plt
 from cl.runtime.plots.matplotlib_util import MatplotlibUtil
 from cl.runtime.plots.plot import Plot
+from cl.runtime.plots.plot_line_style import PlotLineStyle
 from cl.runtime.plots.plot_surface_style import PlotSurfaceStyle
 from cl.runtime.plots.scatter_values_3d import ScatterValues3D
 from cl.runtime.records.for_dataclasses.extensions import required
@@ -58,6 +59,8 @@ class ScatterPlot3D(Plot):
         for values in self.data:
             if values.surface_style == PlotSurfaceStyle.SOLID:
                 ax.plot_trisurf(values.x, values.y, values.z, alpha=0.8, label=values.legend)
+            elif values.line_style == PlotLineStyle.SOLID:
+                ax.plot(values.x, values.y, values.z, label=values.legend, linewidth=0.5)
             else:
                 ax.scatter(values.x, values.y, values.z, label=values.legend)
         if self.x_label:

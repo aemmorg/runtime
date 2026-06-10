@@ -88,7 +88,8 @@ class LinePlot(MatplotlibPlot):
                 axes.set_ylabel(self.y_axis_label)
             axes.set_title(self.title)
 
-            axes.set_xticks(self.x_values)
+            if len(self.x_values) <= 30:
+                axes.set_xticks(self.x_values)
 
             if self.y_lim is not None:
                 current_ylim = axes.get_ylim()

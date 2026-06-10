@@ -62,6 +62,18 @@ class PlotlyEngine(PlottingEngine):
                             intensity=values.z,
                         )
                     )
+                elif values.line_style == PlotLineStyle.SOLID:
+                    # Render as a connected polyline (NaN coordinates break the line into segments)
+                    fig.add_trace(
+                        go.Scatter3d(
+                            x=values.x,
+                            y=values.y,
+                            z=values.z,
+                            mode="lines",
+                            line={"color": color_css, "width": 1},
+                            name=values.legend,
+                        )
+                    )
                 else:
                     # Default: render as markers
                     fig.add_trace(
